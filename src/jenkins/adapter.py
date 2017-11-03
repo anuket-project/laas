@@ -10,6 +10,7 @@
 
 import logging
 import re
+from django.conf import settings
 
 import requests
 from django.core.cache import cache
@@ -33,11 +34,13 @@ def get_json(url):
 
 
 def get_all_slaves():
-    url = "https://build.opnfv.org/ci/computer/api/json?tree=computer[displayName,offline,idle]"
+    url = settings.ALL_SLAVES_URL
     json = get_json(url)
     if json is not None:
         return json['computer']  # return list of dictionaries
     return []
+
+
 
 
 def get_slave(slavename):
@@ -49,7 +52,7 @@ def get_slave(slavename):
 
 
 def get_ci_slaves():
-    url = "https://build.opnfv.org/ci/label/ci-pod/api/json?tree=nodes[nodeName,offline,idle]"
+    url = settings.CI_SLAVES_URL
     json = get_json(url)
     if json is not None:
         return json['nodes']
@@ -57,7 +60,7 @@ def get_ci_slaves():
 
 
 def get_all_jobs():
-    url = "https://build.opnfv.org/ci/api/json?tree=jobs[displayName,url,lastBuild[fullDisplayName,building,builtOn,timestamp,result]]"
+    url = settings.ALL_JOBS_URL
     json = get_json(url)
     if json is not None:
         return json['jobs']  # return list of dictionaries
@@ -123,7 +126,7 @@ def parse_job_string(full_displayname):
     return job
 
 def get_slave_url(slave):
-    return 'https://build.opnfv.org/ci/computer/' + slave['displayName']
+    return settings.GET_SLAVE_URL + slave['displayName']
 
 
 def get_slave_status(slave):
