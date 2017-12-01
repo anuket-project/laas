@@ -70,6 +70,7 @@ class BookingFormView(FormView):
         booking = Booking(start=form.cleaned_data['start'],
                           end=form.cleaned_data['end'],
                           purpose=form.cleaned_data['purpose'],
+                          opsys=form.cleaned_data['opsys'],
                           installer=form.cleaned_data['installer'],
                           scenario=form.cleaned_data['scenario'],
                           resource=self.resource, user=user)
@@ -117,6 +118,6 @@ class ResourceBookingsJSON(View):
     def get(self, request, *args, **kwargs):
         resource = get_object_or_404(Resource, id=self.kwargs['resource_id'])
         bookings = resource.booking_set.get_queryset().values('id', 'start', 'end', 'purpose',
-                                                              'jira_issue_status',
+                                                              'jira_issue_status', 'opsys__name',
                                                               'installer__name', 'scenario__name')
         return JsonResponse({'bookings': list(bookings)})
