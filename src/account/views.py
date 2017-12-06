@@ -119,6 +119,7 @@ class JiraAuthenticatedView(RedirectView):
 
         jira = JIRA(server=settings.JIRA_URL, oauth=oauth_dict)
         username = jira.current_user()
+        email = jira.user(username).emailAddress
         url = '/'
         # Step 3. Lookup the user or create them if they don't exist.
         try:
@@ -130,6 +131,7 @@ class JiraAuthenticatedView(RedirectView):
             profile = UserProfile()
             profile.user = user
             profile.save()
+            user.userprofile.email_addr = email
             url = reverse('account:settings')
         user.userprofile.oauth_token = access_token['oauth_token']
         user.userprofile.oauth_secret = access_token['oauth_token_secret']
