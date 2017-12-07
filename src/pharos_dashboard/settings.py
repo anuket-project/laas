@@ -182,3 +182,9 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(hours=24)
     },
 }
+# Jenkins Settings
+ALL_SLAVES_URL = os.environ['JENKINS_URL'] + '/computer/api/json?tree=computer[displayName,offline,idle]'
+CI_SLAVES_URL = os.environ['JENKINS_URL'] + '/label/ci-pod/api/json?tree=nodes[nodeName,offline,idle]'
+ALL_JOBS_URL = os.environ['JENKINS_URL'] + '/api/json?tree=jobs[displayName,url,lastBuild[fullDisplayName,building,builtOn,timestamp,result]'
+GET_SLAVE_URL = os.environ['JENKINS_URL'] + '/computer/'
+
