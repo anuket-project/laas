@@ -10,6 +10,7 @@
 
 from rest_framework import serializers
 
+from notifier.models import Notifier
 from booking.models import Booking
 from dashboard.models import Server, Resource, ResourceStatus
 
@@ -37,3 +38,8 @@ class ResourceStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = ResourceStatus
         fields = ('id', 'resource', 'timestamp','type', 'title', 'content')
+
+class NotifierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notifier
+        fields = ('id', 'title', 'content', 'user', 'sender', 'message_type', 'msg_sent')

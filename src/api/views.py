@@ -8,7 +8,7 @@
 ##############################################################################
 
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -41,6 +41,9 @@ class ResourceStatusViewSet(viewsets.ModelViewSet):
     queryset = ResourceStatus.objects.all()
     serializer_class = ResourceStatusSerializer
 
+class NotifierViewSet(viewsets.ModelViewSet):
+    queryset = Notifier.objects.none()
+    serializer_class = NotifierSerializer
 
 @method_decorator(login_required, name='dispatch')
 class GenerateTokenView(View):

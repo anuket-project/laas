@@ -33,6 +33,7 @@ router.register(r'resources', ResourceViewSet)
 router.register(r'servers', ServerViewSet)
 router.register(r'bookings', BookingViewSet)
 router.register(r'resource_status', ResourceStatusViewSet)
+router.register(r'notifier', NotifierViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),
