@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('account', '0002_userprofile_email_addr'),
         ('dashboard', '0002_auto_20170505_0815'),
     ]
 

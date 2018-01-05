@@ -27,3 +27,12 @@
 <p>
     <b>Scenario: </b> {{ booking.scenario }}
 </p>
+{% if user.is_authenticated %}
+{% if user.get_username == booking.user.username %}
+<p>
+    <a href="{% url 'booking:edit' booking_id=booking.id resource_id=booking.resource.id  %}" class="btn btn btn-success">
+        Edit Booking
+    </a>
+</p>
+{% endif %}
+{% endif %}

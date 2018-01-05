@@ -7,7 +7,6 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -21,10 +20,9 @@ from django.views.generic import TemplateView
 from jira import JIRAError
 
 from account.jira_util import get_jira
-from booking.forms import BookingForm
+from booking.forms import BookingForm, BookingEditForm
 from booking.models import Booking
 from dashboard.models import Resource
-
 
 def create_jira_ticket(user, booking):
     jira = get_jira(user)
@@ -55,6 +53,7 @@ class BookingFormView(FormView):
         title = 'Booking: ' + self.resource.name
         context = super(BookingFormView, self).get_context_data(**kwargs)
         context.update({'title': title, 'resource': self.resource})
+        #raise PermissionDenied('check')
         return context
 
     def get_success_url(self):
@@ -91,6 +90,75 @@ class BookingFormView(FormView):
         messages.add_message(self.request, messages.SUCCESS, 'Booking saved')
         return super(BookingFormView, self).form_valid(form)
 
+
+class BookingEditFormView(FormView):
+    template_name = "booking/booking_calendar.html"
+    form_class = BookingEditForm
+
+    def is_valid(self):
+        return True
+
+    def dispatch(self, request, *args, **kwargs):
+        self.resource = get_object_or_404(Resource, id=self.kwargs['resource_id'])
+        self.original_booking = get_object_or_404(Booking, id=self.kwargs['booking_id'])
+        return super(BookingEditFormView, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        title = 'Editing Booking on: ' + self.resource.name
+        context = super(BookingEditFormView, self).get_context_data(**kwargs)
+        context.update({'title': title, 'resource': self.resource})
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super(BookingEditFormView, self).get_form_kwargs()
+        kwargs['purpose'] = self.original_booking.purpose
+        kwargs['start'] = self.original_booking.start
+        kwargs['end'] = self.original_booking.end
+        try:
+            kwargs['installer'] = self.original_booking.installer
+        except AttributeError:
+            pass
+        try:
+            kwargs['scenario'] = self.original_booking.scenario
+        except AttributeError:
+            pass
+        return kwargs
+
+    def get_success_url(self):
+        return reverse('booking:create', args=(self.resource.id,))
+
+    def form_valid(self, form):
+
+        if not self.request.user.is_authenticated:
+            messages.add_message(self.request, messages.ERROR,
+                                 'You need to be logged in to book a Pod.')
+            return super(BookingEditFormView, self).form_invalid(form)
+
+        if not self.request.user == self.original_booking.user:
+            messages.add_message(self.request, messages.ERROR,
+                                 'You are not the owner of this booking.')
+            return super(BookingEditFormView, self).form_invalid(form)
+
+        #Do Conflict Checks
+        if self.original_booking.start != form.cleaned_data['start']:
+            if timezone.now() > form.cleaned_data['start']:
+                messages.add_message(self.request, messages.ERROR,
+                                     'Cannot change start date after it has occurred.')
+                return super(BookingEditFormView, self).form_invalid(form)
+        self.original_booking.start = form.cleaned_data['start']
+        self.original_booking.end = form.cleaned_data['end']
+        self.original_booking.purpose = form.cleaned_data['purpose']
+        self.original_booking.installer = form.cleaned_data['installer']
+        self.original_booking.scenario = form.cleaned_data['scenario']
+        self.original_booking.reset = form.cleaned_data['reset']
+        try:
+            self.original_booking.save()
+        except ValueError as err:
+            messages.add_message(self.request, messages.ERROR, err)
+            return super(BookingEditFormView, self).form_invalid(form)
+
+        user = self.request.user
+        return super(BookingEditFormView, self).form_valid(form)
 
 class BookingView(TemplateView):
     template_name = "booking/booking_detail.html"

@@ -25,4 +25,14 @@ class Migration(migrations.Migration):
             name='opsys',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='booking.Opsys'),
         ),
+        migrations.AddField(
+            model_name='booking',
+            name='changeid',
+            field=models.TextField(default='no change ID'),
+        ),
+        migrations.AlterField(
+            model_name='booking',
+            name='changeid',
+            field=models.TextField(blank=True, default='no change ID', null=True),
+        ),
     ]

@@ -51,8 +51,23 @@ function loadEvents(url) {
 }
 
 $(document).ready(function () {
+    createEditViewSwitch();
     $('#calendar').fullCalendar(calendarOptions);
     loadEvents(bookings_url);
     $('#starttimepicker').datetimepicker(timepickerOptions);
     $('#endtimepicker').datetimepicker(timepickerOptions);
+    $('#starttimeeditpicker').datetimepicker(timepickerOptions);
+    $('#endtimeeditpicker').datetimepicker(timepickerOptions);
 });
+
+function createEditViewSwitch() {
+    var url = window.location.href;
+    var isEdit = url.substr(url.lastIndexOf('/'));
+
+    if ( url.indexOf('edit') !== -1 ) {
+        document.getElementById('booking_form_div').style.display = 'none';
+        calendarOptions.selectable = false;
+    } else {
+        document.getElementById('booking_edit_form_div').style.display = 'none';
+    }
+}
