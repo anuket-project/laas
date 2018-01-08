@@ -7,12 +7,8 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
+from django.contrib import admin
 
-from django.apps import AppConfig
+from notifier.models import *
 
-
-class NotificationConfig(AppConfig):
-    name = 'notification'
-
-    def ready(self):
-        import notification.signals #noqa
+admin.site.register(Notifier)
