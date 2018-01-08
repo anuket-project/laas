@@ -16,10 +16,11 @@ from dashboard.models import Server, Resource, ResourceStatus
 class BookingSerializer(serializers.ModelSerializer):
     installer_name = serializers.CharField(source='installer.name')
     scenario_name = serializers.CharField(source='scenario.name')
+    opsys_name = serializers.CharField(source='opsys.name')
 
     class Meta:
         model = Booking
-        fields = ('id', 'resource_id', 'start', 'end', 'installer_name', 'scenario_name', 'purpose')
+        fields = ('id', 'resource_id', 'start', 'end', 'opsys_name', 'installer_name', 'scenario_name', 'purpose')
 
 
 class ServerSerializer(serializers.ModelSerializer):

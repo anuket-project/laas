@@ -13,5 +13,6 @@ from django.contrib import admin
 from booking.models import *
 
 admin.site.register(Booking)
+admin.site.register(Opsys)
 admin.site.register(Installer)
 admin.site.register(Scenario)

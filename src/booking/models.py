@@ -31,6 +31,12 @@ class Scenario(models.Model):
     def __str__(self):
         return self.name
 
+class Opsys(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
 
 class Booking(models.Model):
     id = models.AutoField(primary_key=True)
@@ -41,6 +47,7 @@ class Booking(models.Model):
     jira_issue_id = models.IntegerField(null=True)
     jira_issue_status = models.CharField(max_length=50)
 
+    opsys = models.ForeignKey(Opsys, models.DO_NOTHING, null=True)
     installer = models.ForeignKey(Installer, models.DO_NOTHING, null=True)
     scenario = models.ForeignKey(Scenario, models.DO_NOTHING, null=True)
     purpose = models.CharField(max_length=300, blank=False)
