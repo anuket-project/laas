@@ -26,9 +26,8 @@ class DispatchHandler():
     def email(instance):
         if instance.msg_sent != 'no dispatcher by given name exists: sending by email':
             instance.msg_sent = 'by email'
-        send_mail(instance.title,instance.content + 
-            '\n\n This message pertains to the following resource: ' + 
-            instance.resource.name,instance.sender,[instance.user.email_addr], fail_silently=False)
+        send_mail(instance.title,instance.content,
+            instance.sender,[instance.user.email_addr], fail_silently=False)
 
     def webnotification(instance):
         instance.msg_sent='by web notification'
