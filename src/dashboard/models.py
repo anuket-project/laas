@@ -15,6 +15,7 @@ from django.db import models
 from django.utils import timezone
 
 from jenkins.models import JenkinsSlave
+from account.models import Lab
 
 
 class Resource(models.Model):
@@ -22,6 +23,7 @@ class Resource(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.CharField(max_length=300, blank=True, null=True)
     url = models.CharField(max_length=100, blank=True, null=True)
+    resource_lab = models.ForeignKey(Lab, related_name='lab_resource_set', null=True, blank=True)
     owner = models.ForeignKey(User, related_name='user_lab_owner', null=True, blank=True)
     vpn_users = models.ManyToManyField(User, related_name='user_vpn_users', blank=True)
     slave = models.ForeignKey(JenkinsSlave, on_delete=models.DO_NOTHING, null=True, blank=True)

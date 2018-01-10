@@ -33,7 +33,7 @@ class ServerSerializer(serializers.ModelSerializer):
 class ResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resource
-        fields = ('id', 'name', 'description', 'url', 'server_set', 'dev_pod')
+        fields = ('id', 'name', 'description', 'resource_lab', 'url', 'server_set', 'dev_pod')
 
 class ResourceStatusSerializer(serializers.ModelSerializer):
     class Meta:
