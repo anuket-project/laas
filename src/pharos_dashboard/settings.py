@@ -5,7 +5,9 @@ from datetime import timedelta
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ['DEBUG']
+# NOTE: os.environ only returns strings, so making a comparison to
+# 'True' here will convert it to the correct Boolean value.
+DEBUG = os.environ['DEBUG'] == 'True'
 
 # Application definition
 
