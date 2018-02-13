@@ -30,11 +30,17 @@ from booking.views import *
 urlpatterns = [
     url(r'^(?P<resource_id>[0-9]+)/$', BookingFormView.as_view(), name='create'),
     url(r'^(?P<resource_id>[0-9]+)/edit/(?P<booking_id>[0-9]+)/$', BookingEditFormView.as_view(), name='edit'),
+
     url(r'^(?P<resource_id>[0-9]+)/bookings_json/$', ResourceBookingsJSON.as_view(),
         name='bookings_json'),
 
     url(r'^detail/$', BookingView.as_view(), name='detail_prefix'),
     url(r'^detail/(?P<booking_id>[0-9]+)/$', BookingView.as_view(), name='detail'),
+
+    url(r'^delete/$', BookingDeleteView.as_view(), name='delete_prefix'),
+    url(r'^delete/(?P<booking_id>[0-9]+)/$', BookingDeleteView.as_view(), name='delete'),
+
+    url(r'^delete/(?P<booking_id>[0-9]+)/confirm/$', bookingDelete, name='delete_booking'),
 
     url(r'^list/$', BookingListView.as_view(), name='list')
 ]

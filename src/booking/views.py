@@ -18,6 +18,7 @@ from django.views import View
 from django.views.generic import FormView
 from django.views.generic import TemplateView
 from jira import JIRAError
+from django.shortcuts import redirect
 
 from account.jira_util import get_jira
 from booking.forms import BookingForm, BookingEditForm
@@ -163,6 +164,7 @@ class BookingEditFormView(FormView):
 class BookingView(TemplateView):
     template_name = "booking/booking_detail.html"
 
+
     def get_context_data(self, **kwargs):
         booking = get_object_or_404(Booking, id=self.kwargs['booking_id'])
         title = 'Booking Details'
@@ -170,6 +172,21 @@ class BookingView(TemplateView):
         context.update({'title': title, 'booking': booking})
         return context
 
+class BookingDeleteView(TemplateView):
+    template_name = "booking/booking_delete.html"
+
+    def get_context_data(self, **kwargs):
+        booking = get_object_or_404(Booking, id=self.kwargs['booking_id'])
+        title = 'Delete Booking'
+        context = super(BookingDeleteView, self).get_context_data(**kwargs)
+        context.update({'title': title, 'booking': booking})
+        return context
+
+def bookingDelete(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+    booking.delete()
+    messages.add_message(request, messages.SUCCESS, 'Booking deleted')
+    return redirect('../../../../')
 
 class BookingListView(TemplateView):
     template_name = "booking/booking_list.html"

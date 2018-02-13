@@ -113,6 +113,7 @@
     <script type="text/javascript">
         var bookings_url = "{% url 'booking:bookings_json' resource_id=resource.id %}";
         var booking_detail_prefix = "{% url 'booking:detail_prefix' %}";
+        var booking_delete_prefix = "{% url 'booking:delete_prefix' %}";
         var user_timezone = "{{ request.user.userprofile.timezone }}"
     </script>
 

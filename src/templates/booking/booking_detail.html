@@ -1,5 +1,22 @@
 {% load jira_filters %}
 
+<script type="text/javascript">
+    function deleteClick(id) {
+        var booking_delete_url = booking_delete_prefix + id
+        $.ajax({
+            url: booking_delete_url,
+            type: 'get',
+            success: function (data) {
+                $('#booking_delete_content').html(data);
+            },
+            failure: function (data) {
+                alert('Error finding that booking');
+            }
+        });
+        $('#booking_delete_modal').modal('show');
+    }
+</script>
+
 <p>
     <b>Resource: </b>
     <a href="{{ booking.resource.url }}">
@@ -33,6 +50,21 @@
     <a href="{% url 'booking:edit' booking_id=booking.id resource_id=booking.resource.id  %}" class="btn btn btn-success">
         Edit Booking
     </a>
+    <a href="javascript:deleteClick({{ booking.id }})" class="btn btn btn-danger">
+        Delete Booking
+    </a>
+    <div id="booking_delete_modal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Delete Booking</h4>
+                </div>
+                <div class="modal-body" id="booking_delete_content">
+                </div>
+            </div>
+        </div>
+    </div>
 </p>
 {% endif %}
 {% endif %}
