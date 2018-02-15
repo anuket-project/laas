@@ -21,6 +21,7 @@ class BookingForm(forms.Form):
     reset = forms.ChoiceField(choices = ((True, 'Yes'),(False, 'No')), label="Reset System", initial='False', required=False)
     purpose = forms.CharField(max_length=300)
     opsys = forms.ModelChoiceField(queryset=Opsys.objects.all(), required=False)
+    opsys.label = "Operating System"
     installer = forms.ModelChoiceField(queryset=Installer.objects.all(), required=False)
     scenario = forms.ModelChoiceField(queryset=Scenario.objects.all(), required=False)
 
