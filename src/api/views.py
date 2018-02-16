@@ -16,6 +16,7 @@ from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
 
 from api.serializers import *
+from account.models import UserProfile
 from booking.models import Booking
 from dashboard.models import Resource, Server, ResourceStatus
 
@@ -44,6 +45,10 @@ class ResourceStatusViewSet(viewsets.ModelViewSet):
 class NotifierViewSet(viewsets.ModelViewSet):
     queryset = Notifier.objects.none()
     serializer_class = NotifierSerializer
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserSerializer
 
 @method_decorator(login_required, name='dispatch')
 class GenerateTokenView(View):

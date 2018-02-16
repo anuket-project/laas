@@ -10,6 +10,7 @@
 
 from rest_framework import serializers
 
+from account.models import UserProfile
 from notifier.models import Notifier
 from booking.models import Booking
 from dashboard.models import Server, Resource, ResourceStatus
@@ -44,3 +45,9 @@ class NotifierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notifier
         fields = ('id', 'title', 'content', 'user', 'sender', 'message_type', 'msg_sent')
+
+class UserSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username')
+    class Meta:
+        model = UserProfile
+        fields = ('user', 'username', 'ssh_public_key', 'pgp_public_key', 'email_addr')
