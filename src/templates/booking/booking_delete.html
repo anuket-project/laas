@@ -1,0 +1,11 @@
+{% load jira_filters %}
+{% load bootstrap3 %}
+
+<p>
+    Really delete Booking from {{ booking.start}} to {{ booking.end }}?
+</p>
+<p>
+    <div id="booking_delete_form_div">
+        <a href="{% url 'booking:delete_booking' booking_id=booking.id %}" class="btn btn btn-danger">Delete Booking</a>
+    </div>
+</p>
