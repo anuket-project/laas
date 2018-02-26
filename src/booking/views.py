@@ -66,6 +66,11 @@ class BookingFormView(FormView):
                                  'You need to be logged in to book a Pod.')
             return super(BookingFormView, self).form_invalid(form)
 
+        if form.cleaned_data['end'] - form.cleaned_data['start'] > timezone.timedelta(days=21):
+            messages.add_message(self.request, messages.ERROR,
+                                 'Bookings can be no more than 3 weeks long.')
+            return super(BookingFormView, self).form_invalid(form)
+
         user = self.request.user
         booking = Booking(start=form.cleaned_data['start'],
                           end=form.cleaned_data['end'],
@@ -107,7 +112,7 @@ class BookingEditFormView(FormView):
     def get_context_data(self, **kwargs):
         title = 'Editing Booking on: ' + self.resource.name
         context = super(BookingEditFormView, self).get_context_data(**kwargs)
-        context.update({'title': title, 'resource': self.resource})
+        context.update({'title': title, 'resource': self.resource, 'booking': self.original_booking})
         return context
 
     def get_form_kwargs(self):
@@ -141,6 +146,19 @@ class BookingEditFormView(FormView):
             return super(BookingEditFormView, self).form_invalid(form)
 
         #Do Conflict Checks
+        if self.original_booking.end != form.cleaned_data['end']:
+            if form.cleaned_data['end'] - self.original_booking.end > timezone.timedelta(days=7):
+                messages.add_message(self.request, messages.ERROR,
+                                     'Extensions can not be longer than one week.')
+                return super(BookingEditFormView, self).form_invalid(form)
+            elif self.original_booking.ext_count <= 0:
+                messages.add_message(self.request, messages.ERROR,
+                                     'Cannot change end date after maximum number of extensions reached.')
+                return super(BookingEditFormView, self).form_invalid(form)
+
+            else:
+                self.original_booking.ext_count -= 1
+
         if self.original_booking.start != form.cleaned_data['start']:
             if timezone.now() > form.cleaned_data['start']:
                 messages.add_message(self.request, messages.ERROR,

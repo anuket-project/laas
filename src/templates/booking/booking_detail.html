@@ -44,6 +44,10 @@
 <p>
     <b>Scenario: </b> {{ booking.scenario }}
 </p>
+<p>
+    <b>Extensions Remaining: </b> {{ booking.ext_count }}
+</p>
+
 {% if user.is_authenticated %}
 {% if user.get_username == booking.user.username %}
 <p>

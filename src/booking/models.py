@@ -55,6 +55,7 @@ class Booking(models.Model):
     installer = models.ForeignKey(Installer, models.DO_NOTHING, null=True)
     scenario = models.ForeignKey(Scenario, models.DO_NOTHING, null=True)
     purpose = models.CharField(max_length=300, blank=False)
+    ext_count = models.IntegerField(default=2)
 
     class Meta:
         db_table = 'booking'
