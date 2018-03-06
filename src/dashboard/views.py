@@ -120,22 +120,27 @@ class JenkinsUtilizationJSON(View):
     def get(self, request, *args, **kwargs):
         resource = get_object_or_404(Resource, id=kwargs['resource_id'])
         weeks = int(kwargs['weeks'])
-        utilization = resource.slave.get_utilization(timedelta(weeks=weeks))
-        utilization = [
-            {
-                'label': 'Offline',
-                'data': utilization['offline'],
-                'color': '#d9534f'
-            },
-            {
-                'label': 'Online',
-                'data': utilization['online'],
-                'color': '#5cb85c'
-            },
-            {
-                'label': 'Idle',
-                'data': utilization['idle'],
-                'color': '#5bc0de'
-            },
-        ]
-        return JsonResponse({'data': utilization})
+        try:
+            utilization = resource.slave.get_utilization(timedelta(weeks=weeks))
+            utilization = [
+                {
+                    'label': 'Offline',
+                    'data': utilization['offline'],
+                    'color': '#d9534f'
+                },
+                {
+                    'label': 'Online',
+                    'data': utilization['online'],
+                    'color': '#5cb85c'
+                },
+                {
+                    'label': 'Idle',
+                    'data': utilization['idle'],
+                    'color': '#5bc0de'
+                },
+            ]
+            jutilization = JsonResponse({'data': utilization})
+        except AttributeError:
+            return JsonResponse({'data': ''})
+        if jutilization:
+            return jutilization
