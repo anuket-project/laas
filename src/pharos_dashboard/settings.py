@@ -170,6 +170,9 @@ RABBITMQ_PASSWORD = os.environ['RABBITMQ_PASSWORD']
 
 BROKER_URL = 'amqp://' + RABBITMQ_USER + ':' + RABBITMQ_PASSWORD + '@rabbitmq:5672//'
 
+BOOKING_EXP_TIME = os,environ['BOOKING_EXPIRE_TIME']
+BOOKING_MAX_NUM = os.environ['BOOKING_MAXIMUM_NUMBER']
+
 CELERYBEAT_SCHEDULE = {
     'sync-jenkins': {
         'task': 'jenkins.tasks.sync_jenkins',
@@ -181,6 +184,10 @@ CELERYBEAT_SCHEDULE = {
     },
     'clean-database': {
         'task': 'dashboard.tasks.database_cleanup',
+        'schedule': timedelta(hours=24)
+    },
+    'booking_cleanup': {
+        'task': 'dashboard.tasks.booking_cleanup',
         'schedule': timedelta(hours=24)
     },
 }
