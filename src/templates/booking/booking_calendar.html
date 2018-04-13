@@ -64,13 +64,26 @@
                         {% bootstrap_form_errors form type='non_fields' %}
                         <form method="post" action="" class="form" id="bookingeditform">
                             {% csrf_token %}
-
+                            <div id='hide_if_noext'>
                             <div class='input-group' id='starttimeeditpicker'>
                                 {% bootstrap_field form.start addon_after='<span class="glyphicon glyphicon-calendar"></span>' %}
                             </div>
                             <div class='input-group' id='endtimeeditpicker'>
                                 {% bootstrap_field form.end addon_after='<span class="glyphicon glyphicon-calendar"></span>' %}
                             </div>
+                            </div>
+                            <script type="text/javascript">
+                                if( {{ booking.ext_count }} <= 0 ){
+                                    var hidediv = document.getElementById('hide_if_noext');
+                                    hidediv.style.display = 'none';
+                                    var par = document.createElement("div");
+                                    var text = document.createTextNode("No Extensions Remaining");
+                                    par.appendChild(text);
+                                    par.style.fontWeight = 'bold';
+                                    par.style.paddingBottom = '15pt';
+                                    hidediv.parentNode.insertBefore(par,hidediv.nextSibling);
+                                }
+                            </script>
                             {% bootstrap_field form.purpose %}
                             {% bootstrap_field form.installer %}
                             {% bootstrap_field form.scenario %}
