@@ -53,8 +53,7 @@ services:
             - pharos-data:/var/lib/postgresql/data
 
     rabbitmq:
-        restart: always
-        build: ./rabbitmq/
+        image: rabbitmq
         container_name: rm01
         env_file: config.env
         ports:
