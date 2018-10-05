@@ -9,23 +9,24 @@
 
 
 The dashboard is deployed using docker-compose.
-Application / database files are saved in /var/lib/pharos_dashboard/.
+
+Application / database files are saved in the 'pharos-data' container
+which needs to be pre-built before bringing up the dashboard.
 
 Deployment:
 
 - clone the repository
 - complete the config.env.sample file and save it as config.env
-- install docker, docker-compose and bower
-- run 'bower install' in ./src/static/ to fetch javascript dependencies
-- run 'make build' to build the containers
+- install docker, docker-compose
 - run 'make data'
 - run 'make up' to run the dashboard
 
 Updating:
 
+- run 'docker-compose pull'
+- run 'docker-compose up -d'
 - make stop
 - git pull
-- run 'bower install' if javascript dependencies changed
 - make build
 - make start
 
@@ -34,3 +35,9 @@ If there is migrations that need user input (like renaming a field), they need t
 Logs / Shell access:
 
 - there is some shortcuts in the makefile
+
+Development:
+
+- Install dependencies listed in 'Deployment'
+- run 'make build'
+- run 'make dev-up'

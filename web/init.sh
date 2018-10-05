@@ -1,3 +1,4 @@
+#!/bin/bash -e
 ##############################################################################
 # Copyright (c) 2018 Trevor Bramwell and others.
 #
@@ -6,21 +7,6 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-FROM node as static
-RUN npm install -g bower
-ADD src/static/ /static
-WORKDIR /static/
-RUN bower install --allow-root
-
-FROM python:3.5
-ENV PYTHONUNBUFFERED 1
-
-ADD requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
-
-ADD web/init.sh /init.sh
-ADD src/ /pharos_dashboard/
-COPY --from=static /static/ pharos_dashboard/static/
-
-WORKDIR /pharos_dashboard/
-CMD ["/init.sh"]
+python manage.py migrate && \
+python manage.py collectstatic --no-input && \
+gunicorn pharos_dashboard.wsgi -b 0.0.0.0:8000
