@@ -49,7 +49,6 @@ services:
         container_name: ps01
         env_file: config.env
         volumes:
-            - ./config/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
             - pharos-data:/var/lib/postgresql/data
 
     rabbitmq:
