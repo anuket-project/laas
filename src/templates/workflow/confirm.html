@@ -1,0 +1,125 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+<style>
+    #form_div {
+        width: 100%;
+        padding: 5%;
+        text-align: center;
+    }
+    #text_display {
+        text-align: left;
+        display: inline-block;
+    }
+    #text_wrapper {
+        text-align: center; /*centers child div*/
+    }
+    p {
+        margin:0;
+        padding:0;
+    }
+</style>
+
+<div style="text-align:center;">
+    <h3>Confirm  Session</h3>
+</div>
+<div id="vlan_warning"></div>
+<form id="vlan_form" action="/wf/workflow/" method="post">
+    {% csrf_token %}
+    <input id="vlan_input" name="vlan_input" type="hidden"/>
+</form>
+<div id="text_wrapper">
+    <div id="text_display">
+        <pre>{{confirmation_info|escape}}</pre>
+    </div>
+</div>
+<div id="form_div">
+<form id="confirmation_form" action="/wf/workflow/" method="post">
+    {% csrf_token %}
+    <div style="display: none;">
+    {{form|default:"<p> No Form Loaded</p>"}}
+    </div>
+</form>
+<div class="cform_buttons">
+    <button id="confirm_button" class="btn btn-success" onclick="formconfirm()">Confirm</button>
+    <button id="cancel_button" class="btn btn-danger" onclick="formcancel()">Cancel</button>
+</div>
+
+<div style="display: none;">
+<form id="manager_delete_form" action="/wf/workflow/finish/" method="post">
+    {% csrf_token %}
+</form>
+</div>
+
+<script>
+    var select = document.getElementById("id_confirm");
+
+    function delete_manager()
+    {
+        var form = $("#manager_delete_form");
+        var formData = form.serialize();
+        var req = new XMLHttpRequest();
+        req.open("POST", "/wf/workflow/finish/", false);
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.onerror = function() { alert("problem with cleaning up session"); }
+        req.onreadystatechange = function() { if(req.readyState === 4 ) { parent.redirect_root(); } }
+        req.send(formData);
+    }
+
+    function formconfirm()
+    {
+        select.value = "True";
+        document.getElementById("confirmation_form").submit();
+    }
+    function formcancel()
+    {
+        select.value = "False";
+        document.getElementById("confirmation_form").submit();
+    }
+
+    var confirmed = {{bypassed|default:"false"}};
+    if( confirmed )
+    {
+        delete_manager();
+    }
+</script>
+<script>
+
+function fixVlans() {
+    document.getElementById("vlan_input").value = "True";
+    document.getElementById("vlan_form").submit();
+}
+var problem = {{vlan_warning|default:'false'}};
+if(problem){
+    var d = document.getElementById("vlan_warning");
+    var h3 = document.createElement("h3");
+    h3.innerHTML = "WARNING: Vlans not available";
+    var h4 = document.createElement("h4");
+    h4.innerHTML = "The vlans you selected are not currently available. Would you like to automatically change them?";
+    var button1 = document.createElement("button");
+    button1.innerHTML = "Correct Vlans For Me";
+    button1.onclick = function() { fixVlans(); }
+
+    var button2 = document.createElement("button");
+    button2.innerHTML = "Cancel. I will change my vlans";
+    button2.onclick = function() { formcancel(); }
+    d.appendChild(h3);
+    d.appendChild(h4);
+    d.appendChild(button1);
+    d.appendChild(button2);
+    document.getElementById("confirm_button").disabled = true;
+    document.getElementById("cancel_button").disabled = true;
+}
+</script>
+</div>
+{% block element_messages %}
+
+{% endblock element_messages %}
+{% endblock content %}
+{% block onleave %}
+//document.getElementById("confirmation_form").submit();
+{% endblock %}

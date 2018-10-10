@@ -1,74 +1,293 @@
-{% load jira_filters %}
+{% extends "base.html" %}
+{% load staticfiles %}
 
-<script type="text/javascript">
-    function deleteClick(id) {
-        var booking_delete_url = booking_delete_prefix + id
-        $.ajax({
-            url: booking_delete_url,
-            type: 'get',
-            success: function (data) {
-                $('#booking_delete_content').html(data);
-            },
-            failure: function (data) {
-                alert('Error finding that booking');
-            }
-        });
-        $('#booking_delete_modal').modal('show');
-    }
-</script>
+{% block extrahead %}
+    {{block.super}}
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
+<script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+{% endblock %}
 
-<p>
-    <b>Resource: </b>
-    <a href="{{ booking.resource.url }}">
-        {{ booking.resource.name }}
-    </a>
-</p>
-<p>
-    <b>User: </b> {{ booking.user.username }}
-</p>
-<p>
-    <b>Start: </b> {{ booking.start }}
-</p>
-<p>
-    <b>End: </b> {{ booking.end }}
-</p>
-<p>
-    <b>Purpose: </b> {{ booking.purpose }}
-</p>
-<p>
-    <b>Operating System: </b> {{ booking.opsys }}
-</p>
-<p>
-    <b>Installer: </b> {{ booking.installer }}
-</p>
-<p>
-    <b>Scenario: </b> {{ booking.scenario }}
-</p>
-<p>
-    <b>Extensions Remaining: </b> {{ booking.ext_count }}
-</p>
-
-{% if user.is_authenticated %}
-{% if user.get_username == booking.user.username %}
-<p>
-    <a href="{% url 'booking:edit' booking_id=booking.id resource_id=booking.resource.id  %}" class="btn btn btn-success">
-        Edit Booking
-    </a>
-    <a href="javascript:deleteClick({{ booking.id }})" class="btn btn btn-danger">
-        Delete Booking
-    </a>
-    <div id="booking_delete_modal" class="modal fade" role="dialog">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                    <h4 class="modal-title">Delete Booking</h4>
-                </div>
-                <div class="modal-body" id="booking_delete_content">
-                </div>
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+    <div class="col-lg-6">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Overview</h4>
+               <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body" id="panel_overview">
+                <table class="table">
+                    <tr>
+                        <td>Purpose</td>
+                        <td>{{ booking.purpose }}</td>
+                    </tr>
+                    <tr>
+                        <td>Project</td>
+                        <td>{{ booking.project }}</td>
+                    </tr>
+                    <tr>
+                        <td>Start Time</td>
+                        <td>{{ booking.start }}</td>
+                    </tr>
+                    <tr>
+                        <td>End Time</td>
+                        <td>{{ booking.end }}</td>
+                    </tr>
+                    <tr>
+                        <td>Pod Definition</td>
+                        <td>{{ booking.resource.template }}</td>
+                    </tr>
+                    <tr>
+                        <td>Pod Configuration</td>
+                        <td>{{ booking.config_bundle }}</td>
+                    </tr>
+                    <tr>
+                        <td>Lab Deployed At</td>
+                        <td>{{ booking.lab }}</td>
+                    </tr>
+                </table>
             </div>
         </div>
+    <div class="row">
+
+        <div class="col-lg-6">
+
+            <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Pod</h4>
+
+               <a data-toggle="collapse" data-target="#pod_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body pod_panel" id="pod_panel">
+                <table class="table">
+                {% for host in booking.resource.hosts.all %}
+                <tr>
+                    <td><h4>{{host.template.resource.name}}</h4></td>
+                    <td>
+                        <table class="table">
+                            <tr>
+                                <td>Hostname:</td>
+                                <td>{{host.template.resource.name}}</td>
+                            </tr>
+                            <tr>
+                                <td>Profile:</td>
+                                <td>{{host.name}}</td>
+                            </tr>
+                            <tr>
+                                <td>Role:</td>
+                                <td>{{host.config.opnfvRole}}</td>
+                            </tr>
+                            <tr>
+                                <td>Image:</td>
+                                <td>{{host.config.image}}</td>
+                            </tr>
+                            <tr>
+                                <td>RAM:</td>
+                                <td>{{host.profile.ramprofile.first.amount}}G,
+                                    {{host.profile.ramprofile.first.channels}} channels</td>
+                            </tr>
+                            <tr>
+                                <td>CPU:</td>
+                                <td>
+                                    <table class="table">
+                                        <tr>
+                                            <td>Arch:</td>
+                                            <td>{{host.profile.cpuprofile.first.architecture}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Cores:</td>
+                                            <td>{{host.profile.cpuprofile.first.cores}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Sockets:</td>
+                                            <td>{{host.profile.cpuprofile.first.cpus}}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>DISK:</td>
+                                <td>
+                                    <table class="table">
+                                        <tr>
+                                            <td>Size:</td>
+                                            <td>{{host.profile.diskprofile.first.size}}GiB</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Type:</td>
+                                            <td>{{host.profile.diskprofile.first.media_type}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Mount Point:</td>
+                                            <td>{{host.profile.diskprofile.first.name}}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Interfaces:</td>
+                                <td>
+                                    <style>
+                                        .borderless td {
+                                            border: none !important;
+                                        }
+                                    </style>
+                                    <table class="table">
+                                    {% for intprof in host.profile.interfaceprofile.all %}
+                                    <tr>
+                                        <td>
+                                        <table class="table borderless">
+                                            <tr>
+                                                <td>Name:</td>
+                                                <td>{{intprof.name}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Speed:</td>
+                                                <td>{{intprof.speed}}</td>
+                                            </tr>
+                                        </table>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    </table>
+                                </td>
+                            </tr>
+
+
+                        </table>
+
+                    </td>
+                {% endfor %}
+                </tr>
+                </table>
+            </div>
+        </div>
+      </div>
+        <div class="col-lg-6">
+
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">PDF</h4>
+            <a data-toggle="collapse" data-target="#pdf_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+
+            <div class="panel-body" id="pdf_panel" style="padding: 0px;">
+                <pre class="prettyprint lang-yaml" style="margin: 0px; padding: 0px; border: none;">
+
+                    {{pdf}}
+
+
+                </pre>
+            </div>
+        </div>
+        </div>
+        </div>
     </div>
-</p>
-{% endif %}
-{% endif %}
+
+
+
+    <div class="col-lg-6">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Deployment Progress</h4>
+                <p style="display: inline; margin-left: 10px;">  These are the different tasks that have to be completed before your deployment is ready</p>
+               <a data-toggle="collapse" data-target="#panel_tasks" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+
+            <div class="panel-body" id="panel_tasks">
+                <table class="table">
+                    <style>
+                        .progress {
+                            display: inline-block;
+                            border: 3px solid #f3f3f3;
+                            border-radius: 50%;
+                            border-top: 3px solid #12aebb;
+                            width: 20px;
+                            height: 20px;
+                            -webkit-animation: spin 2s linear infinite; /* Safari */
+                            animation: spin 2s linear infinite;
+                          }
+
+                          @keyframes spin {
+                              0% {transform: rotate(0deg);}
+                              100% {transform: rotate(360deg);}
+                          }
+
+                          .new {
+                              display: inline-block;
+                              width: 20px;
+                              height: 20px;
+                              background: #f3f3f3;
+                              border-radius: 50%;
+                              animation: fadeInOut 1s infinite alternate;
+
+
+                          }
+                          @keyframes fadeInOut {
+                              from { opacity: 0;}
+                          }
+                          .done {
+                              display: inline-block;
+                              width: 20px;
+                              height: 20px;
+                              background: #40B976;
+                              border-radius: 50%;
+                          }
+                        </style>
+                    <tr>
+                        <th></th>
+                        <th>Status</th>
+                        <th>Lab Response</th>
+                        <th>Type</th>
+                    </tr>
+                    {% for task in booking.job.get_tasklist %}
+                    <tr>
+                        <td>
+                            {% if task.status < 100 %}
+                                <div class="new"></div>
+                            {% elif task.status < 200 %}
+                                <div class="progress"></div>
+                            {% else %}
+                                <div class="done"></div>
+                            {% endif %}
+                            </td>
+
+
+                        <td>
+                            {% if task.status < 100 %}
+                                PENDING
+                            {% elif task.status < 200 %}
+                                IN PROGRESS
+                            {% else %}
+                                DONE
+                            {% endif %}
+                        </td>
+                        <td>
+
+                            {% if task.message %}
+                            {% if task.type_str == "Access Task" and user_id != task.config.user.id %}
+                            Message from Lab: <pre>--secret--</pre>
+                            {% else %}
+                            Message from Lab: <pre>{{ task.message }}</pre>
+                            {% endif %}
+                            {% else %}
+                            No response provided (yet)
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ task.type_str }}
+
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+    </div>
+    </div>
+</div>
+
+
+{% endblock content %}

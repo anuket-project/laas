@@ -2,6 +2,7 @@
 {% load staticfiles %}
 
 {% block extrahead %}
+    {{ block.super }}
     <!-- Morris Charts CSS -->
     <link href="{% static "bower_components/morrisjs/morris.css" %}" rel="stylesheet">
 
@@ -50,8 +51,6 @@
             var utilization_url = "{% url 'dashboard:booking_utilization' resource_id=resource.id weeks=4 %}";
             loadChartData(chart_id, utilization_url);
 
-            var chart_id = "{{ resource.id }}_jenkins_utilization";
-            var utilization_url = "{% url 'dashboard:jenkins_utilization' resource_id=resource.id weeks=1 %}";
             loadChartData(chart_id, utilization_url);
         });
     </script>

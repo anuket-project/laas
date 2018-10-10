@@ -11,3 +11,9 @@
 .modal p {
     word-wrap: break-word;
 }
+
+.create_drop {
+    display: none;
+    width: 100%;
+
+}

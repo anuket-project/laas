@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block extrahead %}
+    {{block.super}}
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
+<script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+
+{% endblock %}
+
+{% block content %}
+<script type="text/javascript">
+    $('.grid').masonry(
+      {
+        itemSelector: '.grid-item',
+        columnWidth: '.grid-sizer',
+        percentPosition: true
+      }
+    );
+</script>
+
+<style media="screen">
+
+  @media screen and (min-width: 0px) and (max-width: 767px)
+  {
+
+  .grid-item
+  {
+    width: 100%;
+  }
+}
+  @media screen and (min-width: 768px) and (max-width: 1200px) {
+    .grid-item {
+      width: 50%;
+    }
+
+  }
+
+  @media screen and (min-width: 1201px) and (max-width: 2000px) {
+    .grid-item {
+      width: 33%;
+    }
+  }
+  @media screen and (min-width: 2001px) {
+    .grid-item {
+      width: 25%;
+    }
+
+  }
+  .grid-item-content {
+  height: 100px;
+  background: #D26;
+  border: 2px solid hsla(0, 0%, 0%, 0.5);
+  border-radius: 5px;
+}
+
+.grid-item-content--height2 { height: 200px; }
+</style>
+
+<div class="container-fluid">
+  <!-- add extra container element for Masonry -->
+  <div class="grid">
+    {% for host in hosts %}
+    <div class="grid-item col-xs-4">
+        <p>stub for current PR</p>
+    </div>
+    {% endfor %}
+    </div>
+</div>
+
+{% endblock content %}

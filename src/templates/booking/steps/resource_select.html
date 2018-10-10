@@ -1,0 +1,73 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+<style>
+    #resource_form_div {
+        width: 100%;
+        padding: 5%;
+    }
+
+    .panel {
+        /*border: solid 1px black;*/
+        border: none;
+    }
+    .select_panels {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 45% 10% 45%;
+
+    }
+
+    .panel_center {
+        text-align: center;
+        border: none;
+
+
+    }
+    .panel_center p{
+        font-size: 20pt;
+    }
+</style>
+
+<div id="resource_form_div">
+    <div class="select_panels">
+        <div class="panel_chooser panel">
+    <form id="resource_select_form" method="post" action="" class="form" id="resourceselectorform">
+        {% csrf_token %}
+        {{ form|default:"<p>no form loaded</p>" }}
+        {% buttons %}
+
+        {% endbuttons %}
+    </form>
+    </div>
+    <div class="panel_center panel"><p>OR</p></div>
+    <div class="panel_add panel">
+        <button class="btn {% if disabled %} disabled {% endif %}"
+        style="width: 100%; height: 100%;"
+        {% if not disabled %}onclick="parent.add_wf(1)"
+        {% endif %}>Create Resource</button>
+    </div>
+
+</div>
+</div>
+<script>
+    {% if disabled %}
+    disable();
+    {% endif %}
+</script>
+
+{% endblock content %}
+{% block onleave %}
+var form = $("#resource_select_form");
+var formData = form.serialize();
+var req = new XMLHttpRequest();
+req.open("POST", "/wf/workflow/", false);
+req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+req.onerror = function() { alert("problem with form submission"); }
+req.send(formData);
+{% endblock %}
+

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<script>
+function edit_resource(pk){
+    var csrf = $('input[name="csrfmiddlewaretoken"]').val();
+    $.ajax({
+        type: "POST",
+        url: "/",
+        data: { "target": pk, "create": 1, "csrfmiddlewaretoken": csrf},
+        beforeSend: function(request) {
+            request.setRequestHeader("X-CSFRToken", csrf);
+            }
+        }).done(function(){
+            window.location.replace("/wf/");
+        }).fail(function(){});
+}
+</script>
+    {% for resource in resources %}
+        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+            <ul>
+                <li>id: {{resource.id}}</li>
+                <li>name: {{resource.name}}</li>
+                <li>description: {{resource.description}}</li>
+            </ul>
+            <button onclick="edit_resource({{resource.id}});">Edit</button>
+        </div>
+    {% endfor %}
+{% endblock %}

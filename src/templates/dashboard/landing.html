@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+    <div class="">
+        <p style="text-align:center;">Welcome to the Pharos Dashboard! To get started, select one of the options below:</p>
+    </div>
+{% csrf_token %}
+
+<style>
+    .wf_create{
+        display: inline-block;
+        text-align: center;
+    }
+    .wf_create_div{
+        text-align: center;
+    }
+    .hidden_form{
+        display: none;
+    }
+
+    .panel {
+        border: none;
+    }
+
+    .panels {
+        display: grid;
+        grid-template-columns: 33% 34% 33%;
+    }
+</style>
+<script type="text/javascript">
+    function cwf(wf_type){
+        document.getElementById('id_workflow').selectedIndex = wf_type;
+        document.getElementById('wf_selection_form').submit();
+    }
+</script>
+<div class='wf_create_div'>
+<button class="wf_create btn" onclick="cwf(0)">Create a Booking</button>
+<button class="wf_create btn" onclick="cwf(1)">Create a Pod</button>
+<button class="wf_create btn" onclick="cwf(2)">Configure a Pod</button>
+<button class="wf_create btn" onclick="cwf(3)">Create a Snapshot</button>
+{% if manager == True %}
+<button class="wf_continue btn" onclick="continue_wf()">Finish Unfinished Business</button>
+{% endif %}
+</div>
+
+<script type="text/javascript">
+    function cwf(type)
+    {
+        $.ajax({
+            type: "POST",
+            url: "/",
+            data: {"create":type},
+            beforeSend: function(request) {
+                request.setRequestHeader("X-CSRFToken",
+                $('input[name="csrfmiddlewaretoken"]').val()
+                );
+            }
+
+        }).done(function (data) {
+            window.location.replace("/wf/");
+        }).fail(function(jqxHR, textstatus) {
+            alert("Something went wrong...");});
+    }
+    function continue_wf()
+    {
+        window.location.replace("/wf/");
+    }
+
+    //success: window.location.replace("/wf/")
+
+</script>
+
+<div class="hidden_form" id="form_div">
+    <form method="post" action="" class="form" id="wf_selection_form">
+        {% csrf_token %}
+
+        <input type="hidden" id="landing_action">
+
+        <button type="submit" class="btn btn btn-success">
+            Confirm Edit
+        </button>
+    </form>
+</div>
+
+{% block vport_comm %}
+{% endblock %}
+{% endblock content %}

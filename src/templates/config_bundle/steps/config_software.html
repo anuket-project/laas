@@ -1,0 +1,72 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+<form action="/wf/workflow/" method="POST" id="software_config_form" class="form">
+    {% csrf_token %}
+    <p>Give it a name:</p>
+    {{ form.name }}
+
+    <p>And a description:</p>
+    {{ form.description }}
+    <p>Install OPNFV?</p>
+    {{ form.opnfv }}
+    <p>Choose your:</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Installer</th>
+                <th>Scenario</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{form.installer}}</td>
+                <td>{{form.scenario}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+</form>
+
+<script>
+var supported = {{supported|safe}};
+var installer_drop = document.getElementById("id_installer");
+installer_drop.addEventListener("change", filter);
+var scenario_drop = document.getElementById("id_scenario");
+var scenario_options = {};
+for(var i=0; i<scenario_drop.options.length; i++){
+    var option = scenario_drop.options[i];
+    scenario_options[option.text] = option;
+}
+
+scenario_drop.disabled=true;
+
+function filter(){
+    //clear out existing options
+    while(scenario_drop.firstChild){
+        scenario_drop.removeChild(scenario_drop.firstChild)
+    }
+    var installer = installer_drop.options[installer_drop.selectedIndex].text;
+    var options = supported[installer];
+    for(var i=0; i<options.length; i++){
+        scenario_drop.appendChild(scenario_options[options[i]]);
+    }
+    scenario_drop.disabled = false;
+}
+</script>
+
+{% endblock content %}
+
+{% block onleave %}
+var ajaxForm = $("#software_config_form");
+var formData = ajaxForm.serialize();
+req = new XMLHttpRequest();
+req.open("POST", "/wf/workflow/", false);
+req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+req.onerror = function() { alert("problem submitting form"); }
+req.send(formData);
+{% endblock %}

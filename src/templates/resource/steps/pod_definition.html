@@ -1,0 +1,653 @@
+{% extends "workflow/viewport-element.html" %}
+{% block extrahead %}
+<link href="/static/css/graph_common.css" rel="stylesheet">
+<title>Pod Definition Prototype</title>
+
+<!-- Loads and initializes the library -->
+<script>
+    var mxLoadStylesheets = false;
+</script>
+<script type="text/javascript" src="/static/js/mxClient.min.js" ></script>
+<style>
+p {
+    word-break: normal;
+    white-space: normal;
+}
+</style>
+<script type="text/javascript">
+var currentWindow;
+var currentGraph;
+var netCount = 0;
+var netColors = ['red', 'blue', 'purple', 'green', 'orange', '#8CCDF5', '#1E9BAC'];
+var hostCount = 0;
+var lastHostBottom = 100;
+var networks = new Set([]);
+var network_names = new Set([]);
+var has_public_net = false;
+var vlans = {{vlans|default:'null'}};
+var vlan_string = "";
+
+function main(graphContainer, overviewContainer, toolbarContainer) {
+    if(vlans){
+        for(var i=0; i<vlans.length-1; i++){
+            vlan_string += vlans[i] + ", ";
+        }
+        if(vlans.length > 0){
+            vlan_string += vlans[vlans.length-1];
+        }
+
+        var str = "Available vlans for your POD: " + vlan_string;
+        document.getElementById("vlan_notice").innerHTML = str;
+    }
+    //check if the browser is supported
+    if (!mxClient.isBrowserSupported()) {
+        mxUtils.error('Browser is not supported', 200, false);
+        return null;
+    }
+
+    // Workaround for Internet Explorer ignoring certain styles
+    if (mxClient.IS_QUIRKS) {
+        document.body.style.overflow = 'hidden';
+        new mxDivResizer(graphContainer);
+    }
+    var editor = new mxEditor();
+    var graph = editor.graph;
+    var model = graph.getModel();
+    editor.setGraphContainer(graphContainer);
+
+    {% if debug %}
+    editor.addAction('printXML', function(editor, cell) {
+        mxLog.write(encodeGraph(graph));
+        mxLog.show();
+    });
+    {% endif %}
+
+
+    doGlobalConfig(graph);
+    currentGraph = graph;
+
+    {% if xml %}
+        restoreFromXml('{{xml|safe}}', editor);
+    {% elif hosts %}
+        {% for host in hosts %}
+
+        var host = {{host|safe}};
+        makeHost(host);
+        {% endfor %}
+    {% endif %}
+    {% if added_hosts %}
+        {% for host in added_hosts %}
+        var host = {{host|safe}}
+        makeHost(host);
+        {% endfor %}
+        updateHosts([]);
+    {% endif %}
+
+    addToolbarButton(editor, toolbarContainer, 'zoomIn', '', "/static/img/mxgraph/zoom_in.png", true);
+    addToolbarButton(editor, toolbarContainer, 'zoomOut', '', "/static/img/mxgraph/zoom_out.png", true);
+    addToolbarButton(editor, toolbarContainer, 'printXML', '', '/static/img/mxgraph/fit_to_size.png', true);
+    var outline = new mxOutline(graph, overviewContainer);
+
+
+    var checkAllowed = function(edge, terminal, source) {
+        //check if other terminal is null, and that they are different
+        otherTerminal = edge.getTerminal(!source);
+        if(terminal != null && otherTerminal != null) {
+            if( terminal.getParent().getId().split('_')[0] == //'host' or 'network'
+                otherTerminal.getParent().getId().split('_')[0] ) {
+                    //not allowed
+                    graph.removeCells([edge]);
+                    return false;
+                }
+        }
+        return true;
+    };
+
+    var colorEdge = function(edge, terminal, source) {
+        if(terminal.getParent().getId().indexOf('network') >= 0) {
+            styles = terminal.getParent().getStyle().split(';');
+            color = 'black';
+            for(var i=0; i<styles.length; i++){
+                kvp = styles[i].split('=');
+                if(kvp[0] == "fillColor"){
+                    color = kvp[1];
+                }
+            }
+            edge.setStyle('strokeColor=' + color);
+        }
+    };
+
+    var alertVlan = function(edge, terminal, source) {
+        if( terminal == null || edge.getTerminal(!source) == null) {
+            return;
+        }
+        var vlanHTML = '<form> <input type="radio" name="tagged" value="True" checked> Tagged<br>'
+        vlanHTML += '<input type="radio" name="tagged" value="False"> Untagged </form>'
+        vlanHTML += '<button onclick=parseVlanWindow(' + edge.getId() + ');>Okay</button>'
+        vlanHTML += '<button onclick=deleteVlanWindow(' + edge.getId() + ');>Cancel</button>'
+        content = document.createElement('div');
+        content.innerHTML = vlanHTML;
+        showWindow(graph, "Vlan Selection", content, 200, 200);
+    }
+
+    //sets the edge color to be the same as the network
+    graph.addListener(mxEvent.CELL_CONNECTED, function(sender, event){
+        edge = event.getProperty('edge');
+        terminal = event.getProperty('terminal')
+        source = event.getProperty('source');
+        if(checkAllowed(edge, terminal, source)) {
+            colorEdge(edge, terminal, source);
+            alertVlan(edge, terminal, source);
+        }
+    });
+
+    graph.dblClick = function(evt, cell) {
+
+        if( cell != null ){
+            if( cell.getParent() != null && cell.getParent().getId().indexOf("network") > -1) {
+                cell = cell.getParent();
+            }
+            if( cell.isEdge() || cell.getId().indexOf("network") > -1 ) {
+                var content = document.createElement('div');
+                var innerHTML = "<button onclick=deleteCell('" + cell.getId() + "');>Remove</button>"
+                innerHTML += "<button onclick='currentWindow.destroy();'>Cancel</button>"
+                content.innerHTML = innerHTML;
+                showWindow(this, 'Delete?', content, 200, 200);
+            }
+            else {
+            showDetailWindow(cell);
+           }
+        }
+    };
+    graph.setCellsSelectable(false);
+    graph.setCellsMovable(false);
+
+    updateHosts({{ removed_hosts|default:"[]"|safe }});
+    if(!has_public_net){
+        addPublicNetwork();
+    }
+}
+
+function showDetailWindow(cell) {
+    var info = JSON.parse(cell.getValue());
+    var content = document.createElement("div");
+    var inner = "<pre>Name: " + info.name + "\n";
+    inner += "Description:\n" + info.description + "</pre>";
+    inner += '<button onclick="currentWindow.destroy();">Okay</button>'
+    content.innerHTML = inner
+    showWindow(currentGraph, 'Details', content, 400, 400);
+}
+
+function restoreFromXml(xml, editor) {
+    var doc = mxUtils.parseXml(xml);
+    var node = doc.documentElement;
+    editor.readGraphModel(node);
+
+    //Iterate over all children, and parse the networks to add them to the sidebar
+    var root = currentGraph.getDefaultParent();
+    for( var i=0; i<root.getChildCount(); i++) {
+        var cell = root.getChildAt(i);
+        if(cell.getId().indexOf("network") > -1) {
+            var info = JSON.parse(cell.getValue());
+            var vlan_id = info['vlan_id'];
+            networks.add(vlan_id);
+            var name = info['name'];
+            network_names.add(name);
+            var styles = cell.getStyle().split(";");
+            var color = null;
+            for(var j=0; j< styles.length; j++){
+                var kvp = styles[j].split('=');
+                if(kvp[0] == "fillColor") {
+                    color = kvp[1];
+                    break;
+                }
+            }
+            if(info.public){
+                vlan_id = "";
+                has_public_net = true;
+            }
+            netCount++;
+            makeSidebarNetwork(name, vlan_id, color, cell.getId());
+        }
+    }
+}
+
+function deleteCell(cellId) {
+    var cell = currentGraph.getModel().getCell(cellId);
+    if( cellId.indexOf("network") > -1 ) {
+        elem = document.getElementById(cellId);
+        elem.parentElement.removeChild(elem);
+    }
+    currentGraph.removeCells([cell]);
+    currentWindow.destroy();
+
+}
+
+function newNetworkWindow() {
+    var innerHtml = 'Name: <input type="text" name="net_name" id="net_name_input" style="margin:5px;"><br>';
+    innerHtml += 'Vlan: <input type="number" step="1" name="vlan_id" id="vlan_id_input" style="margin:5px;"><br>';
+    innerHtml += '<button type="button" onclick="parseNetworkWindow()">Okay</button>';
+    innerHtml += '<button type="button" onclick="currentWindow.destroy();">Cancel</button><br>';
+    innerHtml += '<div id="current_window_vlans"/>';
+    innerHtml += '<div id="current_window_errors"/>';
+    var content = document.createElement("div");
+    content.innerHTML = innerHtml;
+
+    showWindow(currentGraph, "Network Creation", content, 300, 300);
+
+    if(vlans){
+        vlan_notice = document.getElementById("current_window_vlans");
+        vlan_notice.appendChild(document.createTextNode("Available Vlans: " + vlan_string));
+        }
+}
+
+function parseNetworkWindow() {
+    var net_name = document.getElementById("net_name_input").value
+    var vlan_id = document.getElementById("vlan_id_input").value
+    var error_div = document.getElementById("current_window_errors");
+    var vlan_valid = Number.isInteger(Number(vlan_id)) && (vlan_id < 4095) && (vlan_id > 1)
+    if(vlans){
+        vlan_valid = vlan_valid & vlans.indexOf(Number(vlan_id)) >= 0;
+    }
+    if( !vlan_valid)
+    {
+        error_div.innerHTML = "Please only enter an integer in the valid range (default 1-4095) for the VLAN ID";
+        return;
+    }
+    if( networks.has(vlan_id))
+    {
+        error_div.innerHTML = "All VLAN IDs must be unique";
+        return;
+    }
+    if( network_names.has(net_name) ){
+        error_div.innerHTML = "All network names must be unique";
+        return;
+    }
+    addNetwork(net_name, vlan_id);
+    currentWindow.destroy();
+}
+
+function addToolbarButton(editor, toolbar, action, label, image, isTransparent)
+{
+    var button = document.createElement('button');
+    button.style.fontSize = '10';
+    if (image != null)
+    {
+        var img = document.createElement('img');
+        img.setAttribute('src', image);
+        img.style.width = '16px';
+        img.style.height = '16px';
+        img.style.verticalAlign = 'middle';
+        img.style.marginRight = '2px';
+        button.appendChild(img);
+    }
+    if (isTransparent)
+    {
+        button.style.background = 'transparent';
+        button.style.color = '#FFFFFF';
+        button.style.border = 'none';
+    }
+    mxEvent.addListener(button, 'click', function(evt)
+    {
+        editor.execute(action);
+    });
+    mxUtils.write(button, label);
+    toolbar.appendChild(button);
+};
+
+function encodeGraph(graph) {
+    var encoder = new mxCodec();
+    var xml = encoder.encode(graph.getModel());
+    return mxUtils.getXml(xml);
+}
+
+function doGlobalConfig(graph) {
+    //general graph stuff
+    graph.setMultigraph(false);
+
+    //edge behavior
+    graph.setConnectable(true);
+    graph.setAllowDanglingEdges(false);
+    mxEdgeHandler.prototype.snapToTerminals = true;
+    mxConstants.MIN_HOTSPOT_SIZE = 16;
+    mxConstants.DEFAULT_HOTSPOT = 1;
+    //edge 'style' (still affects behavior greatly)
+    style = graph.getStylesheet().getDefaultEdgeStyle();
+    style[mxConstants.STYLE_EDGE] = mxConstants.EDGESTYLE_ELBOW;
+    style[mxConstants.STYLE_ENDARROW] = mxConstants.NONE;
+    style[mxConstants.STYLE_ROUNDED] = true;
+    style[mxConstants.STYLE_FONTCOLOR] = 'black';
+    style[mxConstants.STYLE_STROKECOLOR] = 'red';
+
+    style[mxConstants.STYLE_LABEL_BACKGROUNDCOLOR] = '#FFFFFF';
+    style[mxConstants.STYLE_STROKEWIDTH] = '3';
+    style[mxConstants.STYLE_ROUNDED] = true;
+    style[mxConstants.STYLE_EDGE] = mxEdgeStyle.EntityRelation;
+
+    // TODO: Proper override
+    graph.convertValueToString = function(cell) {
+        try{
+            //changes value for edges with xml value
+            if(cell.isEdge()) {
+                if(JSON.parse(cell.getValue())["tagged"]) {
+                    return "tagged";
+                }
+                return "untagged";
+            } else{
+                    return JSON.parse(cell.getValue())['name'];
+            }
+        }
+        catch(e){
+                return cell.getValue();
+        }
+    };
+}
+
+function showWindow(graph, title, content, width, height) {
+    //create transparent black background
+    var background = document.createElement('div');
+    background.style.position = 'absolute';
+    background.style.left = '0px';
+    background.style.top = '0px';
+    background.style.right = '0px';
+    background.style.bottom = '0px';
+    background.style.background = 'black';
+    mxUtils.setOpacity(background, 50);
+    document.body.appendChild(background);
+
+    //deal with IE quirk
+    if (mxClient.IS_IE) {
+        new mxDivResizer(background);
+    }
+
+    var x = Math.max(0, document.body.scrollWidth/2-width/2);
+    var y = Math.max(10, (document.body.scrollHeight ||
+                document.documentElement.scrollHeight)/2-height*2/3);
+
+    var wnd = new mxWindow(title, content, x, y, width, height, false, true);
+    wnd.setClosable(false);
+
+    wnd.addListener(mxEvent.DESTROY, function(evt) {
+        graph.setEnabled(true);
+        mxEffects.fadeOut(background, 50, true, 10, 30, true);
+    });
+    currentWindow = wnd;
+
+    graph.setEnabled(false);
+    wnd.setVisible(true);
+};
+
+function closeWindow() {
+    //allows the current window to be destroyed
+    currentWindow.destroy();
+};
+
+function othersUntagged(edgeID) {
+    var edge = currentGraph.getModel().getCell(edgeID);
+    var end1 = edge.getTerminal(true);
+    var end2 = edge.getTerminal(false);
+
+    if( end1.getParent().getId().split('_')[0] == 'host' )
+    {
+        var netint = end1;
+    }
+    else
+    {
+        var netint = end2;
+    }
+
+    var edges = netint.edges;
+
+    for( var i=0; i < edges.length; i++ )
+    {
+        if( edges[i].getValue() )
+        {
+            var tagged = JSON.parse(edges[i].getValue()).tagged;
+        }
+        else
+        {
+            var tagged = true;
+        }
+        if( !tagged )
+        {
+            return true;
+        }
+    }
+    return false;
+};
+
+
+function deleteVlanWindow(edgeID) {
+    var cell = currentGraph.getModel().getCell(edgeID);
+    currentGraph.removeCells([cell]);
+    currentWindow.destroy();
+}
+
+function parseVlanWindow(edgeID) {
+    //do parsing and data manipulation
+    var radios = document.getElementsByName("tagged");
+    edge = currentGraph.getModel().getCell(edgeID);
+
+    for(var i=0; i<radios.length; i++) {
+        if(radios[i].checked) {
+            //set edge to be tagged or untagged
+            //cellValue.setAttribute("tagged", radios[i].value);
+            if( radios[i].value == "False")
+            {
+                if( othersUntagged(edgeID) )
+                {
+                    alert("Only one untagged VLAN is allowed per interface");
+                    return;
+                }
+            }
+            edgeVal = Object();
+            edgeVal['tagged'] = radios[i].value == "True";
+            edge.setValue(JSON.stringify(edgeVal));
+            break;
+        }
+    }
+    //edge.setValue(cellValue);
+    currentGraph.refresh(edge);
+    closeWindow();
+}
+
+function makeMxNetwork(vlan_id, net_name) {
+    model = currentGraph.getModel();
+    width = 10;
+    height = 1700;
+    xoff = 400 + (30 * netCount);
+    yoff = -10;
+    var color = netColors[netCount];
+    if( netCount > (netColors.length - 1)) {
+        color = Math.floor(Math.random() * 16777215); //int in possible color space
+        color = '#' + color.toString(16).toUpperCase(); //convert to hex
+        //alert(color);
+    }
+    var net_val = Object();
+    net_val['vlan_id'] = vlan_id;
+    net_val['name'] = net_name;
+    net_val['public'] = vlan_id < 0;
+    net = currentGraph.insertVertex(
+        currentGraph.getDefaultParent(),
+        'network_' + netCount,
+        JSON.stringify(net_val),
+        xoff,
+        yoff,
+        width,
+        height,
+        'fillColor=' + color,
+        false
+    );
+    var num_ports = 45;
+    for(var i=0; i<num_ports; i++){
+        port = currentGraph.insertVertex(
+            net,
+            null,
+            '',
+            0,
+            (1/num_ports) * i,
+            10,
+            height / num_ports,
+            'fillColor=black;opacity=0',
+            true
+        );
+    }
+
+    var retVal = Object();
+    retVal['color'] = color;
+    retVal['element_id'] = "network_" + netCount;
+
+    netCount++;
+    return retVal;
+}
+
+function addPublicNetwork() {
+    var net = makeMxNetwork(-1, "public");
+    makeSidebarNetwork("public", "", net['color'], net['element_id']);
+}
+
+function addNetwork(net_name, vlan_id) {
+    var ret = makeMxNetwork(vlan_id, net_name);
+    var color = ret['color'];
+    var net_id = ret['element_id'];
+    networks.add(vlan_id);
+    network_names.add(net_name);
+    makeSidebarNetwork(net_name, vlan_id, color, net_id);
+}
+
+function updateHosts(removed) {
+    for(var i=0; i < removed.length; i++)
+    {
+        var hoststring = removed[i];
+        var hostid = "host_" + hoststring.split("*")[0];
+        var cell = currentGraph.getModel().getCell(hostid);
+        currentGraph.removeCells([cell]);
+    }
+
+    var hosts = currentGraph.getChildVertices(currentGraph.getDefaultParent());
+    var topdist = 100;
+    for(var i=0; i<hosts.length; i++)
+    {
+        var host = hosts[i];
+        if(!host.id.startsWith("host_"))
+        {
+            continue;
+        }
+        var geometry = host.getGeometry();
+        geometry.y = topdist + 50;
+        topdist = geometry.y + geometry.height;
+        host.setGeometry(geometry);
+    }
+}
+
+function makeSidebarNetwork(net_name, vlan_id, color, net_id){
+    var newNet = document.createElement("li");
+    newNet.id = net_id;
+    var text = net_name;
+    if(vlan_id){
+        text += " : " + vlan_id;
+    }
+    var newNetValue = document.createTextNode(text);
+    newNet.appendChild(newNetValue);
+    newNet.style['background'] = color;
+    document.getElementById("network_list").appendChild(newNet);
+}
+
+function makeHost(hostInfo) {
+    value = JSON.stringify(hostInfo['value']);
+    interfaces = hostInfo['interfaces'];
+    graph = currentGraph;
+    width = 100;
+    height = (25 * interfaces.length) + 10;
+    xoff = 75;
+    yoff = lastHostBottom + 50;
+    lastHostBottom = yoff + height;
+    host = graph.insertVertex(
+        graph.getDefaultParent(),
+        'host_' + hostInfo['id'],
+        value,
+        xoff,
+        yoff,
+        width,
+        height,
+        'editable=0',
+        false
+    );
+    host.setConnectable(false);
+    hostCount++;
+
+    for(var i=0; i<interfaces.length; i++) {
+        port = graph.insertVertex(
+            host,
+            null,
+            JSON.stringify(interfaces[i]),
+            90,
+            (i * 25) + 5,
+            20,
+            20,
+            'fillColor=blue;editable=0',
+            false
+        );
+    }
+}
+
+function submitForm() {
+    var form = document.getElementById("xml_form");
+    var input_elem = document.getElementById("hidden_xml_input");
+    var s = encodeGraph(currentGraph);
+    input_elem.value = s;
+    //form.submit();
+    req = new XMLHttpRequest();
+    req.open("POST", "/wf/workflow/", false);
+    req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    req.onerror = function() { alert("problem with form submission"); }
+    var formData = $("#xml_form").serialize();
+    req.send(formData);
+}
+</script>
+{% endblock extrahead %}
+
+<!-- Calls the main function after the page has loaded. Container is dynamically created. -->
+{% block content %}
+    <div id="graphParent"
+         style="position:absolute;overflow:hidden;top:0px;bottom:0px;width:65%;left:0px;">
+        <div id="graphContainer"
+            style="position:relative;overflow:hidden;top:36px;bottom:0px;left:0px;right:0px;background-image:url('/static/img/mxgraph/grid.gif');cursor:default;">
+        </div>
+
+
+        <!-- Creates a container for the sidebar -->
+        <div id="toolbarContainer"
+            style="position:absolute;white-space:nowrap;overflow:hidden;top:0px;left:0px;max-height:24px;height:36px;right:0px;padding:6px;background-image:url('/static/img/mxgraph/toolbar_bg.gif');">
+        </div>
+
+        <!-- Creates a container for the outline -->
+        <div id="outlineContainer"
+            style="position:absolute;overflow:hidden;top:36px;right:0px;width:200px;height:140px;background:transparent;border-style:solid;border-color:black;">
+        </div>
+    </div>
+
+    <div id="network_select" style="position:absolute;top:0px;bottom:0px;width:35%;right:0px;left:auto;background:grey">
+        <button type="button" onclick="newNetworkWindow();">Add Network</button>
+        <ul id="network_list">
+        </ul>
+        <p id="vlan_notice"></p>
+        <button type="button" style="display: none" onclick="submitForm();">Submit</button>
+    </div>
+    <form id="xml_form" method="post" action="/wf/workflow/">
+        {% csrf_token %}
+        <input type="hidden" id="hidden_xml_input" name="xml" />
+    </form>
+
+<script>
+    main(
+        document.getElementById('graphContainer'),
+        document.getElementById('outlineContainer'),
+        document.getElementById('toolbarContainer'),
+        document.getElementById('sidebarContainer')
+    )
+</script>
+{% endblock content %}
+{% block onleave %}
+submitForm();
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% if script %} <script>{{ script }}</script> {% endif %}
+{% block content %}
+    {% for item in grid_items %}
+        <div class="grid-item" style="border:2px; border-style:solid; border-color:black; margin:3px">
+            {{ item }}
+        </div>
+    {% endfor %}
+{% endblock content %}

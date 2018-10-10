@@ -1,0 +1,45 @@
+{% extends "dashboard/table.html" %}
+{% load staticfiles %}
+
+{% block table %}
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Profile</th>
+        <th>Booked</th>
+        <th>Working</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for host in hosts %}
+        <tr>
+            <td>
+                {{ host.name }}
+            </td>
+            <td>
+                {{ host.profile }}
+            </td>
+            <td>
+                {{ host.booked }}
+            </td>
+            <td>
+                {{ host.working }}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+{% endblock table %}
+
+{% block tablejs %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#table').DataTable({
+        scrollX: true,
+                columnDefs: [
+                    {type: 'status', targets: 6}
+                ],
+                "order": [[6, "asc"]]
+            });
+        });
+    </script>
+{% endblock tablejs %}

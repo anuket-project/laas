@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<script>
+function edit_booking(pk){
+    var csrf = $('input[name="csrfmiddlewaretoken"]').val();
+    $.ajax({
+        type: "POST",
+        url: "/",
+        data: { "target": pk, "create": 0, "csrfmiddlewaretoken": csrf},
+        beforeSend: function(request) {
+            request.setRequestHeader("X-CSFRToken", csrf);
+        }
+    }).done(function(){
+        window.location.replace("/wf/");
+    }).fail(function(){})
+}
+</script>
+<h2>Bookings I Own</h2>
+    {% for booking in bookings %}
+        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+            <ul>
+            <li>id: {{booking.id}}</li>
+            <li>lab: {{booking.resource.template.lab.lab_user.username}}</li>
+            <li>resource: {{booking.resource.template.name}}</li>
+            <li>start: {{booking.start}}</li>
+            <li>end: {{booking.end}}</li>
+            <li>purpose: {{booking.purpose}}</li>
+            </ul>
+            <div style="display:inline;margin:3px;padding:3px">
+                <button onclick="edit_booking({{booking.id}});">Edit</button>
+                <button onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
+            </div>
+        </div>
+    {% endfor %}
+<h2>Bookings I Collaborate On</h2>
+    {% for booking in collab_bookings %}
+        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+            <ul>
+            <li>id: {{booking.id}}</li>
+            <li>lab: {{booking.lab}}</li>
+            <li>resource: {{booking.resource_name}}</li>
+            <li>start: {{booking.start}}</li>
+            <li>end: {{booking.end}}</li>
+            <li>purpose: {{booking.purpose}}</li>
+            </ul>
+            <div style="display:inline;margin:3px;padding:3px">
+                <button disabled=true onclick="edit_booking({{booking.id}});">Edit</button>
+                <button onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

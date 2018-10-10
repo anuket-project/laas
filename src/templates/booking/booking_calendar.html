@@ -4,6 +4,8 @@
 {% load bootstrap3 %}
 
 {% block extrahead %}
+    {{ block.super }}
+
     <link href="{% static "bower_components/fullcalendar/dist/fullcalendar.css" %}"
           rel='stylesheet'/>
     <link href="{% static "bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" %}"
@@ -84,6 +86,7 @@
                                     hidediv.parentNode.insertBefore(par,hidediv.nextSibling);
                                 }
                             </script>
+                            {% bootstrap_field form.opsys %}
                             {% bootstrap_field form.purpose %}
                             {% bootstrap_field form.installer %}
                             {% bootstrap_field form.scenario %}
@@ -95,6 +98,15 @@
                             {% endbuttons %}
                         </form>
                     </div>
+                   <script type="text/javascript">
+                    //Check if current view is an edit or a standard booking view
+                    if(window.location.href.includes('edit')) {
+                        var element = document.getElementById("bookingform");
+                        element.parentNode.removeChild(element); }
+                    else {
+                        var element = document.getElementById("bookingeditform");
+                        element.parentNode.removeChild(element); }
+                    </script>
                 {% else %}
                     <p>Please
                         <a href="{% url 'account:login' %}">
@@ -132,8 +144,61 @@
         var booking_detail_prefix = "{% url 'booking:detail_prefix' %}";
         var booking_delete_prefix = "{% url 'booking:delete_prefix' %}";
         var user_timezone = "{{ request.user.userprofile.timezone }}"
-    </script>
+        {% autoescape off %}
+        var sup_installer_dict = {{ installer_filter }}
+        var sup_scenario_dict = {{ scenario_filter }}
+        {% endautoescape %}
 
+    </script>
+    <script type="text/javascript">
+    $(document).ready(function () {
+        $("#id_installer").children().hide();
+        $("#id_scenario").children().hide();
+    });
+
+    function installerHider() {
+        dropFilter("id_installer", sup_installer_dict, "id_opsys");
+        scenarioHider();
+    }
+    document.getElementById('id_opsys').addEventListener('change', installerHider);
+
+    function scenarioHider() {
+        dropFilter("id_scenario", sup_scenario_dict, "id_installer");
+    }
+    document.getElementById('id_installer').addEventListener('change', scenarioHider);
+
+    function dropFilter(target, target_filter, master) {
+        ob = document.getElementById(target);
+
+        for(var i=0; i<ob.options.length; i++) {
+            if ( ob.options[i].text == '---------' ) {
+                ob.selectedIndex = i;
+                }
+        }
+
+        targ_id = "#" + target;
+        $(targ_id).children().hide();
+        var drop = document.getElementById(master);
+        var opts = target_filter[drop.options[drop.selectedIndex].value];
+        if (!opts) {
+            opts = {};
+        }
+        var emptyMap = {}
+
+        var map = Object.create(null);
+        for (var i = 0; i < opts.length; i++) {
+            var j = opts[i];
+            map[j] = true;
+        }
+
+        for (var i = 0; i < document.getElementById(target).childNodes.length; i++) {
+            if (document.getElementById(target).childNodes[i].value in opts && !(document.getElementById(target).childNodes[i].value in emptyMap) ) {
+                document.getElementById(target).childNodes[i].style.display = "inherit";
+            }
+        }
+    }
+
+    </script>
     <script src={% static "bower_components/moment/moment.js" %}></script>
     <script src={% static "bower_components/fullcalendar/dist/fullcalendar.js" %}></script>
     <script type="text/javascript"

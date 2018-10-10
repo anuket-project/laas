@@ -1,11 +1,11 @@
 celery==3.1.23
 cryptography==2.3.1
-Django==1.10
-django-bootstrap3==7.0.1
-django-crispy-forms==1.6.0
-django-filter==0.14.0
+Django==2.1
+django-bootstrap3==10.0.1
+django-crispy-forms==1.7.2
+django-filter==2.0.0
 django-registration==2.1.2
-djangorestframework==3.4.6
+djangorestframework==3.8.2
 gunicorn==19.6.0
 jira==1.0.7
 jsonpickle==0.9.3
@@ -16,3 +16,5 @@ psycopg2==2.6.2
 PyJWT==1.4.2
 requests==2.11.0
 django-fernet-fields==0.5
+pyyaml==3.13
+pytz==2018.5

@@ -1,0 +1,50 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+<p>resource selection template</p>
+
+<style>
+    .db_pane_wrapper{
+        display: grid;
+        grid-template-columns: 49% 2% 49%;
+    }
+    .divider{
+        border-style: solid;
+        height: 100vh;
+    }
+
+    .hidden_form{
+        display: none;
+    }
+</style>
+
+<div class="db_pane_wrapper">
+    <div class="pane_one">
+        <p>Select Resource</p>
+
+    </div>
+    <div class="divider">
+
+    </div>
+    <div class="pane_two">
+        <button>Create New Resource</button>
+    </div>
+</div>
+
+<div class="hidden_form" id="form_div">
+    <form method="post" action="" class="form" id="resource_selection_form">
+        {% csrf_token %}
+        {% bootstrap_field form.resourcebundle %}
+        {% buttons %}
+            <button type="submit" class="btn btn btn-success">
+                Confirm Edit
+            </button>
+        {% endbuttons %}
+    </form>
+</div>
+
+{% endblock content %}

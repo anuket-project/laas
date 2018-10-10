@@ -1,0 +1,27 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+
+<style>
+</style>
+
+{% bootstrap_form_errors form type='non_fields' %}
+<form id="meta_form" action="/wf/workflow/" method="POST" class="form">
+{% csrf_token %}
+{{form}}
+</form>
+{% endblock content %}
+
+{% block onleave %}
+var ajaxForm = $("#meta_form");
+var formData = ajaxForm.serialize();
+req = new XMLHttpRequest();
+req.open("POST", "/wf/workflow/", false);
+req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+req.onerror = function() { alert("problem submitting form"); }
+req.send(formData);
+{% endblock %}

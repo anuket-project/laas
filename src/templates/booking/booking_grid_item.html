@@ -1,0 +1,11 @@
+<p>{{ id|default:"id" }}</p>
+<p>{{ lab|default:"lab" }}</p>
+<p>{{ resource_name|default:"resource name" }}</p>
+<p>{{ start|default:"start" }}</p>
+<p>{{ end|default:"end" }}<p>
+<p>Collaborators:</p>
+<ul>
+    {% for collaborator in collaborators %}
+    <li>{{ collaborator }}</li>
+    {% endfor %}
+</ul>

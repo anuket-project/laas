@@ -1,5 +1,6 @@
 ##############################################################################
 # Copyright (c) 2016 Max Breitenfeldt and others.
+# Copyright (c) 2018 Parker Berberian, Sawyer Bergeron, and others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -8,139 +9,106 @@
 ##############################################################################
 
 
-from datetime import timedelta
-
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from django.views import View
 from django.views.generic import TemplateView
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
 
 from booking.models import Booking
-from dashboard.models import Resource
-from jenkins.models import JenkinsSlave
+from account.models import Lab
+
+from resource_inventory.models import *
+from workflow.views import *
+from workflow.workflow_manager import *
 
 
-class JenkinsSlavesView(TemplateView):
-    template_name = "dashboard/jenkins_slaves.html"
+def lab_list_view(request):
+    labs = Lab.objects.all()
+    context = {"labs": labs}
 
-    def get_context_data(self, **kwargs):
-        slaves = JenkinsSlave.objects.filter(active=True)
-        context = super(JenkinsSlavesView, self).get_context_data(**kwargs)
-        context.update({'title': "Jenkins Slaves", 'slaves': slaves})
-        return context
+    return render(request, "dashboard/lab_list.html", context)
 
 
-class CIPodsView(TemplateView):
-    template_name = "dashboard/ci_pods.html"
+def lab_detail_view(request, lab_name):
+    user = None
+    if request.user.is_authenticated:
+        user = request.user
 
-    def get_context_data(self, **kwargs):
-        ci_pods = Resource.objects.filter(slave__ci_slave=True, slave__active=True)
-        context = super(CIPodsView, self).get_context_data(**kwargs)
-        context.update({'title': "CI Pods", 'ci_pods': ci_pods})
-        return context
+    lab = get_object_or_404(Lab, name=lab_name)
 
+    images = Image.objects.filter(from_lab=lab).filter(public=True)
+    if user:
+        images = images | Image.objects.filter(from_lab=lab).filter(owner=user)
 
-class DevelopmentPodsView(TemplateView):
-    template_name = "dashboard/dev_pods.html"
-
-    def get_context_data(self, **kwargs):
-        resources = Resource.objects.filter(dev_pod=True)
-
-        bookings = Booking.objects.filter(start__lte=timezone.now())
-        bookings = bookings.filter(end__gt=timezone.now())
-
-        dev_pods = []
-        for resource in resources:
-            booking_utilization = resource.get_booking_utilization(weeks=4)
-            total = booking_utilization['booked_seconds'] + booking_utilization['available_seconds']
-            try:
-                utilization_percentage = "%d%%" % (float(booking_utilization['booked_seconds']) /
-                                                   total * 100)
-            except (ValueError, ZeroDivisionError):
-                return ""
-
-            dev_pod = (resource, None, utilization_percentage)
-            for booking in bookings:
-                if booking.resource == resource:
-                    dev_pod = (resource, booking, utilization_percentage)
-            dev_pods.append(dev_pod)
-
-        context = super(DevelopmentPodsView, self).get_context_data(**kwargs)
-        context.update({'title': "Development Pods", 'dev_pods': dev_pods})
-        return context
+    return render(request, "dashboard/lab_detail.html",
+                  {'title': "Lab Overview",
+                   'lab': lab,
+                   'hostprofiles': lab.hostprofiles.all(),
+                   'images': images})
 
 
-class ResourceView(TemplateView):
-    template_name = "dashboard/resource.html"
+def host_profile_detail_view(request):
 
-    def get_context_data(self, **kwargs):
-        resource = get_object_or_404(Resource, id=self.kwargs['resource_id'])
-        bookings = Booking.objects.filter(resource=resource, end__gt=timezone.now())
-        context = super(ResourceView, self).get_context_data(**kwargs)
-        context.update({'title': str(resource), 'resource': resource, 'bookings': bookings})
-        return context
+    return render(request, "dashboard/host_profile_detail.html",
+                   {'title': "Host Types",
+                   })
 
 
-class LabOwnerView(TemplateView):
-    template_name = "dashboard/resource_all.html"
+def landing_view(request):
+    manager = None
+    manager_detected = False
+    if 'manager_session' in request.session:
 
-    def get_context_data(self, **kwargs):
-        resources = Resource.objects.filter(slave__dev_pod=True, slave__active=True)
-        pods = []
-        for resource in resources:
-            utilization = resource.slave.get_utilization(timedelta(days=7))
-            bookings = Booking.objects.filter(resource=resource, end__gt=timezone.now())
-            pods.append((resource, utilization, bookings))
-        context = super(LabOwnerView, self).get_context_data(**kwargs)
-        context.update({'title': "Overview", 'pods': pods})
-        return context
-
-
-class BookingUtilizationJSON(View):
-    def get(self, request, *args, **kwargs):
-        resource = get_object_or_404(Resource, id=kwargs['resource_id'])
-        utilization = resource.get_booking_utilization(int(kwargs['weeks']))
-        utilization = [
-            {
-                'label': 'Booked',
-                'data': utilization['booked_seconds'],
-                'color': '#d9534f'
-            },
-            {
-                'label': 'Available',
-                'data': utilization['available_seconds'],
-                'color': '#5cb85c'
-            },
-        ]
-        return JsonResponse({'data': utilization})
-
-
-class JenkinsUtilizationJSON(View):
-    def get(self, request, *args, **kwargs):
-        resource = get_object_or_404(Resource, id=kwargs['resource_id'])
-        weeks = int(kwargs['weeks'])
         try:
-            utilization = resource.slave.get_utilization(timedelta(weeks=weeks))
-            utilization = [
-                {
-                    'label': 'Offline',
-                    'data': utilization['offline'],
-                    'color': '#d9534f'
-                },
-                {
-                    'label': 'Online',
-                    'data': utilization['online'],
-                    'color': '#5cb85c'
-                },
-                {
-                    'label': 'Idle',
-                    'data': utilization['idle'],
-                    'color': '#5bc0de'
-                },
-            ]
-            jutilization = JsonResponse({'data': utilization})
-        except AttributeError:
-            return JsonResponse({'data': ''})
-        if jutilization:
-            return jutilization
+            manager = ManagerTracker.managers[request.session['manager_session']]
+
+
+        except KeyError as e:
+            pass
+
+    if manager is not None:
+        #no manager detected, don't display continue button
+        manager_detected = True
+
+    if request.method == 'GET':
+        return render(request, 'dashboard/landing.html', {'manager': manager_detected, 'title': "Welcome!"})
+
+    if request.method == 'POST':
+        try:
+            create = request.POST['create']
+
+            if manager is not None:
+                del manager
+
+            mgr_uuid = create_session(create, request=request,)
+            request.session['manager_session'] = mgr_uuid
+            return HttpResponseRedirect('/wf/')
+
+        except KeyError as e:
+            pass
+
+
+class LandingView(TemplateView):
+    template_name = "dashboard/landing.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(LandingView, self).get_context_data(**kwargs)
+
+        hosts = []
+
+        for host_profile in HostProfile.objects.all():
+            name = host_profile.name
+            description = host_profile.description
+            in_labs = host_profile.labs
+
+            interfaces = host_profile.interfaceprofile
+            storage = host_profile.storageprofile
+            cpu = host_profile.cpuprofile
+            ram = host_profile.ramprofile
+
+            host = (name, description, in_labs, interfaces, storage, cpu, ram)
+            hosts.append(host)
+
+        context.update({'hosts': hosts})
+
+        return context

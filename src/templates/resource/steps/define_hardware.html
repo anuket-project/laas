@@ -1,0 +1,37 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+<p>Note that not all labs host every kind of machine.
+As you make your selections, labs and hosts that are not compatible
+with your current configuration will become unavailable.</p>
+<h4>NOTE: Only PTL's are able to create multi-node PODs. See <a href="https://google.com">here</a>
+    for more details</h4>
+<form id="define_hardware_form" action="/wf/workflow/" method="post">
+    {% csrf_token %}
+    {{form.filter_field|default:"<p>No Form</p>"}}
+</form>
+{% endblock content %}
+{% block onleave %}
+var normalize = function(data){
+    //converts the top level keys in data to map to lists
+    var normalized = {}
+    for( var key in data ){
+        normalized[key] = [];
+        for( var subkey in data[key] ){
+            normalized[key].push(data[key][subkey]);
+        }
+    }
+    return normalized;
+}
+var data = normalize(result);
+data = JSON.stringify(data);
+document.getElementById("filter_field").value = data;
+var formData = $("#define_hardware_form").serialize();
+req = new XMLHttpRequest();
+req.open('POST', '/wf/workflow/', false);
+req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+req.send(formData);
+{% endblock %}

@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+<style>
+    .go_btn{
+
+        position: absolute;
+        width: 100px;
+        top: 170px;
+        height: calc(100% - 170px);
+
+    }
+    .go_forward{
+        right: 0px;
+        border-left: none;
+    }
+
+    .go_back{
+        left: 251px;
+        border-right: none;
+    }
+
+
+    .btn_wrapper{
+        text-align: center;
+        margin-bottom: 5px;
+
+    }
+
+    {% if DEBUG %}
+
+    .add_btn_wrapper{
+        right: 130px;
+        top: 10px;
+        position: absolute;
+    }
+    {% endif %}
+
+
+
+    .options{
+        position: absolute;
+        top: 60px;
+        right: 20px;
+    }
+
+    #breadcrumbs {
+        padding: 4px;
+    }
+    .step{
+        background: #DEEED3;
+        display: inline;
+        padding: 5px;
+        margin: 1px;
+    }
+
+    .step_active{
+        background: #5EC392;
+        display: inline;
+        padding: 5px;
+        margin: 1px;
+        font-weight: bold;
+    }
+
+    .step_untouched
+    {
+        background: #98B0AF;
+    }
+
+    .step_invalid
+    {
+        background: #CC3300;
+    }
+
+    .step_valid
+    {
+        background: #0FD57D;
+    }
+
+ #viewport-iframe
+ {
+     height: calc(100vh - 450);
+ }
+
+
+</style>
+
+<button id="gof" onclick="go(step+1)" class="btn go_btn go_forward">Go Forward</button>
+<button id="gob" onclick="go(step-1)" class="btn btn go_btn go_back">Go Back</button>
+
+<div class="options">
+    <button class="btn" onclick="cancel_wf()">Cancel</button>
+</div>
+<div class="btn_wrapper">
+<div id="breadcrumbs">
+</div>
+</div>
+{% csrf_token %}
+
+<script type="text/javascript">
+
+
+    update_context();
+    var step = 0;
+    var page_count = 0;
+    var context_data = false;
+
+    function go(to)
+    {
+        step_on_leave();
+        request_leave(to);
+    }
+
+    function request_leave(to)
+    {
+        $.ajax({
+            type: "GET",
+            url: "/wf/manager/",
+            beforeSend: function(request) {
+                request.setRequestHeader("X-CSRFToken",
+                $('input[name="csrfmiddlewaretoken"]').val());
+            },
+            success: function (data) {
+                confirm_permission(to, data);
+                update_page(data);
+            }
+        });
+    }
+
+    function confirm_permission(to, data)
+    {
+        if( errors_exist(data) )
+        {
+            var continueanyway = confirm("The current step has errors that will prevent it from saving. Continue anyway?");
+            if( !continueanyway )
+            {
+                return;
+            }
+        }
+        if( to >= page_count )
+        {
+            to = page_count-1;
+        }
+        else if( to < 0 )
+        {
+            to = 0;
+        }
+        var problem = function() {
+            alert("There was a problem");
+        }
+        //makes an asynch request
+        req = new XMLHttpRequest();
+        url = "/wf/workflow/?step=" + to;
+        req.open("GET", url, true);
+        req.onload = function(e) {
+            if(req.readyState === 4){
+                if(req.status < 300){
+                    document.getElementById("viewport-iframe").srcdoc = this.responseText;
+                } else { problem(); }
+            } else { problem(); }
+        }
+        req.onerror = problem;
+        req.send();
+    }
+
+    function step_on_leave()
+    {
+        document.getElementById("viewport-iframe").contentWindow.step_on_leave();
+    }
+
+    function errors_exist(data)
+    {
+        var stat = data['steps'][data['active']]['valid'];
+        if( stat >= 100 && stat < 200 )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    function update_context() {
+        $.ajax({
+            type: "GET",
+            url: "/wf/manager/",
+            beforeSend: function(request) {
+                request.setRequestHeader("X-CSRFToken",
+                $('input[name="csrfmiddlewaretoken"]').val());
+            },
+            success: function (data) {
+                update_page(data);
+            }
+        });
+    }
+
+    function update_page(data)
+    {
+        context_data = data;
+        update_breadcrumbs(data);
+    }
+
+    function update_breadcrumbs(meta_json) {
+        step = meta_json['active'];
+        page_count = meta_json['steps'].length;
+        //remove all children of breadcrumbs so we can redraw
+        var container = document.getElementById("breadcrumbs");
+        while(container.firstChild){
+            container.removeChild(container.firstChild);
+        }
+        //draw enough rows for all steps
+        var depth = meta_json['max_depth'];
+        for(var i=0; i<=depth; i++){
+            var div = document.createElement("DIV");
+            div.id = "row"+i;
+            if(i<depth){
+                div.style['margin-bottom'] = "7px";
+            }
+            if(i>0){
+                div.style['margin-top'] = "7px";
+            }
+            container.appendChild(div);
+        }
+        draw_steps(meta_json);
+    }
+
+    function draw_steps(meta_json){
+        var all_relations = meta_json['relations'];
+        var relations = [];
+        var active_steps = [];
+        var active_step = step;
+        while(active_step < meta_json['steps'].length){
+            active_steps.push(active_step);
+            var index = meta_json['parents'][active_step];
+            var relation = all_relations[index];
+            relations.push(relation);
+            active_step = relation['parent'];
+        }
+        var child_index = meta_json['children'][step];
+        var my_children = all_relations[child_index];
+        if(my_children){
+            relations.push(my_children);
+        }
+        draw_relations(relations, meta_json, active_steps);
+    }
+
+    function draw_relations(relations, meta_json, active_steps){
+        for(var i=0; i<relations.length; i++){
+            var relation = relations[i];
+            var children_container = document.createElement("DIV");
+            children_container.style['display'] = "inline";
+            children_container.style['margin'] = "3px";
+            children_container.style['padding'] = "3px";
+            console.log("meta_json: ");
+            console.log(meta_json);
+            for(var j=0; j<relation['children'].length; j++){
+                var step_json = meta_json['steps'][relation['children'][j]];
+                step_json['index'] = relation['children'][j];
+                var active = active_steps.indexOf(step_json['index']) > -1;
+                var step_button = create_step(meta_json['steps'][relation['children'][j]], active);
+                children_container.appendChild(step_button);
+            }
+            var parent_div = document.getElementById("row" + relation['depth']);
+            parent_div.appendChild(children_container);
+        }
+    }
+
+    function create_step(step_json, active){
+        var step_dom = document.createElement("DIV");
+        if(active){
+            step_dom.className = "step_active";
+            console.log(step_json['message']);
+
+        } else{
+            step_dom.className = "step";
+        }
+        step_dom.appendChild(document.createTextNode(step_json['title']));
+        var code = step_json['valid'];
+        stat = "";
+        msg = "";
+        if( code < 100 )
+        {
+            step_dom.classList.add("step_untouched");
+
+            stat = "";
+            msg = "";
+        }
+        else if( code < 200 )
+        {
+            step_dom.classList.add("step_invalid");
+            stat = "invalid";
+            msg = step_json['message'];
+        }
+        else if( code < 300 )
+        {
+            step_dom.classList.add("step_valid");
+            stat = "valid";
+            msg = step_json['message'];
+        }
+        if(active)
+        {
+            update_message(msg, stat);
+        }
+
+        var step_number = step_json['index'];
+        step_dom.onclick = function(){ go(step_number); }
+        //TODO: background color and other style
+        return step_dom;
+    }
+
+    function cancel_wf(){
+        $.ajax({
+            type: "POST",
+            url: "/wf/manager/",
+            data: {"cancel":"",},
+            beforeSend: function(request) {
+                request.setRequestHeader("X-CSRFToken",
+                $('input[name="csrfmiddlewaretoken"]').val()
+                );
+            },
+            success: redirect_root()
+        });
+    }
+
+    function redirect_root()
+    {
+        window.location.replace('/');
+    }
+
+    function add_wf(type){
+        add_wf_internal(type, false);
+    }
+
+    function add_edit_wf(type, target){
+        add_wf_internal(type, target);
+    }
+
+    function add_wf_internal(type, itemid){
+        data = {"add": type};
+        if(itemid){
+            data['target'] = itemid;
+        }
+        $.ajax({
+            type: "POST",
+            url: "/wf/manager/",
+            data: data,
+            beforeSend: function(request) {
+                request.setRequestHeader("X-CSRFToken",
+                $('input[name="csrfmiddlewaretoken"]').val()
+                );
+            },
+            success: refresh_wf_iframe()
+        });
+    }
+
+    function refresh_wf_iframe() {
+        window.location=window.location;
+    }
+</script>
+<div id="iframe_header" class="row view-header">
+    <div class="col-lg-12 step_header">
+        <h1 class="step_title" id="view_title"></h1>
+        <p class="description" id="view_desc"></p>
+        <p class="step_message" id="view_message"></p>
+    </div>
+    <style>
+        #view_desc{
+            margin-bottom: 15px;
+            margin-top: 5px;
+            margin-left: 30px;
+            display: inline;
+        }
+        #view_title{
+            margin-top: 5px;
+            margin-bottom: 0px;
+            display: inline;
+        }
+        #view_message{
+            margin-top: 10px;
+            margin-bottom: 5px;
+            float: right;
+        }
+        .message_invalid{
+            color: #ff4400;
+        }
+        .message_valid{
+            color: #44cc00;
+        }
+        .step_header{
+            border-bottom: 1px solid #eee;
+            border-top: 1px solid #eee;
+            left: 101px;
+            width: calc(100% - 202px);
+        }
+    </style>
+    <script>
+        function update_description(title, desc){
+            document.getElementById("view_title").innerText = title;
+            document.getElementById("view_desc").innerText = desc;
+        }
+        function update_message(message, stepstatus){
+            document.getElementById("view_message").innerText = message;
+            document.getElementById("view_message").className = "step_message";
+            document.getElementById("view_message").classList.add("message_" + stepstatus);
+        }
+        function resize_iframe(){
+            var page_rect = document.getElementById("wrapper").getBoundingClientRect();
+            var title_rect = document.getElementById("iframe_header").getBoundingClientRect();
+            var iframe_height = page_rect.bottom - title_rect.bottom;
+            console.log("setting height to " + iframe_height);
+            document.getElementById("viewport-iframe").height = iframe_height;
+
+        }
+     window.addEventListener('load', resize_iframe);
+     window.addEventListener('resize', resize_iframe);
+    </script>
+    <!-- /.col-lg-12 -->
+</div>
+
+<iframe src="/wf/workflow" style="position: absolute; left: 351px; right: 105px; width: calc(100% - 450px); border-style: none; border-width: 1px; border-color: #888888;" scrolling="yes" id="viewport-iframe" onload="resize_iframe();"></iframe>
+{% endblock content %}

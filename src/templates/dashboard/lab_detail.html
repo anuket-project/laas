@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block extrahead %}
+    {{block.super}}
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Lab Profile</h4>
+               <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body" id="panel_overview">
+                <table class="table">
+                    <tr>
+                        <td>Lab Name: </td><td>{{lab.name}}</td>
+                    </tr>
+                    <tr>
+                        <td>Lab Location: </td><td>{{lab.location}}</td>
+                    </tr>
+                    <tr>
+                        <td>Lab Email: </td>
+                        <td>{{lab.contact_email}}</td>
+                    </tr>
+                    {% if lab.contact_phone %}
+                    <tr>
+                        <td>Lab Phone: </td>
+                        <td>{{lab.contact_phone}}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td>Lab Status: </td>
+                        {% if lab.status < 100 %}
+                        <td><div style="border-radius: 50%; background:#40B976; height: 20px; width: 20px; display: inline-block;"></div>
+                        Up</td>
+                        {% elif lab.status < 200 %}
+                        <td>
+                        <div style="border-radius: 50%; background:#eeee00; height: 20px; width: 20px; display: inline-block;"></div>
+                        Temporarily Offline</td>
+                        {% else %}
+                        <td>
+                        <div style="border-radius: 50%; background:#e50000; height: 20px; width: 20px; display: inline-block;"></div>
+                        Offline Indefinitely</td>
+                        {% endif %}
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Host Profiles</h4>
+
+               <a data-toggle="collapse" data-target="#profile_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body pod_panel" id="profile_panel">
+                <table class="table">
+                    {% for profile in hostprofiles %}
+                    <tr>
+                        <td>{{profile.name}}</td>
+                        <td>{{profile.description}}</td>
+                        <td>{{profile.labs}}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Networking Capabilities</h4>
+            <a data-toggle="collapse" data-target="#network_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+
+            <div class="panel-body" id="network_panel">
+
+                    <table class="table">
+                        <tr>
+                            <td>Block Size: (number of VLANs allowed per deployment)</td><td>{{lab.vlan_manager.block_size}}</td>
+                        </tr>
+                        <tr>
+                            <td>Overlapping Vlans Allowed (user can pick which VLANs they wish to use): </td>
+                            <td>{{lab.vlan_manager.allow_overlapping}}</td>
+                        </tr>
+                    </table>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Images</h4>
+            <a data-toggle="collapse" data-target="#image_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body" id="image_panel">
+                <table class="table">
+                    <tr>
+                        <th>Name</th>
+                        <th>Owner</th>
+                        <th>For Host Type</th>
+                        <th>Description</th>
+                    </tr>
+                    {% for image in images %}
+                    <tr>
+                        <td>{{image.name}}</td>
+                        <td>{{image.owner}}</td>
+                        <td>{{image.host_type}}</td>
+                        <td>{{image.description}}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+    </div>
+    <div class="col-lg-8">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Lab Hosts</h4>
+                <p style="display: inline; margin-left: 10px;"></p>
+               <a data-toggle="collapse" data-target="#lab_hosts_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+
+            <div class="panel-body" id="lab_hosts_panel">
+                <table class="table">
+                    <tr>
+                        <th>Name</th>
+                        <th>Profile</th>
+                        <th>Booked</th>
+                        <th>Working</th>
+                        <th>Vendor</th>
+                    </tr>
+                    {% for host in lab.host_set.all %}
+                    <tr>
+                        <td>{{host.labid}}</td>
+                        <td>{{host.profile}}</td>
+                        <td>{{host.booked}}</td>
+                        {% if host.working %}
+                        <td style="background-color: #40B976;">{{host.working}}</td>
+                        {% else %}
+                        <td>{{host.working}}</td>
+                        {% endif %}
+                        <td>{{host.vendor}}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+{% endblock content %}
+

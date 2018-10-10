@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+function drawGraph(data, graph_id, graph_title){
+    var container = document.getElementById(graph_id);
+    var plot_data = { x: data[0],
+        y: data[1],
+        fill: "tonexty",
+        type: "scatter",
+        mode: "none",
+    };
+    var layout = {
+        title: graph_title
+    };
+    Plotly.newPlot(container, [plot_data], layout);
+}
+function getData(){
+    var req = new XMLHttpRequest();
+    var url = "/booking/stats/json";
+    var day_input = document.getElementById("number_days");
+    var days = day_input.value;
+    //var days = document.getElementById("number_days").value;
+    if(days){
+        url = url + "?days=" + days;
+    }
+    req.onreadystatechange = function(){
+        if( req.readyState == XMLHttpRequest.DONE) {
+            var data = JSON.parse(req.responseText);
+            drawGraph(data["booking"], "booking_graph_container", "Active Bookings");
+            drawGraph(data["user"], "user_graph_container", "Active Users");
+        }
+    }
+    req.open("GET", url, true);
+    req.send();
+}
+</script>
+{% endblock %}
+
+{% block content %}
+    <p>Number of days to plot: </p>
+    <input id="number_days" type="number" min="1" step="1"/>
+    <button onclick="getData();">Submit</button>
+    <div id="all_graph_container">
+        <div id="booking_graph_wrapper">
+            <div id="booking_graph_container"/>
+        </div>
+        <div id="user_graph_wrapper" >
+            <div id="user_graph_container"/>
+        </div>
+    </div>
+    <script>
+var data = {{data|safe}};
+drawGraph(data["booking"], "booking_graph_container", "Active Bookings");
+drawGraph(data["user"], "user_graph_container", "Active Users");
+    </script>
+{% endblock content %}

@@ -1,0 +1,43 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+{% if error %}
+<p>{{error}}</p>
+{% else %}
+
+
+<form id="host_meta_form" method="post" action="/wf/workflow/">
+    {% csrf_token %}
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for form in formset %}
+            <tr>
+                {% for field in form %}
+                    <td>{{field}}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+    {{formset.management_form}}
+</form>
+{% endif %}
+{% endblock content %}
+
+{% block onleave %}
+var formData = $("#host_meta_form").serialize();
+var req = new XMLHttpRequest();
+req.open("POST", "/wf/workflow/", false);
+req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+req.onerror = function() { alert("There was a problem submitting the form"); }
+req.send(formData);
+{% endblock %}

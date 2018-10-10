@@ -1,0 +1,14 @@
+{
+    "profiles": {
+        "HPE_Proliant": [
+            "hpe13",
+            "hpe14",
+            "hpe15",
+            "hpe16",
+            "hpe17",
+            "hpe18",
+            "hpe19",
+            "hpe20"
+        ]
+    }
+}

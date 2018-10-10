@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block extrahead %}
+    {{block.super}}
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
+{% endblock %}
+
+{% block content %}
+    <style>
+     .grid-item-container {
+         padding: 10px;
+     }
+
+         .grid-item {
+             cursor: pointer;
+             border:2px;
+             border-style:none;
+             border-color:black;
+             border-radius: 5px;
+             padding: 7px;
+             color: inherit;
+
+             box-shadow: 0px 0px 7px 0px rgba(0,0,0,0.75);
+             transition-property: box-shadow, background-color;
+             transition-duration: .2s;
+         }
+
+     .grid-item-text
+     {
+         color: inherit;
+         text-decoration: none;
+     }
+     .grid-item-text:hover
+     {
+         color: #121212;
+         text-decoration: none;
+     }
+
+     .grid-item:hover {
+         box-shadow: 0px 0px 14px 0px rgba(0,0,0,0.75);
+         transition-property: box-shadow;
+         transition-duration: .2s;
+
+     }
+
+     .selected_node {
+         box-shadow: 0px 0px 14px 0px rgba(0,0,0,0.75);
+         background-color: #CCECD7;
+         transition-property: background-color;
+         transition-duration: .2s;
+     }
+
+     .disabled_node {
+         cursor: not-allowed;
+         background-color: #EFEFEF;
+         box-shadow: 0px 0px 1px 0px rgba(0,0,0,0.75);
+         transition-property: box-shadow;
+         transition-duration: .2s;
+     }
+
+     .disabled_node:hover {
+         box-shadow: 0px 0px 1px 0px rgba(0,0,0,0.75);
+     }
+
+    </style>
+    <div class="container-fluid">
+    <div class="row">
+
+    <div class="listgrid">
+        {% for lab in labs %}
+        <div class="grid-item-container col-lg-2 col-mid-4 col-sm-6">
+
+            <a href="{{ lab.name }}" class="grid-item-text">
+
+            <div class="grid-item">
+            <h4 class="grid-item-header">{{ lab.name }}</h4>
+            <p class="grid-item-description">{{ lab.description }}</p>
+            </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    </div>
+    </div>
+
+{% endblock content %}

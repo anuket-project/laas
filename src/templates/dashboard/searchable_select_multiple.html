@@ -1,0 +1,408 @@
+<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+
+<div class="autocomplete" style="width:400px;">
+    <input id="user_field" name="ignore_this" class="form-control" autocomplete="off" type="text" placeholder="{{placeholder}}" value="{{initial.name}}" oninput="search(this.value)"
+    {% if disabled %} disabled {% endif %}
+    >
+
+    <input type="hidden" id="selector" name="{{ name }}" class="form-control" style="display: none;"
+    {% if disabled %} disabled {% endif %}
+    >
+    </input>
+
+    <ul id="drop_results"></ul>
+
+
+    <div id="default_entry_wrap" style="display: none;">
+        <div class="list_entry unremovable_list_entry">
+            <p id="default_text" class="full_name"></p>
+            <button class="btn-remove btn disabled">remove</button>
+        </div>
+    </div>
+
+    <div id="added_list">
+
+    </div>
+    <div id="added_counter" style="text-align: center; margin: 10px;"><p id="added_number" style="display: inline;">0</p><p style="display: inline;">/
+        {% if selectable_limit > -1 %} {{ selectable_limit }} {% else %} &infin; {% endif %}added</p></div>
+    <style>
+        #user_field {
+            font-size: 14pt;
+            width: 400px;
+            padding: 5px;
+
+        }
+
+        #drop_results{
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            max-height: 300px;
+            min-height: 0;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            border: solid 1px #ddd;
+            display: none;
+
+        }
+
+        #drop_results li a{
+            font-size: 14pt;
+            border: 1px solid #ddd;
+            background-color: #f6f6f6;
+            padding: 12px;
+            text-decoration: none;
+            display: block;
+            width: 400px;
+        }
+
+        .btn-remove {
+            float: right;
+            height: 30px;
+            margin: 4px;
+        }
+
+        .list_entry {
+            width: 400px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            margin-top: 5px;
+            vertical-align: middle;
+            line-height: 40px;
+            height: 40px;
+            padding-left: 12px;
+        }
+
+        #drop_results li a:hover{
+            background-color: #ffffff;
+        }
+
+        .small_name {
+            display: inline-block;
+        }
+
+        .full_name {
+            display: inline-block;
+        }
+
+    </style>
+</div>
+
+<script type="text/javascript">
+    //flags
+    var show_from_noentry = {{show_from_noentry|default:"false"}};
+    var show_x_results = {{show_x_results|default:-1}};
+    var results_scrollable = {{results_scrollable|default:"false"}};
+    var selectable_limit = {{selectable_limit|default:-1}};
+    var field_name  = "{{name|default:"users"}}";
+    var placeholder = "{{placeholder|default:"begin typing"}}";
+    var default_entry = "{{default_entry}}";
+
+    //needed info
+    var items = {{items|safe}}
+
+    //tries
+    var expanded_name_trie = {}
+    expanded_name_trie.isComplete = false;
+    var small_name_trie = {}
+    small_name_trie.isComplete = false;
+    var string_trie = {}
+    string_trie.isComplete = false;
+
+    var added_items = [];
+
+    var added_template = {{ added_list|default:"{}" }};
+
+    if( default_entry )
+    {
+        var default_entry_div = document.getElementById("default_entry_wrap");
+        default_entry_div.style.display = "inherit";
+
+        var entry_p = document.getElementById("default_text");
+        entry_p.innerText = default_entry;
+    }
+
+    init();
+
+    if( show_from_noentry )
+    {
+        search("");
+    }
+
+    function disable() {
+        var textfield = document.getElementById("user_field");
+        var drop = document.getElementById("drop_results");
+
+        textfield.disabled = "True";
+        drop.style.display = "none";
+
+        var btns = document.getElementsByClassName("btn-remove");
+        for( var i = 0; i < btns.length; i++ )
+        {
+            btns[i].classList.add("disabled");
+        }
+    }
+
+    function init() {
+        build_all_tries(items);
+
+        var initial = {{ initial|safe }};
+
+        for( var i = 0; i < initial.length; i++)
+        {
+            select_item(String(initial[i]));
+        }
+        if(initial.length == 1)
+        {
+            search(items[initial[0]]["small_name"]);
+            document.getElementById("user_field").value = items[initial[0]]["small_name"];
+        }
+    }
+
+    function build_all_tries(dict)
+    {
+        for( var i in dict )
+        {
+            add_item(dict[i]);
+        }
+    }
+
+    function add_item(item)
+    {
+        var id = item['id'];
+        add_to_tree(item['expanded_name'], id, expanded_name_trie);
+        add_to_tree(item['small_name'], id, small_name_trie);
+        add_to_tree(item['string'], id, string_trie);
+    }
+
+    function add_to_tree(str, id, trie)
+    {
+        inner_trie = trie;
+        while( str )
+        {
+            if( !inner_trie[str.charAt(0)] )
+            {
+                new_trie = {};
+                inner_trie[str.charAt(0)] = new_trie;
+            }
+            else
+            {
+                new_trie = inner_trie[str.charAt(0)];
+            }
+
+            if( str.length == 1 )
+            {
+                new_trie.isComplete = true;
+                new_trie.itemID = id;
+            }
+            inner_trie = new_trie;
+            str = str.substring(1);
+        }
+    }
+
+    function search(input)
+    {
+        if( input.length == 0 && !show_from_noentry){
+            dropdown([]);
+            return;
+        }
+        else if( input.length == 0 && show_from_noentry)
+        {
+            dropdown(items); //show all items
+        }
+        else
+        {
+            var trees = []
+            var tr1 = getSubtree(input, expanded_name_trie);
+            trees.push(tr1);
+            var tr2 = getSubtree(input, small_name_trie);
+            trees.push(tr2);
+            var tr3 = getSubtree(input, string_trie);
+            trees.push(tr3);
+            var results = collate(trees);
+            dropdown(results);
+        }
+    }
+
+    function getSubtree(input, given_trie)
+    {
+        /*
+        recursive function to return the trie accessed at input
+        */
+
+        if( input.length == 0 ){
+            return given_trie;
+        }
+
+        else{
+        var substr = input.substring(0, input.length - 1);
+        var last_char = input.charAt(input.length-1);
+        var subtrie = getSubtree(substr, given_trie);
+        if( !subtrie ) //substr not in the trie
+        {
+            return {};
+        }
+        var indexed_trie = subtrie[last_char];
+        return indexed_trie;
+        }
+    }
+
+    function serialize(trie)
+    {
+        /*
+        takes in a trie and returns a list of its item id's
+        */
+        var itemIDs = [];
+        if ( !trie )
+        {
+            return itemIDs; //empty, base case
+        }
+        for( var key in trie )
+        {
+            if(key.length > 1)
+            {
+                continue;
+            }
+            itemIDs = itemIDs.concat(serialize(trie[key]));
+        }
+        if ( trie.isComplete )
+        {
+            itemIDs.push( trie.itemID );
+        }
+
+        return itemIDs;
+    }
+
+    function collate(trees)
+    {
+        /*
+        takes a list of tries
+        returns a list of ids of objects that are available
+        */
+        results = [];
+        for( var i in trees )
+        {
+            var available_IDs = serialize(trees[i]);
+            for( var j=0; j<available_IDs.length; j++){
+                var itemID = available_IDs[j];
+                results[itemID] = items[itemID];
+            }
+        }
+        return results;
+    }
+
+    function dropdown(ids)
+    {
+        /*
+        takes in a mapping of ids to objects in  items
+        and displays them in the dropdown
+        */
+        var drop = document.getElementById("drop_results");
+        while(drop.firstChild)
+        {
+            drop.removeChild(drop.firstChild);
+        }
+
+        for( var id in ids )
+        {
+            var result_entry = document.createElement("li");
+            var result_button = document.createElement("a");
+            var obj = items[id];
+            var result_text = document.createTextNode(obj['small_name'] + " : " + obj['expanded_name']);
+            result_button.appendChild(result_text);
+            result_button.setAttribute('onclick', 'select_item("' + obj['id'] + '")');
+            result_entry.appendChild(result_button);
+            drop.appendChild(result_entry);
+        }
+
+        if( !drop.firstChild )
+        {
+            drop.style.display = 'none';
+        }
+        else
+        {
+            drop.style.display = 'inherit';
+        }
+    }
+
+    function select_item(item_id)
+    {
+        //TODO make faster
+        var item = items[item_id];
+        if( (selectable_limit > -1 && added_items.length < selectable_limit) || selectable_limit < 0 )
+        {
+            if( added_items.indexOf(item) == -1 )
+            {
+                added_items.push(item);
+            }
+        }
+
+        update_selected_list();
+        document.getElementById("user_field").focus();
+    }
+
+    function remove_item(item_ref)
+    {
+
+        item = Object.values(items)[item_ref];
+        var index = added_items.indexOf(item);
+        added_items.splice(index, 1);
+
+        update_selected_list()
+        document.getElementById("user_field").focus();
+    }
+
+    function edit_item(item_id){
+        var wf_type = "{{wf_type}}";
+        parent.add_edit_wf(wf_type, item_id);
+    }
+
+    function update_selected_list()
+    {
+        document.getElementById("added_number").innerText = added_items.length;
+        selector = document.getElementById('selector');
+        selector.value = JSON.stringify(added_items);
+        added_list = document.getElementById('added_list');
+
+        while(selector.firstChild)
+        {
+            selector.removeChild(selector.firstChild);
+        }
+        while(added_list.firstChild)
+        {
+            added_list.removeChild(added_list.firstChild);
+        }
+
+        list_html = "";
+
+        for( var key in added_items )
+        {
+            item = added_items[key];
+
+            list_html += '<div class="list_entry"><p class="full_name">'
+                + item["expanded_name"]
+                + '</p><p class="small_name">, '
+                + item["small_name"]
+                + '</p><button onclick="remove_item('
+                + Object.values(items).indexOf(item)
+                + ')" class="btn-remove btn">remove</button>';
+            {% if edit %}
+                list_html += '<button onclick="edit_item('
+                + item['id']
+                + ')" class="btn-remove btn">edit</button>';
+            {% endif %}
+                list_html += '</div>';
+        }
+
+        added_list.innerHTML = list_html;
+    }
+
+</script>
+<style>
+    .full_name {
+        display: inline-block;
+    }
+    .small_name {
+        display: inline-block;
+    }
+</style>

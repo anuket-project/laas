@@ -1,5 +1,6 @@
 ##############################################################################
 # Copyright (c) 2016 Max Breitenfeldt and others.
+# Copyright (c) 2018 Parker Berberian, Sawyer Bergeron, and others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -28,7 +29,6 @@ def sync_jira_accounts():
         user.email = user_dict['emailAddress']
         user.userprofile.url = user_dict['self']
         user.userprofile.full_name = user_dict['displayName']
-        print(user_dict)
 
         user.userprofile.save()
         user.save()

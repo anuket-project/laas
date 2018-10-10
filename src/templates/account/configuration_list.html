@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<script>
+function edit_configuration(pk){
+    var csrf = $('input[name="csrfmiddlewaretoken"]').val();
+    $.ajax({
+        type: "POST",
+        url: "/",
+        data: { "target": pk, "create": 2, "csrfmiddlewaretoken": csrf},
+        beforeSend: function(request) {
+            request.setRequestHeader("X-CSFRToken", csrf);
+            }
+        }).done(function(){
+            window.location.replace("/wf/");
+        }).fail(function(){});
+}
+</script>
+    {% for config in configurations %}
+        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+            <ul>
+                <li>id: {{config.id}}</li>
+                <li>name: {{config.name}}</li>
+                <li>description: {{config.description}}</li>
+            </ul>
+            <button onclick="edit_configuration({{config.id}});">Edit</button>
+        </div>
+    {% endfor %}
+{% endblock %}

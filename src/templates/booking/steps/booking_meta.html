@@ -1,0 +1,66 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+<style>
+    .bkmeta_panel {
+        padding: 5%;
+    }
+
+    .panel{
+        padding: 5%;
+        /*border: solid 1px black;*/
+    }
+
+    .panel_wrap {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 45% 10% 45%;
+        border: none;
+    }
+</style>
+
+{% bootstrap_form_errors form type='non_fields' %}
+<form id="booking_meta_form" action="/wf/workflow/" method="POST" class="form">
+{% csrf_token %}
+<div id="form_div">
+    <div class="panel_wrap">
+    <div class="panel bkmeta_panel">
+        {% bootstrap_field form.purpose %}
+        {% bootstrap_field form.project %}
+        {% bootstrap_field form.length %}
+        <p style="display:inline;">Days: </p><output id="daysout" style="display:inline;">0</output>
+        <script>
+            document.getElementById("id_length").setAttribute("oninput", "daysout.value=this.value");
+            document.getElementById("daysout").value = document.getElementById("id_length").value;
+        </script>
+        {% bootstrap_field form.info_file %}
+        <p>You must provide a url to your project's INFO.yaml file if you are a PTL and you are trying to book a POD with multiple servers in it.</p>
+    </div>
+    <div class="panel panel_center">
+    </div>
+    <div class="panel">
+        {% bootstrap_field form.users %}
+    </div>
+
+    {% buttons %}
+    <button type="submit" style="display: none;" class="btn btn-success">Confirm</button>
+    {% endbuttons %}
+    </div>
+</div>
+</form>
+{% endblock content %}
+
+{% block onleave %}
+var ajaxForm = $("#booking_meta_form");
+var formData = ajaxForm.serialize();
+console.log(formData);
+req = new XMLHttpRequest();
+req.open("POST", "/wf/workflow/", false);
+req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+req.onerror = function() { alert("problem submitting form"); }
+req.send(formData);
+{% endblock %}

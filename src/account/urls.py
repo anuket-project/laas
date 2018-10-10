@@ -1,5 +1,6 @@
 ##############################################################################
 # Copyright (c) 2016 Max Breitenfeldt and others.
+# Copyright (c) 2018 Parker Berberian, Sawyer Bergeron, and others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -27,10 +28,16 @@ from django.conf.urls import url
 
 from account.views import *
 
+app_name = "account"
 urlpatterns = [
     url(r'^settings/', AccountSettingsView.as_view(), name='settings'),
     url(r'^authenticated/$', JiraAuthenticatedView.as_view(), name='authenticated'),
     url(r'^login/$', JiraLoginView.as_view(), name='login'),
     url(r'^logout/$', JiraLogoutView.as_view(), name='logout'),
     url(r'^users/$', UserListView.as_view(), name='users'),
+    url(r'^my/resources', account_resource_view, name="my-resources"),
+    url(r'^my/bookings', account_booking_view, name="my-bookings"),
+    url(r'^my/images', account_images_view, name="my-images"),
+    url(r'^my/configurations', account_configuration_view, name="my-configurations"),
+    url(r'^my/$', account_detail_view, name="my-account"),
 ]

@@ -1,0 +1,95 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+
+<style>
+    .booking {
+        border-style: solid;
+        border-color: black;
+        border-width: 2px;
+        display: inline-block;
+        padding: 3px;
+    }
+    .host {
+        border-style: solid;
+        border-color: black;
+        border-width: 1px;
+        margin: 2px;
+    }
+</style>
+
+{% bootstrap_form_errors form type='non_fields' %}
+<form id="host_select_form" action="/wf/workflow/" method="POST" class="form">
+{% csrf_token %}
+<input type="hidden" id="hidden_json_input", name="host"/>
+</form>
+<div id="host_select_container">
+</div>
+<script>
+var selected_host = null;
+var initial = {{chosen|default:'null'}};
+
+function select(booking_id, host_name){
+    var input = document.getElementById("hidden_json_input");
+    input.value = JSON.stringify({"booking": booking_id, "name": host_name});
+    // clear out and highlist host
+    if(selected_host){
+        selected_host.style['background-color'] = "white";
+    }
+    selected_host = document.getElementById("booking_" + booking_id + "_host_" + host_name);
+    selected_host.style['background-color'] = "lightgrey";
+}
+
+function draw_bookings(){
+    var booking_hosts = {{booking_hosts|safe}};
+    var bookings = [];
+    var container = document.getElementById("host_select_container");
+    for(var booking_id in booking_hosts){
+        var booking = document.createElement("DIV");
+        var heading = document.createElement("H3");
+        heading.appendChild(document.createTextNode("Booking " + booking_id));
+        booking.appendChild(heading);
+        var desc = "start: " + booking_hosts[booking_id].start +
+        " end: " + booking_hosts[booking_id].end +
+        " purpose: " + booking_hosts[booking_id].purpose;
+        booking.appendChild(document.createTextNode(desc));
+        booking.id = "booking_" + booking_id;
+        booking.className = "booking";
+        var hosts = booking_hosts[booking_id].hosts;
+        for(var i=0; i<hosts.length; i++){
+            var host = document.createElement("DIV");
+            host.id = "booking_" + booking_id + "_host_" + hosts[i].name;
+            host.className = "host";
+            host.appendChild(document.createTextNode(hosts[i].name));
+            var hostname = hosts[i].name;
+            host.booking = booking_id;
+            host.hostname = hostname;
+            host.onclick = function() {
+                select(this.booking, this.hostname);
+            }
+            booking.appendChild(host);
+        }
+        bookings.push(booking);
+        container.appendChild(booking);
+    }
+}
+draw_bookings();
+if(initial){
+    select(initial.booking_id, initial.hostname);
+}
+</script>
+{% endblock content %}
+
+{% block onleave %}
+var ajaxForm = $("#host_select_form");
+var formData = ajaxForm.serialize();
+req = new XMLHttpRequest();
+req.open("POST", "/wf/workflow/", false);
+req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+req.onerror = function() { alert("problem submitting form"); }
+req.send(formData);
+{% endblock %}

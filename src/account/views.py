@@ -1,5 +1,6 @@
 ##############################################################################
 # Copyright (c) 2016 Max Breitenfeldt and others.
+# Copyright (c) 2018 Parker Berberian, Sawyer Bergeron, and others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -21,12 +22,15 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import RedirectView, TemplateView, UpdateView
+from django.shortcuts import render
 from jira import JIRA
 from rest_framework.authtoken.models import Token
 
 from account.forms import AccountSettingsForm
 from account.jira_util import SignatureMethod_RSA_SHA1
 from account.models import UserProfile
+from booking.models import Booking
+from resource_inventory.models import GenericResourceBundle, ConfigBundle, Image
 
 
 @method_decorator(login_required, name='dispatch')
@@ -153,3 +157,47 @@ class UserListView(TemplateView):
         context = super(UserListView, self).get_context_data(**kwargs)
         context.update({'title': "Dashboard Users", 'users': users})
         return context
+
+
+def account_detail_view(request):
+    template = "account/details.html"
+    return render(request, template)
+
+def account_resource_view(request):
+    """
+    gathers a users genericResoureBundles and
+    turns them into displayable objects
+    """
+    if not request.user.is_authenticated:
+        return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
+    template = "account/resource_list.html"
+    resources = list(GenericResourceBundle.objects.filter(owner=request.user))
+    context = {"resources": resources, "title": "My Resources"}
+    return render(request, template, context=context)
+
+def account_booking_view(request):
+    if not request.user.is_authenticated:
+        return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
+    template = "account/booking_list.html"
+    bookings = list(Booking.objects.filter(owner=request.user))
+    collab_bookings = list(request.user.collaborators.all())
+    context = {"title": "My Bookings", "bookings": bookings, "collab_bookings": collab_bookings}
+    return render(request, template, context=context)
+
+def account_configuration_view(request):
+    if not request.user.is_authenticated:
+        return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
+    template = "account/configuration_list.html"
+    configs = list(ConfigBundle.objects.filter(owner=request.user))
+    context = {"title": "Configuration List", "configurations": configs}
+    return render(request, template, context=context)
+
+def account_images_view(request):
+    if not request.user.is_authenticated:
+        return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
+    template = "account/image_list.html"
+    my_images = Image.objects.filter(owner=request.user)
+    public_images = Image.objects.filter(public=True)
+    context = {"title": "Images", "images": my_images, "public_images": public_images }
+    return render(request, template, context=context)
+

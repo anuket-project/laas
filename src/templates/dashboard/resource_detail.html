@@ -1,32 +1,4 @@
-{% load jenkins_filters %}
-
 <div class="row">
-    <div class="col-lg-3">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                Jenkins Utilization
-                <div class="pull-right">
-                    <div class="form-group">
-                        <select onchange="loadChartData('{{ resource.id }}_jenkins_utilization', this.value);">
-                            <option value="{% url 'dashboard:jenkins_utilization' resource_id=resource.id weeks=1 %}">
-                                Last Week
-                            </option>
-                            <option value="{% url 'dashboard:jenkins_utilization' resource_id=resource.id weeks=4 %}">
-                                Last Month
-                            </option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="panel-body">
-                <div class="flot-chart">
-                    <div class="flot-chart-content"
-                         id="{{ resource.id }}_jenkins_utilization"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="col-lg-9">
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -136,30 +108,6 @@
                     <a href="{{ resource.url }}" class="btn
                     btn-primary">
                         OPNFV Wiki
-                    </a>
-                </p>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                Jenkins Status
-            </div>
-            <div class="panel-body">
-                <p>
-                    <b>Slave Name: </b>
-                    <a target='_blank'
-                       href={{ resource.slave.url }}>{{ resource.slave.name }}</a>
-                </p>
-                <p>
-                    <b>Status: </b>
-                    {{ resource.slave.status }}
-                </p>
-                <p>
-                    <b>Last Job: </b>
-                    <a href="{{ resource.slave.last_job_url }}">
-                        {{ resource.slave.last_job_name }}
                     </a>
                 </p>
             </div>

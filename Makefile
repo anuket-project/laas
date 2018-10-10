@@ -32,10 +32,10 @@ shell-db:
 	docker exec -ti ps01 bash
 
 log-nginx:
-	docker-compose logs nginx  
+	docker-compose logs nginx
 
 log-web:
-	docker-compose logs web  
+	docker-compose logs web
 
 log-ps:
 	docker-compose logs postgres
