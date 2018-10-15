@@ -16,7 +16,7 @@ profiles = [HostProfile, InterfaceProfile, DiskProfile, CpuProfile, RamProfile]
 
 admin.site.register(profiles)
 
-generics = [GenericResourceBundle, GenericResource, GenericHost, GenericPod, GenericInterface]
+generics = [GenericResourceBundle, GenericResource, GenericHost, GenericInterface]
 
 admin.site.register(generics)
 
