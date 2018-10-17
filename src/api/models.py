@@ -488,7 +488,8 @@ class NetworkConfig(TaskConfig):
         return d
 
     def clear_delta(self):
-        pass
+        self.delta = json.dumps(self.to_dict())
+        self.save()
 
     def add_interface(self, interface):
         self.interfaces.add(interface)
