@@ -1,0 +1,18 @@
+{% extends "workflow/viewport-element.html" %}
+{% load staticfiles %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+
+<form id="resource_meta_form" method="post" action="/wf/workflow/">
+    {% csrf_token %}
+    <table>
+        {{form}}
+    </table>
+</form>
+{% endblock content %}
+
+{% block onleave %}
+document.getElementById("resource_meta_form").submit();
+{% endblock %}
