@@ -74,7 +74,6 @@ class Resource_Select(WorkflowStep):
         context = self.get_context()
         if form.is_valid():
             data = form.cleaned_data['generic_resource_bundle']
-            irint(str(data['user']))
             data = data[2:-2]
             if not data:
                 self.metastep.set_invalid("Please select a valid bundle")
