@@ -73,7 +73,11 @@ def booking_poll():
 
     def cleanup_access(qs):
         for relation in qs:
-            pass # TODO
+            if "vpn" in relation.config.access_type.lower():
+                relation.config.set_revoke(True)
+                relation.config.save()
+                relation.status = JobStatus.NEW
+                relation.save()
 
     cleanup_set = Booking.objects.filter(end__lte=timezone.now()).filter(job__complete=False)
 

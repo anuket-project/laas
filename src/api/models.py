@@ -321,10 +321,10 @@ class AccessConfig(TaskConfig):
 
     def to_dict(self):
         d = {}
-        d['access_type'] =  self.access_type
+        d['access_type'] = self.access_type
         d['user'] = self.user.id
         d['revoke'] = self.revoke
-        d['context'] = self.context
+        d['context'] = json.loads(self.context)
         return d
 
     def get_delta(self):
@@ -363,7 +363,7 @@ class AccessConfig(TaskConfig):
         self.delta = json.dumps(d)
 
     def set_context(self, context):
-        self.context = context
+        self.context = json.dumps(context)
         d = json.loads(self.delta)
         d['context'] = context
         self.delta = json.dumps(d)
@@ -608,18 +608,28 @@ class JobFactory(object):
                 hosts=hosts,
                 job=job
                 )
+        all_users = list(booking.collaborators.all())
+        all_users.append(booking.owner)
         cls.makeAccessConfig(
-                users=booking.collaborators.all(),
+                users=all_users,
                 access_type="vpn",
                 revoke=False,
                 job=job
                 )
-        cls.makeAccessConfig(
-                users=[booking.owner],
-                access_type="vpn",
-                revoke=False,
-                job=job
-                )
+        for user in all_users:
+            try:
+                cls.makeAccessConfig(
+                        users=[user],
+                        access_type="ssh",
+                        revoke=False,
+                        job=job,
+                        context={
+                            "key": user.userprofile.ssh_public_key.read(),
+                            "hosts": [host.labid for host in hosts]
+                            }
+                        )
+            except Exception:
+                continue
 
     @classmethod
     def makeHardwareConfigs(cls, hosts=[], job=Job()):
@@ -646,13 +656,15 @@ class JobFactory(object):
             hardware_config.save()
 
     @classmethod
-    def makeAccessConfig(cls, users, access_type, revoke=False, job=Job()):
+    def makeAccessConfig(cls, users, access_type, revoke=False, job=Job(), context=False):
         for user in users:
             relation = AccessRelation()
             relation.job = job
             config = AccessConfig()
             config.access_type = access_type
             config.user = user
+            if context:
+                config.set_context(context)
             config.save()
             relation.config = config
             relation.save()
@@ -709,6 +721,3 @@ class JobFactory(object):
             return software_relation
         except:
             return None
-
-    def makeAccess(cls, user, access_type, revoke):
-        pass
