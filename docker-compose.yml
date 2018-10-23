@@ -33,8 +33,8 @@ services:
             - postgres
         env_file: config.env
         volumes:
-            - pharos-static:/pharos_dashboard/static/
-            - pharos-media:/pharos_dashboard/media/
+            - pharos-static:/static
+            - pharos-media:/media
         expose:
             - "8000"
 
