@@ -43,7 +43,7 @@ def booking_poll():
             network.clear_delta()
             vlans = []
             for interface in host.interfaces.all():
-                for vlan in interface.config:
+                for vlan in interface.config.all():
                     if vlan.public:
                         try:
                             host.lab.vlan_manager.release_public_vlan(vlan.vlan_id)
