@@ -94,8 +94,7 @@ def specific_task(request, lab_name="", job_id="", task_id=""):
         m['job'] = str(task.job)
         m['message'] = task.message
         d['meta'] = m
-        response = json.dumps(d)
-        return JsonResponse(response)
+        return JsonResponse(d, safe=False)
     elif request.method == "GET":
         return JsonResponse(get_task(task_id).config.get_delta())
 
