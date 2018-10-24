@@ -11,13 +11,6 @@
 from rest_framework import serializers
 
 from account.models import UserProfile
-from notifier.models import Notifier
-
-
-class NotifierSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Notifier
-        fields = ('id', 'title', 'content', 'user', 'sender', 'message_type', 'msg_sent')
 
 
 class UserSerializer(serializers.ModelSerializer):

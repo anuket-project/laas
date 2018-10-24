@@ -14,8 +14,6 @@ from django.shortcuts import render
 from django.contrib import messages
 
 import yaml
-import json
-import traceback
 import requests
 
 from workflow.forms import ConfirmationForm
@@ -23,6 +21,7 @@ from api.models import *
 from dashboard.exceptions import *
 from resource_inventory.models import *
 from resource_inventory.resource_manager import ResourceManager
+from notifier.manager import NotificationHandler
 
 
 class BookingAuthManager():
@@ -282,6 +281,9 @@ class Repository():
             errors = self.make_booking()
             if errors:
                 return errors
+            # create notification
+            booking = self.el[self.BOOKING_MODELS]['booking']
+            NotificationHandler.notify_new_booking(booking)
 
 
     def make_snapshot(self):
@@ -464,7 +466,6 @@ class Repository():
 
         for collaborator in collaborators:
             booking.collaborators.add(collaborator)
-
 
         try:
             JobFactory.makeCompleteJob(booking)

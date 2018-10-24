@@ -32,7 +32,6 @@ from api.views import *
 
 router = routers.DefaultRouter()
 router.register(r'bookings', BookingViewSet)
-router.register(r'notifier', NotifierViewSet)
 router.register(r'user', UserViewSet)
 
 urlpatterns = [

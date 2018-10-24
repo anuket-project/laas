@@ -13,15 +13,9 @@ from celery import shared_task
 from django.utils import timezone
 from django.db.models import Q
 from booking.models import Booking
-from notifier.manager import *
-from notifier.models import *
+from notifier.manager import NotificationHandler
 from api.models import *
 from resource_inventory.resource_manager import ResourceManager
-
-
-@shared_task
-def conjure_aggregate_notifiers():
-    NotifyPeriodic.task()
 
 
 @shared_task
@@ -86,6 +80,7 @@ def booking_poll():
             cleanup_access(AccessRelation.objects.filter(job=job))
             job.complete = True
             job.save()
+            NotificationHandler.notify_booking_end(booking)
 
 
 @shared_task
