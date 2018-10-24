@@ -40,7 +40,7 @@ services:
 
     postgres:
         restart: always
-        image: postgres:latest
+        image: postgres:10
         container_name: ps01
         env_file: config.env
         volumes:
