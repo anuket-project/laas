@@ -3,7 +3,7 @@
 
 <thead>
 <tr>
-    <th>User</th>
+    <th>Owner</th>
     <th>Purpose</th>
     <th>Start</th>
     <th>End</th>
@@ -16,7 +16,7 @@
 {% for booking in bookings %}
     <tr>
         <td>
-            {{ booking.user.username }}
+            {{ booking.owner.username }}
         </td>
         <td>
             {{ booking.purpose }}
