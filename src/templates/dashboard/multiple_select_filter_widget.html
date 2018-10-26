@@ -337,6 +337,7 @@ function add_item_prepopulate(node, prepopulate){
     button.appendChild(document.createTextNode("Remove"));
     div.appendChild(button);
     document.getElementById("dropdown_wrapper").appendChild(div);
+    updateObjectResult(div);
     return div;
 }
 
