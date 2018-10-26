@@ -103,6 +103,10 @@ def booking_detail_view(request, booking_id):
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
 
     booking = get_object_or_404(Booking, id=booking_id)
+    allowed_users = set(list(booking.collaborators.all()))
+    allowed_users.add(booking.owner)
+    if user not in allowed_users:
+        return render(request, "dashboard/login.html", {'title': 'This page is private'})
     return render(request, "booking/booking_detail.html", {
         'title': 'Booking Details',
         'booking': booking,
