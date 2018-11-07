@@ -1,0 +1,21 @@
+{{user_name|default:"Developer"}},
+
+The booking you requested of the OPNFV Lab as a Service has ended.
+
+booking information:
+    start: {{booking.start}}
+    end: {{booking.end}}
+    machines:
+        {% for host in hosts %}
+        - {{host}}
+        {% endfor %}
+    purpose: {{booking.purpose}}
+
+You may visit the following link for more information:
+{{booking_url}}
+
+Feel free to create another booking with us!
+
+Thank you for contributing to the OPNFV platform!
+
+    - The Lab-as-a-Service team

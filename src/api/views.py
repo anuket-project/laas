@@ -21,22 +21,17 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 
 from api.serializers.booking_serializer import *
-from api.serializers.old_serializers import NotifierSerializer, UserSerializer
+from api.serializers.old_serializers import UserSerializer
 from account.models import UserProfile
 from booking.models import Booking
-from notifier.models import Notifier
 from api.models import *
+from notifier.manager import NotificationHandler
 
 
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     filter_fields = ('resource', 'id')
-
-
-class NotifierViewSet(viewsets.ModelViewSet):
-    queryset = Notifier.objects.none()
-    serializer_class = NotifierSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -87,6 +82,7 @@ def specific_task(request, lab_name="", job_id="", task_id=""):
         if 'message' in request.POST:
             task.message = request.POST.get('message')
         task.save()
+        NotificationHandler.task_updated(task)
         d = {}
         d['task'] = task.config.get_delta()
         m = {}

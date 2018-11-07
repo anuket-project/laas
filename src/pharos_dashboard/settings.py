@@ -194,10 +194,6 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.free_hosts',
         'schedule': timedelta(minutes=1)
     },
-    'conjure_notifiers': {
-    'task': 'dashboard.tasks.conjure_aggregate_notifiers',
-    'schedule': timedelta(seconds=30)
-    },
 }
 
 # Notifier Settings

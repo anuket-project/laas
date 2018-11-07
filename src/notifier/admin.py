@@ -9,8 +9,6 @@
 
 from django.contrib import admin
 
-from notifier.models import *
+from notifier.models import Notification
 
-admin.site.register(Notifier)
-admin.site.register(MetaBooking)
-admin.site.register(LabMessage)
+admin.site.register(Notification)

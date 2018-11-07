@@ -1,0 +1,34 @@
+<html>
+    <body>
+        <div id="message_content_wrapper">
+            {% if owner %}
+            <h3>You have created a new booking</h3>
+            <p>We have recieved your booking request and will start working on it right away.</p>
+            {% else %}
+            <h3>You have been added as a collaborator to a booking</h3>
+            <p>{{booking.owner.username}} has given you access to thier booking.</p>
+            {% endif %}
+            <p>Booking information:</p>
+            <ul>
+                <li>owner: {{booking.owner.username}}</li>
+                <li>id: {{booking.id}}</li>
+                <li>lab: {{booking.resource.template.lab.lab_user.username}}</li>
+                <li>resource: {{booking.resource.template.name}}</li>
+                <li>start: {{booking.start}}</li>
+                <li>end: {{booking.end}}</li>
+                <li>purpose: {{booking.purpose}}</li>
+                <li>collaborators:
+                    <ul>
+                        {% for user in booking.collaborators.all %}
+                        <li>user.username</li>
+                        {% empty %}
+                        <li>No collaborators</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            </ul>
+
+            <p>You can find more detailed information <a href=/booking/detail/{{booking.id/>Here</a></p>
+        </div>
+    </body>
+</html>

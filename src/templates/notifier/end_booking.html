@@ -1,0 +1,36 @@
+<html>
+    <body>
+        <div id="message_content_wrapper">
+            {% if owner %}
+            <h3>Your booking has expired</h3>
+            <p>Your booking has ended and the machines have been cleaned up.</p>
+            <p>Thank you for working on OPNFV, and feel free to book more machines if you need them.</p>
+            {% else %}
+            <h3>A booking that you collaborated on has expired</h3>
+            <p>The booking owned by {{booking.owner.username}} that you worked on has ended</p>
+            <p>Thank you for contributing to OPNFV!</p>
+            {% endif %}
+            <p>Booking information:</p>
+            <ul>
+                <li>owner: {{booking.owner.username}}</li>
+                <li>id: {{booking.id}}</li>
+                <li>lab: {{booking.resource.template.lab.lab_user.username}}</li>
+                <li>resource: {{booking.resource.template.name}}</li>
+                <li>start: {{booking.start}}</li>
+                <li>end: {{booking.end}}</li>
+                <li>purpose: {{booking.purpose}}</li>
+                <li>collaborators:
+                    <ul>
+                        {% for user in booking.collaborators.all %}
+                        <li>user.username</li>
+                        {% empty %}
+                        <li>No collaborators</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            </ul>
+
+            <p>You can find more detailed information <a href=/booking/detail/{{booking.id/>Here</a></p>
+        </div>
+    </body>
+</html>

@@ -7,8 +7,9 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-from notifier.models import *
+from notifier.models import Notification
 from django.shortcuts import render
+
 
 def InboxView(request):
     if request.user.is_authenticated:
@@ -16,19 +17,17 @@ def InboxView(request):
     else:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
 
-    return render(request, "notifier/inbox.html", {'notifier_messages': Notifier.objects.filter(user=user.userprofile)})
+    return render(request, "notifier/inbox.html", {'notifications': Notification.objects.filter(recipient=user.userprofile)})
 
 
 def NotificationView(request, notification_id):
-    if notification_id == 0:
-        pass
     if request.user.is_authenticated:
         user = request.user
     else:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
 
-    notification = Notifier.objects.get(id=notification_id)
-    if not notification.user.user.username == user.username:
+    notification = Notification.objects.get(id=notification_id)
+    if user not in notification.recipients:
         return render(request, "dashboard/login.html", {'title': 'Access Denied'})
 
     return render(request, "notifier/notification.html", {'notification': notification})

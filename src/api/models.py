@@ -217,6 +217,18 @@ class Job(models.Model):
                 tasklist += list(cls.objects.filter(job=self).filter(status=status))
         return tasklist
 
+    def is_fulfilled(self):
+        """
+        This method should return true if all of the job's tasks are done,
+        and false otherwise
+        """
+        my_tasks = self.get_tasklist()
+        for task in my_tasks:
+            if task.status != JobStatus.DONE:
+                return False
+        return True
+
+
     def get_delta(self, status):
         d = {}
         j = {}

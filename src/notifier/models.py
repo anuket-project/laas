@@ -8,44 +8,16 @@
 ##############################################################################
 
 from django.db import models
-from booking.models import Booking
 from account.models import UserProfile
-from fernet_fields import EncryptedTextField
-from account.models import Lab
 
 
-class MetaBooking(models.Model):
-    id = models.AutoField(primary_key=True)
-    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name="metabooking")
-    ending_notified = models.BooleanField(default=False)
-    ended_notified = models.BooleanField(default=False)
-    created_notified = models.BooleanField(default=False)
-
-
-class LabMessage(models.Model):
-    lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
-    msg = models.TextField()  # django template should be put here
-
-
-class Notifier(models.Model):
-    id = models.AutoField(primary_key=True)
-    title = models.CharField(max_length=240)
-    content = EncryptedTextField()
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, null=True, blank=True)
-    sender = models.CharField(max_length=240, default='unknown')
-    message_type = models.CharField(max_length=240, default='email', choices=(
-        ('email', 'Email'),
-        ('webnotification', 'Web Notification')))
-    msg_sent = ''
+class Notification(models.Model):
+    title = models.CharField(max_length=150)
+    content = models.TextField()
+    recipients = models.ManyToManyField(UserProfile)
 
     def __str__(self):
         return self.title
 
-    """
-    Implement for next PR: send Notifier by media agreed to by user
-    """
-    def send(self):
-        pass
-
-    def getEmail(self):
-        return self.user.email_addr
+    def to_preview_html(self):
+        return "<h3>" + self.title + "</h3>"  # TODO - template?
