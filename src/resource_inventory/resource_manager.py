@@ -15,7 +15,7 @@ from dashboard.exceptions import (
     ResourceExistenceException,
     ResourceAvailabilityException,
     ResourceProvisioningException,
-    ModelValidationException
+    ModelValidationException,
 )
 from resource_inventory.models import Host, HostConfiguration, ResourceBundle
 

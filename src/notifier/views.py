@@ -17,7 +17,7 @@ def InboxView(request):
     else:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
 
-    return render(request, "notifier/inbox.html", {'notifications': Notification.objects.filter(recipient=user.userprofile)})
+    return render(request, "notifier/inbox.html", {'notifications': Notification.objects.filter(recipients=user.userprofile)})
 
 
 def NotificationView(request, notification_id):
@@ -27,7 +27,7 @@ def NotificationView(request, notification_id):
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
 
     notification = Notification.objects.get(id=notification_id)
-    if user not in notification.recipients:
+    if user.userprofile not in notification.recipients.all():
         return render(request, "dashboard/login.html", {'title': 'Access Denied'})
 
     return render(request, "notifier/notification.html", {'notification': notification})

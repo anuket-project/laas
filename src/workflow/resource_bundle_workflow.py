@@ -35,7 +35,8 @@ from dashboard.exceptions import (
     InvalidVlanConfigurationException,
     NetworkExistsException,
     InvalidHostnameException,
-    NonUniqueHostnameException
+    NonUniqueHostnameException,
+    ResourceAvailabilityException
 )
 
 import logging
@@ -233,6 +234,8 @@ class Define_Nets(WorkflowStep):
             self.updateModels(xmlData)
             # update model with xml
             self.metastep.set_valid("Networks applied successfully")
+        except ResourceAvailabilityException:
+            self.metastep.set_invalid("Public network not availble")
         except Exception:
             self.metastep.set_invalid("An error occurred when applying networks")
         return self.render(request)
@@ -261,6 +264,9 @@ class Define_Nets(WorkflowStep):
                     vlan_id = network['network']['vlan']
                     is_public = network['network']['public']
                     if is_public:
+                        public_net = vlan_manager.get_public_vlan()
+                        if public_net is None:
+                            raise ResourceAvailabilityException("No public networks available")
                         vlan_id = vlan_manager.get_public_vlan().vlan
                     vlan = Vlan(vlan_id=vlan_id, tagged=network['tagged'], public=is_public)
                     models['vlans'][existing_host.resource.name][iface['profile_name']].append(vlan)

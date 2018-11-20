@@ -45,7 +45,7 @@ class NotificationHandler(object):
                 }
             )
         )
-        owner_notif.recipients.add(booking.owner)
+        owner_notif.recipients.add(booking.owner.userprofile)
         if not booking.collaborators.all().exists():
             return  # no collaborators - were done
 
@@ -60,7 +60,7 @@ class NotificationHandler(object):
             )
         )
         for c in booking.collaborators.all():
-            collab_notif.recipients.add(c)
+            collab_notif.recipients.add(c.userprofile)
 
     @classmethod
     def email_job_fulfilled(cls, job):

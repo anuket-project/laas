@@ -69,7 +69,15 @@ class Define_Software(WorkflowStep):
         user = self.repo_get(self.repo.SESSION_USER)
         i = 0
         for host_data in hosts_initial:
-            host = GenericHost.objects.get(pk=host_data['host_id'])
+            host_profile = None
+            try:
+                host = GenericHost.objects.get(pk=host_data['host_id'])
+                host_profile = host.profile
+            except Exception:
+                for host in hostlist:
+                    if host.resource.name == host_data['host_name']:
+                        host_profile = host.profile
+                        break
             excluded_images = Image.objects.exclude(owner=user).exclude(public=True)
             excluded_images = excluded_images | Image.objects.exclude(host_type=host.profile)
             lab = self.repo_get(self.repo.SWCONF_SELECTED_GRB).lab

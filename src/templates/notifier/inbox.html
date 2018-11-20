@@ -56,7 +56,7 @@
 <div class="inbox-panel">
   <div class="section-panel">
     <div class="card-container">
-      {% for notification in notifier_messages  %}
+      {% for notification in notifications  %}
         <div class="inbox-entry card" onclick="showmessage({{notification.id}}); setactive(this);">
           {{ notification }}
         </div>
