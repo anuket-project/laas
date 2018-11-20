@@ -8,13 +8,13 @@
 ##############################################################################
 
 
-from django.conf.urls import url, include
+from django.conf.urls import url
 from django.conf import settings
 
-from workflow.views import *
-from workflow.models import *
-from workflow.resource_bundle_workflow import *
-from workflow.booking_workflow import *
+from workflow.views import step_view, delete_session, manager_view, viewport_view
+from workflow.models import Repository
+from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
+from workflow.booking_workflow import SWConfig_Select, Resource_Select, Booking_Meta
 
 app_name = 'workflow'
 urlpatterns = [

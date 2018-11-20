@@ -16,9 +16,27 @@ import re
 from xml.dom import minidom
 
 from workflow.models import WorkflowStep
-from workflow.forms import *
-from resource_inventory.models import *
-from dashboard.exceptions import *
+from account.models import Lab
+from workflow.forms import (
+    HardwareDefinitionForm,
+    NetworkDefinitionForm,
+    ResourceMetaForm,
+    GenericHostMetaForm
+)
+from resource_inventory.models import (
+    GenericResourceBundle,
+    Vlan,
+    GenericInterface,
+    GenericHost,
+    GenericResource,
+    HostProfile
+)
+from dashboard.exceptions import (
+    InvalidVlanConfigurationException,
+    NetworkExistsException,
+    InvalidHostnameException,
+    NonUniqueHostnameException
+)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -30,6 +48,7 @@ class Define_Hardware(WorkflowStep):
     title = "Define Hardware"
     description = "Choose the type and amount of machines you want"
     short_title = "hosts"
+
     def get_context(self):
         context = super(Define_Hardware, self).get_context()
         selection_data = {"hosts": {}, "labs": {}}
@@ -45,15 +64,14 @@ class Define_Hardware(WorkflowStep):
             selection_data['labs'] = {"lab_" + str(models.get("bundle").lab.lab_user.id): "true"}
 
         form = HardwareDefinitionForm(
-                selection_data=selection_data
-                )
+            selection_data=selection_data
+        )
         context['form'] = form
         return context
 
     def render(self, request):
         self.context = self.get_context()
         return render(request, self.template, self.context)
-
 
     def update_models(self, data):
         data = json.loads(data['filter_field'])
@@ -90,11 +108,10 @@ class Define_Hardware(WorkflowStep):
             if list(lab_dict.values())[0]:  # True for lab the user selected
                 lab_user_id = int(list(lab_dict.keys())[0].split("_")[-1])
                 models['bundle'].lab = Lab.objects.get(lab_user__id=lab_user_id)
-                break # if somehow we get two 'true' labs, we only use one
+                break  # if somehow we get two 'true' labs, we only use one
 
         # return to repo
         self.repo_put(self.repo.GRESOURCE_BUNDLE_MODELS, models)
-
 
     def update_confirmation(self):
         confirm = self.repo_get(self.repo.CONFIRMATION, {})
@@ -108,7 +125,6 @@ class Define_Hardware(WorkflowStep):
         if "lab" in models:
             confirm['resource']['lab'] = models['lab'].lab_user.username
         self.repo_put(self.repo.CONFIRMATION, confirm)
-
 
     def post_render(self, request):
         try:
@@ -124,6 +140,7 @@ class Define_Hardware(WorkflowStep):
             self.metastep.set_invalid(str(e))
         self.context = self.get_context()
         return render(request, self.template, self.context)
+
 
 class Define_Nets(WorkflowStep):
     template = 'resource/steps/pod_definition.html'
@@ -147,7 +164,7 @@ class Define_Nets(WorkflowStep):
             vlans = lab.vlan_manager.get_vlan(count=lab.vlan_manager.block_size)
             self.repo_put(self.repo.VLANS, vlans)
             return vlans
-        except Exception as e:
+        except Exception:
             return None
 
     def get_context(self):
@@ -165,7 +182,7 @@ class Define_Nets(WorkflowStep):
             added_list = []
             added_dict = {}
             context['added_hosts'] = []
-            if not hostlist is None:
+            if hostlist is not None:
                 new_hostlist = []
                 for host in models['hosts']:
                     intcount = host.profile.interfaceprofile.count()
@@ -181,9 +198,12 @@ class Define_Nets(WorkflowStep):
                 host['id'] = generic_host.resource.name
                 host['interfaces'] = []
                 for iface in host_profile.interfaceprofile.all():
-                    host['interfaces'].append({
+                    host['interfaces'].append(
+                        {
                             "name": iface.name,
-                            "description": "speed: " + str(iface.speed) + "M\ntype: " + iface.nic_type})
+                            "description": "speed: " + str(iface.speed) + "M\ntype: " + iface.nic_type
+                        }
+                    )
                 host['value'] = {"name": generic_host.resource.name}
                 host['value']['description'] = generic_host.profile.description
                 context['hosts'].append(json.dumps(host))
@@ -195,8 +215,9 @@ class Define_Nets(WorkflowStep):
             else:
                 context['xml'] = False
 
-        except Exception as e:
+        except Exception:
             pass
+
         return context
 
     def post_render(self, request):
@@ -212,7 +233,7 @@ class Define_Nets(WorkflowStep):
             self.updateModels(xmlData)
             # update model with xml
             self.metastep.set_valid("Networks applied successfully")
-        except Exception as e:
+        except Exception:
             self.metastep.set_invalid("An error occurred when applying networks")
         return self.render(request)
 
@@ -222,7 +243,7 @@ class Define_Nets(WorkflowStep):
         given_hosts, interfaces = self.parseXml(xmlData)
         vlan_manager = models['bundle'].lab.vlan_manager
         existing_host_list = models.get("hosts", [])
-        existing_hosts = {} # maps id to host
+        existing_hosts = {}  # maps id to host
         for host in existing_host_list:
             existing_hosts[host.resource.name] = host
 
@@ -233,7 +254,6 @@ class Define_Nets(WorkflowStep):
 
             for ifaceId in given_host['interfaces']:
                 iface = interfaces[ifaceId]
-                iface_profile = existing_host.profile.interfaceprofile.get(name=iface['profile_name'])
                 if existing_host.resource.name not in models['vlans']:
                     models['vlans'][existing_host.resource.name] = {}
                 models['vlans'][existing_host.resource.name][iface['profile_name']] = []
@@ -255,14 +275,13 @@ class Define_Nets(WorkflowStep):
         interfaces = {}  # maps id -> interface
         xmlDom = minidom.parseString(xmlString)
         root = xmlDom.documentElement.firstChild
-        connections = []
         netids = {}
         untagged_ints = {}
         for cell in root.childNodes:
             cellId = cell.getAttribute('id')
 
             if cell.getAttribute("edge"):
-                #cell is a network connection
+                # cell is a network connection
                 escaped_json_str = cell.getAttribute("value")
                 json_str = escaped_json_str.replace('&quot;', '"')
                 attributes = json.loads(json_str)
@@ -272,15 +291,15 @@ class Define_Nets(WorkflowStep):
                 src = cell.getAttribute("source")
                 tgt = cell.getAttribute("target")
                 if src in parent_nets:
-                    #src is a network port
+                    # src is a network port
                     network = networks[parent_nets[src]]
-                    if tgt in untagged_ints and tagged==False:
+                    if tgt in untagged_ints and not tagged:
                         raise InvalidVlanConfigurationException("More than one untagged vlan on an interface")
                     interface = interfaces[tgt]
                     untagged_ints[tgt] = True
                 else:
                     network = networks[parent_nets[tgt]]
-                    if src in untagged_ints and tagged==False:
+                    if src in untagged_ints and not tagged:
                         raise InvalidVlanConfigurationException("More than one untagged vlan on an interface")
                     interface = interfaces[src]
                     untagged_ints[src] = True
@@ -296,7 +315,7 @@ class Define_Nets(WorkflowStep):
                     int_netid = int(nid)
                     assert public or int_netid > 1, "Net id is 1 or lower"
                     assert int_netid < 4095, "Net id is 4095 or greater"
-                except Exception as e:
+                except Exception:
                     raise InvalidVlanConfigurationException("VLAN ID is not an integer more than 1 and less than 4095")
                 if nid in netids:
                     raise NetworkExistsException("Non unique network id found")
@@ -307,7 +326,7 @@ class Define_Nets(WorkflowStep):
                 networks[cellId] = network
 
             elif "host" in cellId:  # cell is a host/machine
-                #TODO gather host info
+                # TODO gather host info
                 cell_json_str = cell.getAttribute("value")
                 cell_json = json.loads(cell_json_str)
                 host = {"interfaces": [], "name": cellId, "profile_name": cell_json['name']}
@@ -318,7 +337,7 @@ class Define_Nets(WorkflowStep):
                 if "network" in parentId:
                     parent_nets[cellId] = parentId
                 elif "host" in parentId:
-                    #TODO gather iface info
+                    # TODO gather iface info
                     cell_json_str = cell.getAttribute("value")
                     cell_json = json.loads(cell_json_str)
                     iface = {"name": cellId, "networks": [], "profile_name": cell_json['name']}

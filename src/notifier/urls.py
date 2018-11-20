@@ -10,12 +10,10 @@
 
 from django.conf.urls import url
 
-from notifier.views import *
+from notifier.views import InboxView, NotificationView
 
 app_name = "notifier"
 urlpatterns = [
-
-
     url(r'^$', InboxView, name='messages'),
-    url(r'^notification/(?P<notification_id>[0-9]+)/$', NotificationView,  name='notifier_single')
+    url(r'^notification/(?P<notification_id>[0-9]+)/$', NotificationView, name='notifier_single')
 ]

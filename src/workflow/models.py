@@ -8,8 +8,6 @@
 ##############################################################################
 
 
-from django.contrib.auth.models import User
-from django.db import models
 from django.shortcuts import render
 from django.contrib import messages
 
@@ -17,11 +15,12 @@ import yaml
 import requests
 
 from workflow.forms import ConfirmationForm
-from api.models import *
-from dashboard.exceptions import *
-from resource_inventory.models import *
+from api.models import JobFactory
+from dashboard.exceptions import ResourceAvailabilityException, ModelValidationException
+from resource_inventory.models import Image, GenericInterface
 from resource_inventory.resource_manager import ResourceManager
 from notifier.manager import NotificationHandler
+from booking.models import Booking
 
 
 class BookingAuthManager():
@@ -52,9 +51,8 @@ class BookingAuthManager():
                 return None
             return ptl
 
-        except Exception as e:
+        except Exception:
             return None
-
 
     def booking_allowed(self, booking, repo):
         """
@@ -64,14 +62,13 @@ class BookingAuthManager():
         which is checked using the provided info file
         """
         if len(booking.resource.template.getHosts()) < 2:
-            return True  #if they only have one server, we dont care
+            return True  # if they only have one server, we dont care
         if booking.owner.userprofile.booking_privledge:
             return True  # admin override for this user
         if repo.BOOKING_INFO_FILE not in repo.el:
             return False  # INFO file not provided
         ptl_info = self.parse_url(repo.BOOKING_INFO_FILE)
-        return ptl_info and  ptl_info == booking.owner.userprofile.email_addr
-
+        return ptl_info and ptl_info == booking.owner.userprofile.email_addr
 
 
 class WorkflowStep(object):
@@ -116,6 +113,7 @@ class WorkflowStep(object):
     def repo_put(self, key, value):
         return self.repo.put(key, value, self.id)
 
+
 class Confirmation_Step(WorkflowStep):
     template = 'workflow/confirm.html'
     title = "Confirm Changes"
@@ -140,14 +138,13 @@ class Confirmation_Step(WorkflowStep):
                             return 1  # There is a problem with these vlans
         return 0
 
-
     def get_context(self):
         context = super(Confirmation_Step, self).get_context()
         context['form'] = ConfirmationForm()
         context['confirmation_info'] = yaml.dump(
-                self.repo_get(self.repo.CONFIRMATION),
-                default_flow_style=False
-                ).strip()
+            self.repo_get(self.repo.CONFIRMATION),
+            default_flow_style=False
+        ).strip()
         context['vlan_warning'] = self.get_vlan_warning()
 
         return context
@@ -211,6 +208,7 @@ class Workflow():
     steps = []
     active_index = 0
 
+
 class Repository():
 
     EDIT = "editing"
@@ -240,12 +238,11 @@ class Repository():
     SNAPSHOT_DESC = "description of the snapshot"
     BOOKING_INFO_FILE = "the INFO.yaml file for this user's booking"
 
-
     def get(self, key, default, id):
         self.add_get_history(key, id)
         return self.el.get(key, default)
 
-    def put(self,key,val, id):
+    def put(self, key, val, id):
         self.add_put_history(key, id)
         self.el[key] = val
 
@@ -256,7 +253,7 @@ class Repository():
         self.add_history(key, id, self.put_history)
 
     def add_history(self, key, id, history):
-        if not key in history:
+        if key not in history:
             history[key] = [id]
         else:
             history[key].append(id)
@@ -266,7 +263,7 @@ class Repository():
             errors = self.make_snapshot()
             if errors:
                 return errors
-        #if GRB WF, create it
+        # if GRB WF, create it
         if self.GRESOURCE_BUNDLE_MODELS in self.el:
             errors = self.make_generic_resource_bundle()
             if errors:
@@ -284,7 +281,6 @@ class Repository():
             # create notification
             booking = self.el[self.BOOKING_MODELS]['booking']
             NotificationHandler.notify_new_booking(booking)
-
 
     def make_snapshot(self):
         owner = self.el[self.SESSION_USER]
@@ -309,7 +305,6 @@ class Repository():
         image.owner = owner
         image.host_type = host.profile
         image.save()
-
 
     def make_generic_resource_bundle(self):
         owner = self.el[self.SESSION_USER]
@@ -354,10 +349,10 @@ class Repository():
                 for resource_name, mapping in models['vlans'].items():
                     for profile_name, vlan_set in mapping.items():
                         interface = GenericInterface.objects.get(
-                                profile__name=profile_name,
-                                host__resource__name=resource_name,
-                                host__resource__bundle=models['bundle']
-                                )
+                            profile__name=profile_name,
+                            host__resource__name=resource_name,
+                            host__resource__bundle=models['bundle']
+                        )
                         for vlan in vlan_set:
                             try:
                                 vlan.save()
@@ -367,16 +362,13 @@ class Repository():
             else:
                 return "GRB, no vlan set provided. CODE:0x0018"
 
-
         else:
             return "GRB no models given. CODE:0x0001"
 
         self.el[self.VALIDATED_MODEL_GRB] = bundle
         return False
 
-
     def make_software_config_bundle(self):
-        owner = self.el[self.SESSION_USER]
         models = self.el[self.CONFIG_MODELS]
         if 'bundle' in models:
             bundle = models['bundle']
@@ -402,7 +394,7 @@ class Repository():
         if 'opnfv' in models:
             opnfvconfig = models['opnfv']
             opnfvconfig.bundle = opnfvconfig.bundle
-            if not opnfvconfig.scenario in opnfvconfig.installer.sup_scenarios.all():
+            if opnfvconfig.scenario not in opnfvconfig.installer.sup_scenarios.all():
                 return "SWC, scenario not supported by installer. CODE:0x000d"
             try:
                 opnfvconfig.save()
@@ -413,7 +405,6 @@ class Repository():
 
         self.el[self.VALIDATED_MODEL_CONFIG] = bundle
         return False
-
 
     def make_booking(self):
         models = self.el[self.BOOKING_MODELS]
@@ -498,9 +489,8 @@ class Repository():
             vlan_manager.reserve_vlans(vlans)
             vlan_manager.reserve_public_vlan(public_vlan.vlan_id)
             return True
-        except Exception as e:
+        except Exception:
             return False
-
 
     def __init__(self):
         self.el = {}

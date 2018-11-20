@@ -11,11 +11,22 @@
 from django.apps import AppConfig
 from django.contrib import admin
 
-from api.models import *
+from api.models import (
+    Job,
+    OpnfvApiConfig,
+    HardwareConfig,
+    NetworkConfig,
+    SoftwareConfig,
+    AccessRelation,
+    SoftwareRelation,
+    HostHardwareRelation,
+    HostNetworkRelation,
+)
 
 
 class ApiConfig(AppConfig):
     name = 'apiJobs'
+
 
 admin.site.register(Job)
 admin.site.register(OpnfvApiConfig)

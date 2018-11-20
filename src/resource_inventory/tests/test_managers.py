@@ -12,7 +12,20 @@ from django.contrib.auth.models import User
 
 from resource.inventory_manager import InventoryManager
 from resource.resource_manager import ResourceManager
-from resource.models import *
+from account.models import Lab
+from resource.models import (
+    Host,
+    Vlan,
+    Interface,
+    ResourceBundle,
+    GenericHost,
+    GenericResourceBundle,
+    CpuProfile,
+    RamProfile,
+    DiskProfile,
+    HostProfile,
+    InterfaceProfile
+)
 
 
 class InventoryManagerTestCase(TestCase):
@@ -39,30 +52,30 @@ class InventoryManagerTestCase(TestCase):
             name='Test profile',
             description='a test profile'
         )
-        interfaceProfile = InterfaceProfile.objects.create(
+        InterfaceProfile.objects.create(
             speed=1000,
             name='eno3',
             host=hostProfile
         )
-        diskProfile = DiskProfile.objects.create(
+        DiskProfile.objects.create(
             size=1000,
             media_type="SSD",
             name='/dev/sda',
             host=hostProfile
         )
-        cpuProfile = CpuProfile.objects.create(
+        CpuProfile.objects.create(
             cores=96,
             architecture="x86_64",
             cpus=2,
             host=hostProfile
         )
-        ramProfile = RamProfile.objects.create(
+        RamProfile.objects.create(
             amount=256,
             channels=4,
             host=hostProfile
         )
 
-        #create GenericResourceBundle
+        # create GenericResourceBundle
         genericBundle = GenericResourceBundle.objects.create()
 
         self.gHost1 = GenericHost.objects.create(
@@ -76,7 +89,7 @@ class InventoryManagerTestCase(TestCase):
             profile=hostProfile
         )
 
-        #actual resource bundle
+        # actual resource bundle
         bundle = ResourceBundle.objects.create(template=genericBundle)
 
         self.host1 = Host.objects.create(
@@ -100,7 +113,7 @@ class InventoryManagerTestCase(TestCase):
         vlan1 = Vlan.objects.create(vlan_id=300, tagged=False)
         vlan2 = Vlan.objects.create(vlan_id=300, tagged=False)
 
-        iface1 = Interface.objects.create(
+        Interface.objects.create(
             mac_address='00:11:22:33:44:55',
             bus_address='some bus address',
             switch_name='switch1',
@@ -108,7 +121,7 @@ class InventoryManagerTestCase(TestCase):
             config=vlan1,
             host=self.host1
         )
-        iface2 = Interface.objects.create(
+        Interface.objects.create(
             mac_address='00:11:22:33:44:56',
             bus_address='some bus address',
             switch_name='switch1',
@@ -153,30 +166,30 @@ class ResourceManagerTestCase(TestCase):
             name='Test profile',
             description='a test profile'
         )
-        interfaceProfile = InterfaceProfile.objects.create(
+        InterfaceProfile.objects.create(
             speed=1000,
             name='eno3',
             host=hostProfile
         )
-        diskProfile = DiskProfile.objects.create(
+        DiskProfile.objects.create(
             size=1000,
             media_type="SSD",
             name='/dev/sda',
             host=hostProfile
         )
-        cpuProfile = CpuProfile.objects.create(
+        CpuProfile.objects.create(
             cores=96,
             architecture="x86_64",
             cpus=2,
             host=hostProfile
         )
-        ramProfile = RamProfile.objects.create(
+        RamProfile.objects.create(
             amount=256,
             channels=4,
             host=hostProfile
         )
 
-        #create GenericResourceBundle
+        # create GenericResourceBundle
         genericBundle = GenericResourceBundle.objects.create()
 
         self.gHost1 = GenericHost.objects.create(
@@ -190,7 +203,7 @@ class ResourceManagerTestCase(TestCase):
             profile=hostProfile
         )
 
-        #actual resource bundle
+        # actual resource bundle
         bundle = ResourceBundle.objects.create(template=genericBundle)
 
         self.host1 = Host.objects.create(
@@ -214,7 +227,7 @@ class ResourceManagerTestCase(TestCase):
         vlan1 = Vlan.objects.create(vlan_id=300, tagged=False)
         vlan2 = Vlan.objects.create(vlan_id=300, tagged=False)
 
-        iface1 = Interface.objects.create(
+        Interface.objects.create(
             mac_address='00:11:22:33:44:55',
             bus_address='some bus address',
             switch_name='switch1',
@@ -222,7 +235,7 @@ class ResourceManagerTestCase(TestCase):
             config=vlan1,
             host=self.host1
         )
-        iface2 = Interface.objects.create(
+        Interface.objects.create(
             mac_address='00:11:22:33:44:56',
             bus_address='some bus address',
             switch_name='switch1',
@@ -232,5 +245,5 @@ class ResourceManagerTestCase(TestCase):
         )
 
     def test_convert_bundle(self):
-        bundle = ResourceManager.getInstance().convertResoureBundle(self.genericBundle, self.lab.name)
+        ResourceManager.getInstance().convertResoureBundle(self.genericBundle, self.lab.name)
         # verify bundle configuration

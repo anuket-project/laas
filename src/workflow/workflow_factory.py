@@ -8,29 +8,32 @@
 ##############################################################################
 
 
-from workflow.booking_workflow import *
-from workflow.resource_bundle_workflow import *
-from workflow.sw_bundle_workflow import *
-from workflow.snapshot_workflow import *
-from workflow.models import Workflow, Repository
+from workflow.booking_workflow import Booking_Resource_Select, SWConfig_Select, Booking_Meta
+from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
+from workflow.sw_bundle_workflow import Config_Software, Define_Software, SWConf_Resource_Select
+from workflow.snapshot_workflow import Select_Host_Step, Image_Meta_Step
 
 import uuid
 
 import logging
 logger = logging.getLogger(__name__)
 
+
 class BookingMetaWorkflow(object):
     workflow_type = 0
     color = "#0099ff"
     is_child = False
 
+
 class ResourceMetaWorkflow(object):
     workflow_type = 1
     color = "#ff6600"
 
+
 class ConfigMetaWorkflow(object):
     workflow_type = 2
     color = "#00ffcc"
+
 
 class MetaRelation(object):
     def __init__(self, *args, **kwargs):
@@ -47,8 +50,8 @@ class MetaRelation(object):
             'depth': self.depth,
         }
 
+
 class MetaStep(object):
-    #valid = 0 #0 is not checked, 1 is invalid, 2 is valid
 
     UNTOUCHED = 0
     INVALID = 100
@@ -89,37 +92,37 @@ class MetaStep(object):
     def __ne__(self, other):
         return self.id.int != other.id.int
 
+
 class WorkflowFactory():
-    #def __init__(self, *args, **kwargs):
     booking_steps = [
-            Booking_Resource_Select,
-            SWConfig_Select,
-            Booking_Meta
-        ]
+        Booking_Resource_Select,
+        SWConfig_Select,
+        Booking_Meta
+    ]
 
     resource_steps = [
-            Define_Hardware,
-            Define_Nets,
-            Resource_Meta_Info,
-        ]
+        Define_Hardware,
+        Define_Nets,
+        Resource_Meta_Info,
+    ]
 
     config_steps = [
-            SWConf_Resource_Select,
-            Define_Software,
-            Config_Software,
-        ]
+        SWConf_Resource_Select,
+        Define_Software,
+        Config_Software,
+    ]
 
     snapshot_steps = [
-            Select_Host_Step,
-            Image_Meta_Step
-        ]
+        Select_Host_Step,
+        Image_Meta_Step
+    ]
 
     def conjure(self, workflow_type=None, repo=None):
         workflow_types = [
-                self.booking_steps,
-                self.resource_steps,
-                self.config_steps,
-                self.snapshot_steps,
+            self.booking_steps,
+            self.resource_steps,
+            self.config_steps,
+            self.snapshot_steps,
         ]
 
         steps = self.make_steps(workflow_types[workflow_type], repository=repo)

@@ -8,12 +8,17 @@
 ##############################################################################
 
 
-from django.core.exceptions import *
 from django.template.loader import render_to_string
 
 import booking
-from dashboard.exceptions import *
-from resource_inventory.models import *
+from dashboard.exceptions import (
+    ResourceExistenceException,
+    ResourceAvailabilityException,
+    ResourceProvisioningException,
+    ModelValidationException
+)
+from resource_inventory.models import Host, HostConfiguration, ResourceBundle
+
 
 class ResourceManager:
 
@@ -28,7 +33,7 @@ class ResourceManager:
             ResourceManager.instance = ResourceManager()
         return ResourceManager.instance
 
-    #public interface
+    # public interface
     def deleteResourceBundle(self, resourceBundle):
         for host in Host.objects.filter(bundle=resourceBundle):
             self.releaseHost(host)
@@ -44,13 +49,13 @@ class ResourceManager:
 
         hosts = genericResourceBundle.getHosts()
 
-        #current supported case: user creating new booking
-        #currently unsupported: editing existing booking
+        # current supported case: user creating new booking
+        # currently unsupported: editing existing booking
 
         physical_hosts = []
 
         for host in hosts:
-            host_config=None
+            host_config = None
             if config:
                 host_config = HostConfiguration.objects.get(bundle=config, host=host)
             try:
@@ -84,7 +89,7 @@ class ResourceManager:
             for vlan in generic_interface.vlans.all():
                 physical_interface.config.add(vlan)
 
-    #private interface
+    # private interface
     def acquireHost(self, genericHost, labName):
         host_full_set = Host.objects.filter(lab__name__exact=labName, profile=genericHost.profile)
         if not host_full_set.first():
@@ -135,7 +140,7 @@ class ResourceManager:
             booking_owner = booking.models.Booking.objects.get(resource=resource).owner
             owner = booking_owner.username
             email = booking_owner.userprofile.email_addr
-        except Exception as e:
+        except Exception:
             pass
 
         details['owner'] = owner
@@ -158,7 +163,6 @@ class ResourceManager:
             pdf_nodes.append(self.get_pdf_host(node))
 
         return pdf_nodes
-
 
     def get_pdf_host(self, host):
         host_info = {}

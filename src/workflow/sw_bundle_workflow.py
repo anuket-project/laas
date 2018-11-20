@@ -8,18 +8,15 @@
 ##############################################################################
 
 
-from django.forms import formset_factory, modelformset_factory
+from django.forms import formset_factory
 
 from workflow.models import WorkflowStep
 from workflow.forms import SoftwareConfigurationForm, HostSoftwareDefinitionForm
 from workflow.booking_workflow import Resource_Select
-from resource_inventory.models import *
+from resource_inventory.models import Image, GenericHost, ConfigBundle, HostConfiguration, Installer, OPNFVConfig
 
 
-#resource selection step is reused from Booking workflow
-
-#TODO: change this: too hacky, just for presentation
-
+# resource selection step is reused from Booking workflow
 class SWConf_Resource_Select(Resource_Select):
     def __init__(self, *args, **kwargs):
         super(SWConf_Resource_Select, self).__init__(*args, **kwargs)
@@ -41,6 +38,7 @@ class SWConf_Resource_Select(Resource_Select):
         models['bundle'] = bundle
         self.repo_put(self.repo.CONFIG_MODELS, models)
         return response
+
 
 class Define_Software(WorkflowStep):
     template = 'config_bundle/steps/define_software.html'
@@ -69,7 +67,7 @@ class Define_Software(WorkflowStep):
 
         filter_data = {}
         user = self.repo_get(self.repo.SESSION_USER)
-        i=0;
+        i = 0
         for host_data in hosts_initial:
             host = GenericHost.objects.get(pk=host_data['host_id'])
             excluded_images = Image.objects.exclude(owner=user).exclude(public=True)
@@ -143,10 +141,10 @@ class Define_Software(WorkflowStep):
                 role = form.cleaned_data['role']
                 bundle = models['bundle']
                 hostConfig = HostConfiguration(
-                        host=host,
-                        image=image,
-                        bundle=bundle,
-                        opnfvRole=role
+                    host=host,
+                    image=image,
+                    bundle=bundle,
+                    opnfvRole=role
                 )
                 models['host_configs'].append(hostConfig)
                 confirm_host = {"name": host.resource.name, "image": image.name, "role": role.name}
@@ -163,10 +161,11 @@ class Define_Software(WorkflowStep):
 
         return self.render(request)
 
+
 class Config_Software(WorkflowStep):
     template = 'config_bundle/steps/config_software.html'
     form = SoftwareConfigurationForm
-    context = {'workspace_form':form}
+    context = {'workspace_form': form}
     title = "Other Info"
     description = "Give your software config a name, description, and other stuff"
     short_title = "config info"
@@ -203,7 +202,6 @@ class Config_Software(WorkflowStep):
             if "bundle" not in models:
                 models['bundle'] = ConfigBundle(owner=self.repo_get(self.repo.SESSION_USER))
 
-
             confirm = self.repo_get(self.repo.CONFIRMATION, {})
             if "configuration" not in confirm:
                 confirm['configuration'] = {}
@@ -216,10 +214,10 @@ class Config_Software(WorkflowStep):
                     installer = form.cleaned_data['installer']
                     scenario = form.cleaned_data['scenario']
                     opnfv = OPNFVConfig(
-                            bundle=models['bundle'],
-                            installer=installer,
-                            scenario=scenario
-                        )
+                        bundle=models['bundle'],
+                        installer=installer,
+                        scenario=scenario
+                    )
                     models['opnfv'] = opnfv
                     confirm['configuration']['installer'] = form.cleaned_data['installer'].name
                     confirm['configuration']['scenario'] = form.cleaned_data['scenario'].name
@@ -233,6 +231,6 @@ class Config_Software(WorkflowStep):
             self.repo_put(self.repo.CONFIG_MODELS, models)
             self.repo_put(self.repo.CONFIRMATION, confirm)
 
-        except Exception as e:
+        except Exception:
             pass
         return self.render(request)

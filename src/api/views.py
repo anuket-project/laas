@@ -18,13 +18,11 @@ from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
 from django.views.decorators.csrf import csrf_exempt
 
-import json
-
-from api.serializers.booking_serializer import *
+from api.serializers.booking_serializer import BookingSerializer
 from api.serializers.old_serializers import UserSerializer
 from account.models import UserProfile
 from booking.models import Booking
-from api.models import *
+from api.models import LabManagerTracker, get_task
 from notifier.manager import NotificationHandler
 
 

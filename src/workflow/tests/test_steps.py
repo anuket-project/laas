@@ -6,18 +6,28 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-from django.test import TestCase, client
+
+from django.test import TestCase
 from dashboard.populate_db import Populator
 from workflow.tests import constants
 from workflow.workflow_factory import WorkflowFactory
 from workflow.models import Repository
-from workflow.resource_bundle_workflow import *
-from workflow.sw_bundle_workflow import *
-from workflow.booking_workflow import *
+from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info, Host_Meta_Info
+from workflow.sw_bundle_workflow import SWConf_Resource_Select, Define_Software, Config_Software
+from workflow.booking_workflow import Booking_Resource_Select, SWConfig_Select, Booking_Meta
 from django.http import QueryDict, HttpRequest
 from django.contrib.auth.models import User
-from django.core.management import call_command
-from resource_inventory.models import *
+from resource_inventory.models import (
+    Scenario,
+    Installer,
+    OPNFVRole,
+    Image,
+    GenericResourceBundle,
+    GenericHost,
+    HostProfile,
+    GenericResource,
+    ConfigBundle
+)
 
 
 class BaseStepTestCase(TestCase):
@@ -48,7 +58,7 @@ class BookingResourceSelectTestCase(BaseStepTestCase):
         grb_model = GenericResourceBundle.objects.filter(owner__username="user 1").first()
         grb = [{"small_name": grb_model.name, "expanded_name": "user 1", "id": grb_model.id, "string": ""}]
         grb = str(grb).replace("'", '"')
-        data = {"generic_resource_bundle": grb }
+        data = {"generic_resource_bundle": grb}
         response, context = self.step_test(Booking_Resource_Select, data)
         self.assertTrue(True)
 
@@ -60,11 +70,12 @@ class BookingResourceSelectTestCase(BaseStepTestCase):
         data = {}
         response, context = self.step_test(SWConfig_Select, data)
 
+
 class SoftwareConfigSelectTestCase(BaseStepTestCase):
 
     def test_step_with_good_data(self):
         config_model = ConfigBundle.objects.filter(owner__username="user 1").first()
-        config = [{"expanded_name":"user 1", "small_name":config_model.name, "id":config_model.id, "string":""}]
+        config = [{"expanded_name": "user 1", "small_name": config_model.name, "id": config_model.id, "string": ""}]
         config = str(config).replace("'", '"')
         data = {"software_bundle": config}
         response, context = self.step_test(SWConfig_Select, data)
@@ -77,6 +88,7 @@ class SoftwareConfigSelectTestCase(BaseStepTestCase):
         data = {}
         response, context = self.step_test(SWConfig_Select, data)
 
+
 class BookingMetaTestCase(BaseStepTestCase):
 
     def test_step_with_good_data(self):
@@ -84,9 +96,9 @@ class BookingMetaTestCase(BaseStepTestCase):
         user2 = User.objects.get(username="user 2")
         john = User.objects.get(username="johnsmith")
         users = [
-                {"expanded_name":"", "id":user2.id, "small_name":user2.username, "string":user2.email},
-                {"expanded_name":"", "id":john.id, "small_name":john.username, "string":john.email}
-                ]
+            {"expanded_name": "", "id": user2.id, "small_name": user2.username, "string": user2.email},
+            {"expanded_name": "", "id": john.id, "small_name": john.username, "string": john.email}
+        ]
         users = str(users).replace("'", '"')
         data['users'] = users
         response, context = self.step_test(Booking_Meta, data)
@@ -104,7 +116,7 @@ class DefineHardwareTestCase(BaseStepTestCase):
 
     def test_step_with_good_data(self):
         hosts = {"host_4": 1, "host_1": 1}
-        labs = {"lab_1":"true"}
+        labs = {"lab_1": "true"}
         data = {"hosts": hosts, "labs": labs}
         response, context = self.step_test(Define_Hardware, data)
 
@@ -197,7 +209,7 @@ class SWConfResourceSelectTestCase(BaseStepTestCase):
         grb_model = GenericResourceBundle.objects.filter(owner__username="user 1").first()
         grb = [{"small_name": grb_model.name, "expanded_name": "user 1", "id": grb_model.id, "string": ""}]
         grb = str(grb).replace("'", '"')
-        data = {"generic_resource_bundle": grb }
+        data = {"generic_resource_bundle": grb}
         response, context = self.step_test(SWConf_Resource_Select, data)
 
     def test_step_with_bad_data(self):  # TODO
@@ -219,7 +231,6 @@ class DefineSoftwareTestCase(BaseStepTestCase):
         grb = GenericResourceBundle.objects.filter(owner__username="user 1").first()
         repo.el[repo.SWCONF_SELECTED_GRB] = grb
         return repo
-
 
     def test_step_with_good_data(self):
         data = {"form-INITIAL_FORMS": 3, "form-MAX_NUM_FORMS": 1000}
@@ -268,4 +279,3 @@ class ConfigSoftwareTestCase(BaseStepTestCase):
     def test_step_with_empty_data(self):
         data = {}
         response, context = self.step_test(Config_Software, data)
-

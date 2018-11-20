@@ -23,6 +23,7 @@ class LabStatus(object):
 def upload_to(object, filename):
     return object.user.username + '/' + filename
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     timezone = models.CharField(max_length=100, blank=False, default='UTC')
@@ -81,7 +82,6 @@ class VlanManager(models.Model):
         net = PublicNetwork.objects.get(lab=self.lab_set.first(), vlan=vlan)
         return not net.in_use
 
-
     def is_available(self, vlans):
         """
         'vlans' is either a single vlan id integer or a list of integers
@@ -139,7 +139,6 @@ class VlanManager(models.Model):
         self.save()
 
 
-
 class Lab(models.Model):
     lab_user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=200, primary_key=True, unique=True, null=False, blank=False)
@@ -158,7 +157,6 @@ class Lab(models.Model):
         for i in range(45):
             key += random.choice(alphabet)
         return key
-
 
     def __str__(self):
         return self.name

@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.db.models import Q
 from booking.models import Booking
 from notifier.manager import NotificationHandler
-from api.models import *
+from api.models import JobStatus, SoftwareRelation, HostHardwareRelation, HostNetworkRelation, AccessRelation
 from resource_inventory.resource_manager import ResourceManager
 
 
@@ -26,7 +26,7 @@ def booking_poll():
             config.clear_delta()
             config.set_power("off")
             config.save()
-            hostrelation.status=JobStatus.NEW
+            hostrelation.status = JobStatus.NEW
             hostrelation.save()
 
     def cleanup_network(qs):
@@ -53,7 +53,7 @@ def booking_poll():
                 interface.config.clear()
                 network.add_interface(interface)
                 network.save()
-            hostrelation.status=JobStatus.NEW
+            hostrelation.status = JobStatus.NEW
             hostrelation.save()
 
     def cleanup_software(qs):
@@ -62,7 +62,7 @@ def booking_poll():
             software = relation.config.opnfv
             software.clear_delta()
             software.save()
-            relation.status=JobStatus.NEW
+            relation.status = JobStatus.NEW
             relation.save()
 
     def cleanup_access(qs):
@@ -96,11 +96,11 @@ def free_hosts():
     hardware = ~Q(~Q(job__hosthardwarerelation__status=200))
 
     bookings = Booking.objects.filter(
-            networks,
-            hardware,
-            end__lt=timezone.now(),
-            job__complete=True,
-            resource__isnull=False
-            )
+        networks,
+        hardware,
+        end__lt=timezone.now(),
+        job__complete=True,
+        resource__isnull=False
+    )
     for booking in bookings:
         ResourceManager.getInstance().deleteResourceBundle(booking.resource)

@@ -10,7 +10,30 @@
 
 from django.contrib import admin
 
-from resource_inventory.models import *
+from resource_inventory.models import (
+    HostProfile,
+    InterfaceProfile,
+    DiskProfile,
+    CpuProfile,
+    RamProfile,
+    GenericResourceBundle,
+    GenericResource,
+    GenericHost,
+    GenericInterface,
+    Host,
+    Interface,
+    Network,
+    Vlan,
+    ResourceBundle,
+    Scenario,
+    Installer,
+    Opsys,
+    ConfigBundle,
+    OPNFVConfig,
+    OPNFVRole,
+    Image,
+    HostConfiguration
+)
 
 profiles = [HostProfile, InterfaceProfile, DiskProfile, CpuProfile, RamProfile]
 

@@ -30,7 +30,7 @@ class AccountMiddlewareTestCase(TestCase):
         The timezone should be UTC for anonymous users, for authenticated users it should be set
         to user.userprofile.timezone
         """
-        #default
+        # default
         self.assertEqual(timezone.get_current_timezone_name(), 'UTC')
 
         url = reverse('account:settings')
@@ -56,5 +56,3 @@ class AccountMiddlewareTestCase(TestCase):
         self.client.login(username='user2', password='user2')
         self.client.get(url)
         self.assertTrue(user2.userprofile)
-
-

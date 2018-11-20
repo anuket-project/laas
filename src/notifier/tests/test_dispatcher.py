@@ -7,10 +7,8 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-
 from django.test import TestCase
-from notifier.models import *
-from django.contrib.auth.models import User
+
 
 class DispatchTestCase(TestCase):
     # This is a stub, it will be filled out as this feature is remade with saner practices.

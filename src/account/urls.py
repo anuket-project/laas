@@ -26,7 +26,18 @@ Including another URLconf
 """
 from django.conf.urls import url
 
-from account.views import *
+from account.views import (
+    AccountSettingsView,
+    JiraAuthenticatedView,
+    JiraLoginView,
+    JiraLogoutView,
+    UserListView,
+    account_resource_view,
+    account_booking_view,
+    account_images_view,
+    account_configuration_view,
+    account_detail_view
+)
 
 app_name = "account"
 urlpatterns = [

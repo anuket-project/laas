@@ -9,8 +9,9 @@
 
 
 from django.test import TestCase
-from notifier.models import *
+from notifier.models import Notifier
 from django.contrib.auth.models import User
+
 
 class NotifierTestCase(TestCase):
 

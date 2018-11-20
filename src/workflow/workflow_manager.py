@@ -8,22 +8,23 @@
 ##############################################################################
 
 
-from django.db import models
-from django.contrib.auth.models import User
-from django.core import serializers
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 
-import json
-import uuid
 import random
 
-from resource_inventory.models import *
 from booking.models import Booking
 from workflow.workflow_factory import WorkflowFactory, MetaStep, MetaRelation
 from workflow.models import Repository, Confirmation_Step
+from resource_inventory.models import (
+    GenericResourceBundle,
+    ConfigBundle,
+    HostConfiguration,
+    OPNFVConfig
+)
 
 import logging
 logger = logging.getLogger(__name__)
+
 
 class SessionManager():
 
@@ -38,7 +39,7 @@ class SessionManager():
         metaconfirm = MetaStep()
         metaconfirm.index = 0
         metaconfirm.short_title = "confirm"
-        self.repository.el['steps'] = 1;
+        self.repository.el['steps'] = 1
         self.metaworkflow = None
         self.metaworkflows = []
         self.metarelations = []
@@ -85,10 +86,8 @@ class SessionManager():
             self.metarelations.append(relation)
             self.initialized = True
 
-
     def status(self, request):
         try:
-            workflows = []
             steps = []
             for step in self.step_meta:
                 steps.append(step.to_json())
@@ -109,11 +108,11 @@ class SessionManager():
             responsejson['parents'] = parents
             responsejson['children'] = children
             return JsonResponse(responsejson, safe=False)
-        except Exception as e:
+        except Exception:
             pass
 
     def render(self, request, **kwargs):
-        #filter out when a step needs to handle post/form data
+        # filter out when a step needs to handle post/form data
         # if 'workflow' in post data, this post request was meant for me, not step
         if request.method == 'POST' and request.POST.get('workflow', None) is None:
             return self.steps[self.active_index].post_render(request)
@@ -125,7 +124,7 @@ class SessionManager():
     def goto(self, num, **kwargs):
         self.repository.el['active_step'] = int(num)
         self.active_index = int(num)
-        #TODO: change to include some checking
+        # TODO: change to include some checking
 
     def prefill_repo(self, target_id, workflow_type):
         self.repository.el[self.repository.EDIT] = True
@@ -139,7 +138,6 @@ class SessionManager():
         elif workflow_type == 2:
             edit_object = ConfigBundle.objects.get(pk=target_id)
             self.prefill_config(edit_object)
-
 
     def prefill_booking(self, booking):
         models = self.make_booking_models(booking)

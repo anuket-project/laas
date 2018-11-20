@@ -19,9 +19,11 @@ class StatisticsManager(object):
         Will return a dictionary of names and 2-D array of x and y data points.
         e.g. {"plot1": [["x1", "x2", "x3"],["y1", "y2", "y3]]}
         x values will be dates in string
-        every change (booking start / end) will be reflected, instead of one data point per day
-        y values are the integer number of bookings/users active at some point in the given date
-        span is the number of days to plot. The last x value will always be the current time
+        every change (booking start / end) will be reflected,
+        instead of one data point per day
+        y values are the integer number of bookings/users active at
+        some point in the given date span is the number of days to plot.
+        The last x value will always be the current time
         """
         x_set = set()
         x = []
@@ -29,7 +31,7 @@ class StatisticsManager(object):
         users = []
         now = datetime.datetime.now(pytz.utc)
         delta = datetime.timedelta(days=span)
-        end = now-delta
+        end = now - delta
         bookings = Booking.objects.filter(start__lte=now, end__gte=end)
         for booking in bookings:
             x_set.add(booking.start)

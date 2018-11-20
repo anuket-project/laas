@@ -11,9 +11,11 @@
 import datetime
 import json
 
-from resource_inventory.models import *
-from workflow.models import *
-from workflow.forms import *
+from booking.models import Booking
+from resource_inventory.models import Host, Image
+from workflow.models import WorkflowStep
+from workflow.forms import SnapshotMetaForm, SnapshotHostSelectForm
+
 
 class Select_Host_Step(WorkflowStep):
     template = "snapshot_workflow/steps/select_host.html"
@@ -36,7 +38,6 @@ class Select_Host_Step(WorkflowStep):
             booking_hosts[booking.id]['hosts'] = []
             for genericHost in booking.resource.template.getHosts():
                 booking_hosts[booking.id]['hosts'].append({"name": genericHost.resource.name})
-
 
         context['booking_hosts'] = booking_hosts
 
@@ -77,6 +78,7 @@ class Select_Host_Step(WorkflowStep):
         self.metastep.set_valid("Success")
         return self.render(request)
 
+
 class Image_Meta_Step(WorkflowStep):
     template = "snapshot_workflow/steps/meta.html"
     title = "Additional Information"
@@ -87,7 +89,6 @@ class Image_Meta_Step(WorkflowStep):
         context = super(Image_Meta_Step, self).get_context()
         context['form'] = SnapshotMetaForm()
         return context
-
 
     def post_render(self, request):
         form = SnapshotMetaForm(request.POST)

@@ -11,25 +11,33 @@
 
 from datetime import timedelta
 
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 from django.utils import timezone
 
-from booking.models import *
+# from booking.models import *
+from booking.models import Booking
 from resource_inventory.models import ResourceBundle, GenericResourceBundle, ConfigBundle
 
+
 class BookingModelTestCase(TestCase):
+
     count = 0
+
     def setUp(self):
         self.owner = User.objects.create(username='owner')
 
         self.res1 = ResourceBundle.objects.create(
-                template=GenericResourceBundle.objects.create(name="gbundle" + str(self.count))
-                )
+            template=GenericResourceBundle.objects.create(
+                name="gbundle" + str(self.count)
+            )
+        )
         self.count += 1
         self.res2 = ResourceBundle.objects.create(
-                template=GenericResourceBundle.objects.create(name="gbundle2" + str(self.count))
-                )
+            template=GenericResourceBundle.objects.create(
+                name="gbundle2" + str(self.count)
+            )
+        )
         self.count += 1
         self.user1 = User.objects.create(username='user1')
 
@@ -37,12 +45,15 @@ class BookingModelTestCase(TestCase):
         self.user1.user_permissions.add(self.add_booking_perm)
 
         self.user1 = User.objects.get(pk=self.user1.id)
-        self.config_bundle = ConfigBundle.objects.create(owner=self.user1, name="test config")
+        self.config_bundle = ConfigBundle.objects.create(
+            owner=self.user1,
+            name="test config"
+        )
 
     def test_start_end(self):
         """
-        if the start of a booking is greater or equal then the end, saving should raise a
-        ValueException
+        if the start of a booking is greater or equal then the end,
+        saving should raise a ValueException
         """
         start = timezone.now()
         end = start - timedelta(weeks=1)
@@ -54,7 +65,7 @@ class BookingModelTestCase(TestCase):
             resource=self.res1,
             owner=self.user1,
             config_bundle=self.config_bundle
-            )
+        )
         end = start
         self.assertRaises(
             ValueError,
@@ -64,11 +75,12 @@ class BookingModelTestCase(TestCase):
             resource=self.res1,
             owner=self.user1,
             config_bundle=self.config_bundle
-            )
+        )
 
     def test_conflicts(self):
         """
-        saving an overlapping booking on the same resource should raise a ValueException
+        saving an overlapping booking on the same resource
+        should raise a ValueException
         saving for different resources should succeed
         """
         start = timezone.now()
@@ -80,8 +92,8 @@ class BookingModelTestCase(TestCase):
                 owner=self.user1,
                 resource=self.res1,
                 config_bundle=self.config_bundle
-                )
             )
+        )
 
         self.assertRaises(
             ValueError,
@@ -91,7 +103,8 @@ class BookingModelTestCase(TestCase):
             resource=self.res1,
             owner=self.user1,
             config_bundle=self.config_bundle
-            )
+        )
+
         self.assertRaises(
             ValueError,
             Booking.objects.create,
@@ -100,7 +113,7 @@ class BookingModelTestCase(TestCase):
             resource=self.res1,
             owner=self.user1,
             config_bundle=self.config_bundle
-            )
+        )
 
         self.assertRaises(
             ValueError,
@@ -110,7 +123,7 @@ class BookingModelTestCase(TestCase):
             resource=self.res1,
             owner=self.user1,
             config_bundle=self.config_bundle
-            )
+        )
 
         self.assertRaises(
             ValueError,
@@ -120,7 +133,7 @@ class BookingModelTestCase(TestCase):
             resource=self.res1,
             owner=self.user1,
             config_bundle=self.config_bundle
-            )
+        )
 
         self.assertRaises(
             ValueError,
@@ -130,7 +143,7 @@ class BookingModelTestCase(TestCase):
             resource=self.res1,
             owner=self.user1,
             config_bundle=self.config_bundle
-            )
+        )
 
         self.assertRaises(
             ValueError,
@@ -140,7 +153,7 @@ class BookingModelTestCase(TestCase):
             resource=self.res1,
             owner=self.user1,
             config_bundle=self.config_bundle
-            )
+        )
 
         self.assertTrue(
             Booking.objects.create(
@@ -149,8 +162,9 @@ class BookingModelTestCase(TestCase):
                 owner=self.user1,
                 resource=self.res1,
                 config_bundle=self.config_bundle
-                )
             )
+        )
+
         self.assertTrue(
             Booking.objects.create(
                 start=end,
@@ -158,8 +172,8 @@ class BookingModelTestCase(TestCase):
                 owner=self.user1,
                 resource=self.res1,
                 config_bundle=self.config_bundle
-                )
             )
+        )
 
         self.assertTrue(
             Booking.objects.create(
@@ -168,8 +182,8 @@ class BookingModelTestCase(TestCase):
                 owner=self.user1,
                 resource=self.res1,
                 config_bundle=self.config_bundle
-                )
             )
+        )
 
         self.assertTrue(
             Booking.objects.create(
@@ -178,8 +192,8 @@ class BookingModelTestCase(TestCase):
                 owner=self.user1,
                 resource=self.res1,
                 config_bundle=self.config_bundle
-                )
             )
+        )
 
         self.assertTrue(
             Booking.objects.create(
@@ -188,8 +202,8 @@ class BookingModelTestCase(TestCase):
                 owner=self.user1,
                 resource=self.res2,
                 config_bundle=self.config_bundle
-                )
             )
+        )
 
     def test_extensions(self):
         """
@@ -223,4 +237,3 @@ class BookingModelTestCase(TestCase):
             self.assertTrue(booking.save())
         except Exception:
             self.fail("save() threw an exception")
-

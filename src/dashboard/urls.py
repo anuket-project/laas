@@ -25,9 +25,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url
-from dashboard.views import *
+from dashboard.views import (
+    landing_view,
+    lab_list_view,
+    lab_detail_view,
+    host_profile_detail_view
+)
 
-app_name="dashboard"
+app_name = "dashboard"
 urlpatterns = [
     url(r'^$', landing_view, name='index'),
     url(r'^lab/$', lab_list_view, name='all_labs'),

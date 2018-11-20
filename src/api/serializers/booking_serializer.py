@@ -10,7 +10,16 @@
 
 from rest_framework import serializers
 
-from resource_inventory.models import *
+from resource_inventory.models import (
+    HostConfiguration,
+    CpuProfile,
+    DiskProfile,
+    InterfaceProfile,
+    RamProfile,
+    Image,
+    Interface
+)
+
 
 class BookingField(serializers.Field):
 
@@ -28,17 +37,17 @@ class BookingField(serializers.Field):
             host_configs[host.name] = HostConfiguration.objects.get(host=host.template)
             if "jumphost" not in ser and host_configs[host.name].opnfvRole.name.lower() == "jumphost":
                 ser['jumphost'] = host.name
-            #host is a Host model
+            # host is a Host model
             for i in range(len(host.interfaces.all())):
                 interface = host.interfaces.all()[i]
-                #interface is an Interface model
+                # interface is an Interface model
                 for vlan in interface.config.all():
-                    #vlan is Vlan model
+                    # vlan is Vlan model
                     if vlan.id not in networks:
                         networks[vlan.id] = []
-                    net_host = {"hostname": host.name, "tagged": vlan.tagged, "interface":i}
+                    net_host = {"hostname": host.name, "tagged": vlan.tagged, "interface": i}
                     networks[vlan.id].append(net_host)
-        #creates networking object of proper form
+        # creates networking object of proper form
         networking = []
         for vlanid in networks:
             network = {}
@@ -47,7 +56,7 @@ class BookingField(serializers.Field):
 
         ser['networking'] = networking
 
-        #creates hosts object of correct form
+        # creates hosts object of correct form
         hosts = []
         for hostname in host_configs:
             host = {"hostname": hostname}
@@ -75,31 +84,36 @@ class BookingField(serializers.Field):
         """
         return None
 
+
 class BookingSerializer(serializers.Serializer):
 
     booking = BookingField()
 
-#Host Type stuff, for inventory
 
+# Host Type stuff, for inventory
 class CPUSerializer(serializers.ModelSerializer):
     class Meta:
         model = CpuProfile
         fields = ('cores', 'architecture', 'cpus')
+
 
 class DiskSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiskProfile
         fields = ('size', 'media_type', 'name')
 
+
 class InterfaceProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = InterfaceProfile
         fields = ('speed', 'name')
 
+
 class RamSerializer(serializers.ModelSerializer):
     class Meta:
         model = RamProfile
         fields = ('amount', 'channels')
+
 
 class HostTypeSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=200)
@@ -109,19 +123,23 @@ class HostTypeSerializer(serializers.Serializer):
     disks = DiskSerializer()
     cpu = CPUSerializer()
 
-#the rest of the inventory stuff
+
+# the rest of the inventory stuff
 class NetworkSerializer(serializers.Serializer):
     cidr = serializers.CharField(max_length=200)
     gateway = serializers.IPAddressField(max_length=200)
     vlan = serializers.IntegerField()
+
 
 class ImageSerializer(serializers.ModelSerializer):
     lab_id = serializers.IntegerField()
     id = serializers.IntegerField(source="dashboard_id")
     name = serializers.CharField(max_length=50)
     description = serializers.CharField(max_length=200)
+
     class Meta:
         model = Image
+
 
 class InterfaceField(serializers.Field):
     def to_representation(self, interface):
@@ -142,6 +160,7 @@ class InterfaceField(serializers.Field):
             switch_name=switch_name,
             port_name=port_name
         )
+
 
 class InventoryHostSerializer(serializers.Serializer):
     hostname = serializers.CharField(max_length=100)

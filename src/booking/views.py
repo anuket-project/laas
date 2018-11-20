@@ -11,10 +11,8 @@
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-from django.urls import reverse
 from django.utils import timezone
 from django.views import View
-from django.views.generic import FormView
 from django.views.generic import TemplateView
 from django.shortcuts import redirect, render
 import json
@@ -107,22 +105,24 @@ def booking_detail_view(request, booking_id):
     allowed_users.add(booking.owner)
     if user not in allowed_users:
         return render(request, "dashboard/login.html", {'title': 'This page is private'})
-    return render(request, "booking/booking_detail.html", {
-        'title': 'Booking Details',
-        'booking': booking,
-        'pdf': ResourceManager().makePDF(booking.resource),
-        'user_id': user.id})
+
+    return render(
+        request,
+        "booking/booking_detail.html",
+        {
+            'title': 'Booking Details',
+            'booking': booking,
+            'pdf': ResourceManager().makePDF(booking.resource),
+            'user_id': user.id
+        })
 
 
 def booking_stats_view(request):
     return render(
-            request,
-            "booking/stats.html",
-            context={
-                "data": StatisticsManager.getContinuousBookingTimeSeries(),
-                "title": "Booking Statistics"
-                }
-            )
+        request,
+        "booking/stats.html",
+        context={"data": StatisticsManager.getContinuousBookingTimeSeries(), "title": "Booking Statistics"}
+    )
 
 
 def booking_stats_json(request):

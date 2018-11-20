@@ -14,12 +14,11 @@ from django.views.generic import TemplateView
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 
-from booking.models import Booking
 from account.models import Lab
 
-from resource_inventory.models import *
-from workflow.views import *
-from workflow.workflow_manager import *
+from resource_inventory.models import Image, HostProfile
+from workflow.views import create_session
+from workflow.workflow_manager import ManagerTracker
 
 
 def lab_list_view(request):
@@ -40,18 +39,27 @@ def lab_detail_view(request, lab_name):
     if user:
         images = images | Image.objects.filter(from_lab=lab).filter(owner=user)
 
-    return render(request, "dashboard/lab_detail.html",
-                  {'title': "Lab Overview",
-                   'lab': lab,
-                   'hostprofiles': lab.hostprofiles.all(),
-                   'images': images})
+    return render(
+        request,
+        "dashboard/lab_detail.html",
+        {
+            'title': "Lab Overview",
+            'lab': lab,
+            'hostprofiles': lab.hostprofiles.all(),
+            'images': images
+        }
+    )
 
 
 def host_profile_detail_view(request):
 
-    return render(request, "dashboard/host_profile_detail.html",
-                   {'title': "Host Types",
-                   })
+    return render(
+        request,
+        "dashboard/host_profile_detail.html",
+        {
+            'title': "Host Types",
+        }
+    )
 
 
 def landing_view(request):
@@ -62,12 +70,11 @@ def landing_view(request):
         try:
             manager = ManagerTracker.managers[request.session['manager_session']]
 
-
-        except KeyError as e:
+        except KeyError:
             pass
 
     if manager is not None:
-        #no manager detected, don't display continue button
+        # no manager detected, don't display continue button
         manager_detected = True
 
     if request.method == 'GET':
@@ -84,7 +91,7 @@ def landing_view(request):
             request.session['manager_session'] = mgr_uuid
             return HttpResponseRedirect('/wf/')
 
-        except KeyError as e:
+        except KeyError:
             pass
 
 

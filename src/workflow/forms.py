@@ -10,18 +10,20 @@
 
 import django.forms as forms
 from django.forms import widgets
-from django.contrib.auth.models import User
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
-from django.core import serializers
 from django.forms.widgets import NumberInput
-from django.db.models import F
 
-import json
-
-from resource_inventory.models import *
 from account.models import Lab
 from account.models import UserProfile
+from resource_inventory.models import (
+    GenericResourceBundle,
+    ConfigBundle,
+    OPNFVRole,
+    Image,
+    Installer,
+    Scenario
+)
 
 
 class SearchableSelectMultipleWidget(widgets.SelectMultiple):
@@ -47,19 +49,21 @@ class SearchableSelectMultipleWidget(widgets.SelectMultiple):
         context = self.get_context(attrs)
         return mark_safe(render_to_string(self.template_name, context))
 
-    def get_context(self,attrs):
-        return {'items':self.items,
-        'name':self.name,
-        'show_from_noentry':self.show_from_noentry,
-        'show_x_results':self.show_x_results,
-        'results_scrollable':self.results_scrollable,
-        'selectable_limit':self.selectable_limit,
-        'placeholder':self.placeholder,
-        'initial':self.initial,
-        'default_entry':self.default_entry,
-        'edit': self.edit,
-        'wf_type': self.wf_type
+    def get_context(self, attrs):
+        return {
+            'items': self.items,
+            'name': self.name,
+            'show_from_noentry': self.show_from_noentry,
+            'show_x_results': self.show_x_results,
+            'results_scrollable': self.results_scrollable,
+            'selectable_limit': self.selectable_limit,
+            'placeholder': self.placeholder,
+            'initial': self.initial,
+            'default_entry': self.default_entry,
+            'edit': self.edit,
+            'wf_type': self.wf_type
         }
+
 
 class ResourceSelectorForm(forms.Form):
 
@@ -73,7 +77,7 @@ class ResourceSelectorForm(forms.Form):
             bundle = kwargs.pop("bundle")
         if "edit" in kwargs:
             edit = kwargs.pop("edit")
-        super(ResourceSelectorForm, self).__init__(data=data,**kwargs)
+        super(ResourceSelectorForm, self).__init__(data=data, **kwargs)
         queryset = GenericResourceBundle.objects.select_related("owner").all()
         if data and 'user' in data:
             queryset = queryset.filter(owner=data['user'])
@@ -81,8 +85,8 @@ class ResourceSelectorForm(forms.Form):
         attrs = self.build_search_widget_attrs(chosen_resource, bundle, edit, queryset)
 
         self.fields['generic_resource_bundle'] = forms.CharField(
-                widget=SearchableSelectMultipleWidget(attrs=attrs)
-                )
+            widget=SearchableSelectMultipleWidget(attrs=attrs)
+        )
 
     def build_search_widget_attrs(self, chosen_resource, bundle, edit, queryset):
         resources = {}
@@ -104,7 +108,7 @@ class ResourceSelectorForm(forms.Form):
                 displayable['string'] = bundle.description
                 displayable['id'] = "repo bundle"
                 resources["repo bundle"] = displayable
-        attrs={
+        attrs = {
             'set': resources,
             'show_from_noentry': "true",
             'show_x_results': -1,
@@ -117,6 +121,7 @@ class ResourceSelectorForm(forms.Form):
             'wf_type': 1
         }
         return attrs
+
 
 class SWConfigSelectorForm(forms.Form):
 
@@ -134,11 +139,11 @@ class SWConfigSelectorForm(forms.Form):
             edit = kwargs.pop("edit")
         if "resource" in kwargs:
             resource = kwargs.pop("resource")
-        super(SWConfigSelectorForm, self).__init__(*args,**kwargs)
-        attrs = self.build_search_widget_attrs(chosen_software,bundle, edit, resource)
+        super(SWConfigSelectorForm, self).__init__(*args, **kwargs)
+        attrs = self.build_search_widget_attrs(chosen_software, bundle, edit, resource)
         self.fields['software_bundle'] = forms.CharField(
-                widget=SearchableSelectMultipleWidget(attrs=attrs)
-                )
+            widget=SearchableSelectMultipleWidget(attrs=attrs)
+        )
 
     def build_search_widget_attrs(self, chosen, bundle, edit, resource):
         configs = {}
@@ -162,7 +167,7 @@ class SWConfigSelectorForm(forms.Form):
             displayable['id'] = "repo bundle"
             configs['repo bundle'] = displayable
 
-        attrs={
+        attrs = {
             'set': configs,
             'show_from_noentry': "true",
             'show_x_results': -1,
@@ -176,9 +181,19 @@ class SWConfigSelectorForm(forms.Form):
         }
         return attrs
 
+
 class BookingMetaForm(forms.Form):
 
-    length = forms.IntegerField(widget=NumberInput(attrs={'type':'range', 'min':"0", "max":"21", "value":"0"}))
+    length = forms.IntegerField(
+        widget=NumberInput(
+            attrs={
+                "type": "range",
+                'min': "0",
+                "max": "21",
+                "value": "0"
+            }
+        )
+    )
     purpose = forms.CharField(max_length=1000)
     project = forms.CharField(max_length=400)
     info_file = forms.CharField(max_length=1000, required=False)
@@ -202,9 +217,9 @@ class BookingMetaForm(forms.Form):
         self.fields['users'] = forms.CharField(
             widget=SearchableSelectMultipleWidget(
                 attrs=self.build_search_widget_attrs(chosen_users, default_user=default_user)
-                ),
+            ),
             required=False
-            )
+        )
 
     def build_user_list(self):
         """
@@ -213,24 +228,24 @@ class BookingMetaForm(forms.Form):
         """
         try:
             users = {}
-            d_qset = UserProfile.objects.select_related('user').all().exclude(user__username=self.default_user);
+            d_qset = UserProfile.objects.select_related('user').all().exclude(user__username=self.default_user)
             for userprofile in d_qset:
                 user = {
-                    'id':userprofile.user.id,
-                    'expanded_name':userprofile.full_name,
-                    'small_name':userprofile.user.username,
-                    'string':userprofile.email_addr
-                    }
+                    'id': userprofile.user.id,
+                    'expanded_name': userprofile.full_name,
+                    'small_name': userprofile.user.username,
+                    'string': userprofile.email_addr
+                }
 
                 users[userprofile.user.id] = user
 
             return users
-        except Exception as e:
+        except Exception:
             pass
 
     def build_search_widget_attrs(self, chosen_users, default_user="you"):
 
-        attrs={
+        attrs = {
             'set': self.build_user_list(),
             'show_from_noentry': "false",
             'show_x_results': 10,
@@ -243,11 +258,12 @@ class BookingMetaForm(forms.Form):
         }
         return attrs
 
+
 class MultipleSelectFilterWidget(forms.Widget):
     def __init__(self, attrs=None):
         super(MultipleSelectFilterWidget, self).__init__(attrs)
         self.attrs = attrs
-        self.template_name="dashboard/multiple_select_filter_widget.html"
+        self.template_name = "dashboard/multiple_select_filter_widget.html"
 
     def render(self, name, value, attrs=None, renderer=None):
         attrs = self.attrs
@@ -258,10 +274,12 @@ class MultipleSelectFilterWidget(forms.Widget):
     def get_context(self, name, value, attrs):
         return attrs
 
+
 class MultipleSelectFilterField(forms.Field):
-    def __init__(   self, required=True, widget=None, label=None, initial=None,
-                    help_text='', error_messages=None, show_hidden_initial=False,
-                    validators=(), localize=False, disabled=False, label_suffix=None):
+
+    def __init__(self, required=True, widget=None, label=None, initial=None,
+                 help_text='', error_messages=None, show_hidden_initial=False,
+                 validators=(), localize=False, disabled=False, label_suffix=None):
         """from the documentation:
         # required -- Boolean that specifies whether the field is required.
         #             True by default.
@@ -287,8 +305,8 @@ class MultipleSelectFilterField(forms.Field):
         # label_suffix -- Suffix to be added to the label. Overrides
         #                 form's label_suffix.
         """
-        #this is bad, but django forms are annoying
-        self.widget=widget
+        # this is bad, but django forms are annoying
+        self.widget = widget
         if self.widget is None:
             self.widget = MultipleSelectFilterWidget()
         super(MultipleSelectFilterField, self).__init__(
@@ -310,6 +328,7 @@ class MultipleSelectFilterField(forms.Field):
             This method will raise a django.forms.ValidationError or return clean data
             """
             return data
+
 
 class FormUtils:
     @staticmethod
@@ -355,11 +374,12 @@ class FormUtils:
         filter_objects = [("labs", labs.values()), ("hosts", hosts.values())]
 
         context = {
-                'filter_objects': filter_objects,
-                'mapping': mapping,
-                'items': items
-                }
+            'filter_objects': filter_objects,
+            'mapping': mapping,
+            'items': items
+        }
         return context
+
 
 class HardwareDefinitionForm(forms.Form):
 
@@ -369,37 +389,39 @@ class HardwareDefinitionForm(forms.Form):
         attrs = FormUtils.getLabData()
         attrs['selection_data'] = selection_data
         self.fields['filter_field'] = MultipleSelectFilterField(
-                widget=MultipleSelectFilterWidget(
-                    attrs=attrs
-                    )
-                )
+            widget=MultipleSelectFilterWidget(
+                attrs=attrs
+            )
+        )
+
 
 class PodDefinitionForm(forms.Form):
 
-    fields = [ "xml" ]
+    fields = ["xml"]
     xml = forms.CharField()
+
 
 class ResourceMetaForm(forms.Form):
 
     bundle_name = forms.CharField(label="POD Name")
     bundle_description = forms.CharField(label="POD Description", widget=forms.Textarea)
 
+
 class GenericHostMetaForm(forms.Form):
 
     host_profile = forms.CharField(label="Host Type", disabled=True, required=False)
     host_name = forms.CharField(label="Host Name")
 
+
 class NetworkDefinitionForm(forms.Form):
     def __init__(self, *args, **kwargs):
-        fields = []
-
         super(NetworkDefinitionForm, self).__init__(**kwargs)
+
 
 class NetworkConfigurationForm(forms.Form):
     def __init__(self, *args, **kwargs):
-        fields = []
-
         super(NetworkConfigurationForm).__init__(**kwargs)
+
 
 class HostSoftwareDefinitionForm(forms.Form):
     fields = ["host_name", "role", "image"]
@@ -407,6 +429,7 @@ class HostSoftwareDefinitionForm(forms.Form):
     host_name = forms.CharField(max_length=200, disabled=True, required=False)
     role = forms.ModelChoiceField(queryset=OPNFVRole.objects.all())
     image = forms.ModelChoiceField(queryset=Image.objects.all())
+
 
 class SoftwareConfigurationForm(forms.Form):
 
@@ -416,31 +439,39 @@ class SoftwareConfigurationForm(forms.Form):
     installer = forms.ModelChoiceField(queryset=Installer.objects.all(), disabled=True, required=False)
     scenario = forms.ModelChoiceField(queryset=Scenario.objects.all(), disabled=True, required=False)
 
+
 class WorkflowSelectionForm(forms.Form):
     fields = ['workflow']
 
     empty_permitted = False
 
-    workflow = forms.ChoiceField( choices=(
-        (0, 'Booking'),
-        (1, 'Resource Bundle'),
-        (2, 'Software Configuration')
+    workflow = forms.ChoiceField(
+        choices=(
+            (0, 'Booking'),
+            (1, 'Resource Bundle'),
+            (2, 'Software Configuration')
         ),
         label="Choose Workflow",
         initial='booking',
-        required=True)
+        required=True
+    )
+
 
 class SnapshotHostSelectForm(forms.Form):
     host = forms.CharField()
+
 
 class SnapshotMetaForm(forms.Form):
     name = forms.CharField()
     description = forms.CharField()
 
+
 class ConfirmationForm(forms.Form):
     fields = ['confirm']
 
-    confirm = forms.ChoiceField( choices=(
-        (True, "Confirm"),
-        (False, "Cancel"))
+    confirm = forms.ChoiceField(
+        choices=(
+            (True, "Confirm"),
+            (False, "Cancel")
         )
+    )

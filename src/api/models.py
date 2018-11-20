@@ -8,14 +8,21 @@
 ##############################################################################
 
 
+from django.contrib.auth.models import User
 from django.db import models
 from django.core.exceptions import PermissionDenied
 
 import json
 import uuid
 
-from resource_inventory.models import *
 from booking.models import Booking
+from resource_inventory.models import (
+    Lab,
+    HostProfile,
+    Host,
+    Image,
+    Interface
+)
 
 
 class JobStatus(object):
@@ -57,16 +64,18 @@ class LabManager(object):
         prof = {}
         prof['name'] = self.lab.name
         prof['contact'] = {
-                "phone": self.lab.contact_phone,
-                "email": self.lab.contact_email
-                }
+            "phone": self.lab.contact_phone,
+            "email": self.lab.contact_email
+        }
         prof['host_count'] = []
         for host in HostProfile.objects.filter(labs=self.lab):
             count = Host.objects.filter(profile=host, lab=self.lab).count()
-            prof['host_count'].append({
-                "type": host.name,
-                "count": count
-                })
+            prof['host_count'].append(
+                {
+                    "type": host.name,
+                    "count": count
+                }
+            )
         return prof
 
     def get_inventory(self):
@@ -135,11 +144,13 @@ class LabManager(object):
     def serialize_images(self, images):
         images_ser = []
         for image in images:
-            images_ser.append({
-                "name": image.name,
-                "lab_id": image.lab_id,
-                "dashboard_id": image.id
-                })
+            images_ser.append(
+                {
+                    "name": image.name,
+                    "lab_id": image.lab_id,
+                    "dashboard_id": image.id
+                }
+            )
         return images_ser
 
     def serialize_host_profiles(self, profiles):
@@ -147,25 +158,27 @@ class LabManager(object):
         for profile in profiles:
             p = {}
             p['cpu'] = {
-                    "cores": profile.cpuprofile.first().cores,
-                    "arch": profile.cpuprofile.first().architecture,
-                    "cpus": profile.cpuprofile.first().cpus,
-                    }
+                "cores": profile.cpuprofile.first().cores,
+                "arch": profile.cpuprofile.first().architecture,
+                "cpus": profile.cpuprofile.first().cpus,
+            }
             p['disks'] = []
             for disk in profile.storageprofile.all():
                 d = {
-                        "size": disk.size,
-                        "type": disk.media_type,
-                        "name": disk.name
-                    }
+                    "size": disk.size,
+                    "type": disk.media_type,
+                    "name": disk.name
+                }
                 p['disks'].append(d)
             p['description'] = profile.description
             p['interfaces'] = []
             for iface in profile.interfaceprofile.all():
-                p['interfaces'].append({
-                    "speed": iface.speed,
-                    "name": iface.name
-                    })
+                p['interfaces'].append(
+                    {
+                        "speed": iface.speed,
+                        "name": iface.name
+                    }
+                )
 
             p['ram'] = {"amount": profile.ramprofile.first().amount}
             p['name'] = profile.name
@@ -228,7 +241,6 @@ class Job(models.Model):
                 return False
         return True
 
-
     def get_delta(self, status):
         d = {}
         j = {}
@@ -269,6 +281,7 @@ class TaskConfig(models.Model):
 
     def clear_delta(self):
         self.delta = '{}'
+
 
 class OpnfvApiConfig(models.Model):
 
@@ -323,6 +336,7 @@ class OpnfvApiConfig(models.Model):
             self.delta = self.to_json()
             self.save()
         return json.loads(self.delta)
+
 
 class AccessConfig(TaskConfig):
     access_type = models.CharField(max_length=50)
@@ -380,6 +394,7 @@ class AccessConfig(TaskConfig):
         d['context'] = context
         self.delta = json.dumps(d)
 
+
 class SoftwareConfig(TaskConfig):
     """
     handled opnfv installations, etc
@@ -408,6 +423,7 @@ class SoftwareConfig(TaskConfig):
 
     def to_json(self):
         return json.dumps(self.to_dict())
+
 
 class HardwareConfig(TaskConfig):
     """
@@ -609,37 +625,37 @@ class JobFactory(object):
         except:
             job = Job.objects.create(status=JobStatus.NEW, booking=booking)
         cls.makeHardwareConfigs(
-                hosts=hosts,
-                job=job
-                )
+            hosts=hosts,
+            job=job
+        )
         cls.makeNetworkConfigs(
-                hosts=hosts,
-                job=job
-                )
+            hosts=hosts,
+            job=job
+        )
         cls.makeSoftware(
-                hosts=hosts,
-                job=job
-                )
+            hosts=hosts,
+            job=job
+        )
         all_users = list(booking.collaborators.all())
         all_users.append(booking.owner)
         cls.makeAccessConfig(
-                users=all_users,
-                access_type="vpn",
-                revoke=False,
-                job=job
-                )
+            users=all_users,
+            access_type="vpn",
+            revoke=False,
+            job=job
+        )
         for user in all_users:
             try:
                 cls.makeAccessConfig(
-                        users=[user],
-                        access_type="ssh",
-                        revoke=False,
-                        job=job,
-                        context={
-                            "key": user.userprofile.ssh_public_key.read(),
-                            "hosts": [host.labid for host in hosts]
-                            }
-                        )
+                    users=[user],
+                    access_type="ssh",
+                    revoke=False,
+                    job=job,
+                    context={
+                        "key": user.userprofile.ssh_public_key.read(),
+                        "hosts": [host.labid for host in hosts]
+                    }
+                )
             except Exception:
                 continue
 

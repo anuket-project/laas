@@ -63,7 +63,7 @@ class JiraLoginView(RedirectView):
         # Step 1. Get a request token from Jira.
         try:
             resp, content = client.request(settings.OAUTH_REQUEST_TOKEN_URL, "POST")
-        except Exception as e:
+        except Exception:
             messages.add_message(self.request, messages.ERROR,
                                  'Error: Connection to Jira failed. Please contact an Administrator')
             return '/'
@@ -76,8 +76,8 @@ class JiraLoginView(RedirectView):
         self.request.session['request_token'] = dict(urllib.parse.parse_qsl(content.decode()))
         # Step 3. Redirect the user to the authentication URL.
         url = settings.OAUTH_AUTHORIZE_URL + '?oauth_token=' + \
-              self.request.session['request_token']['oauth_token'] + \
-              '&oauth_callback=' + settings.OAUTH_CALLBACK_URL
+            self.request.session['request_token']['oauth_token'] + \
+            '&oauth_callback=' + settings.OAUTH_CALLBACK_URL
         return url
 
 
@@ -99,7 +99,7 @@ class JiraAuthenticatedView(RedirectView):
         # Step 2. Request the authorized access token from Jira.
         try:
             resp, content = client.request(settings.OAUTH_ACCESS_TOKEN_URL, "POST")
-        except Exception as e:
+        except Exception:
             messages.add_message(self.request, messages.ERROR,
                                  'Error: Connection to Jira failed. Please contact an Administrator')
             return '/'
@@ -163,6 +163,7 @@ def account_detail_view(request):
     template = "account/details.html"
     return render(request, template)
 
+
 def account_resource_view(request):
     """
     gathers a users genericResoureBundles and
@@ -175,6 +176,7 @@ def account_resource_view(request):
     context = {"resources": resources, "title": "My Resources"}
     return render(request, template, context=context)
 
+
 def account_booking_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
@@ -184,6 +186,7 @@ def account_booking_view(request):
     context = {"title": "My Bookings", "bookings": bookings, "collab_bookings": collab_bookings}
     return render(request, template, context=context)
 
+
 def account_configuration_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
@@ -192,12 +195,12 @@ def account_configuration_view(request):
     context = {"title": "Configuration List", "configurations": configs}
     return render(request, template, context=context)
 
+
 def account_images_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
     template = "account/image_list.html"
     my_images = Image.objects.filter(owner=request.user)
     public_images = Image.objects.filter(public=True)
-    context = {"title": "Images", "images": my_images, "public_images": public_images }
+    context = {"title": "Images", "images": my_images, "public_images": public_images}
     return render(request, template, context=context)
-

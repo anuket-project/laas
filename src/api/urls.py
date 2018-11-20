@@ -28,7 +28,19 @@ from django.conf.urls import url, include
 from django.urls import path
 from rest_framework import routers
 
-from api.views import *
+from api.views import (
+    BookingViewSet,
+    UserViewSet,
+    lab_profile,
+    lab_status,
+    lab_inventory,
+    specific_job,
+    specific_task,
+    new_jobs,
+    current_jobs,
+    done_jobs,
+    GenerateTokenView
+)
 
 router = routers.DefaultRouter()
 router.register(r'bookings', BookingViewSet)

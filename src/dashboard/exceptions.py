@@ -14,17 +14,20 @@ class ResourceProvisioningException(Exception):
     """
     pass
 
+
 class ModelValidationException(Exception):
     """
     Validation before saving model returned issues
     """
     pass
 
+
 class ResourceAvailabilityException(ResourceProvisioningException):
     """
     Requested resources are not *currently* available
     """
     pass
+
 
 class ResourceExistenceException(ResourceAvailabilityException):
     """
@@ -36,11 +39,14 @@ class ResourceExistenceException(ResourceAvailabilityException):
 class NonUniqueHostnameException(Exception):
     pass
 
+
 class InvalidHostnameException(Exception):
     pass
 
+
 class InvalidVlanConfigurationException(Exception):
     pass
+
 
 class NetworkExistsException(Exception):
     pass

@@ -7,17 +7,26 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-
-from django.test import TestCase
-from booking.models import Booking
-from resource_inventory.models import *
-from account.models import *
-from api.serializers.booking_serializer import *
-from datetime import timedelta
-from django.utils import timezone
-from django.contrib.auth.models import Permission, User
 import json
 import yaml
+
+from account.models import Lab, UserProfile
+from django.contrib.auth.models import User
+from resource_inventory.models import (
+    HostProfile,
+    InterfaceProfile,
+    DiskProfile,
+    CpuProfile,
+    RamProfile,
+    VlanManager,
+    Scenario,
+    Installer,
+    Opsys,
+    OPNFVRole,
+    Image,
+    Interface,
+    Host
+)
 
 
 class Populator:
@@ -28,7 +37,6 @@ class Populator:
         self.host_profiles = []
         self.generic_bundle_count = 0
         self.booking_count = 0
-
 
     def make_host_profile(self, lab, data):
         hostProfile = HostProfile.objects.create(
@@ -46,7 +54,6 @@ class Populator:
                 host=hostProfile
             )
             interfaceProfile.save()
-
 
         for disk_data in data['disks']:
 
@@ -84,41 +91,38 @@ class Populator:
         user_sbergeron.save()
         user_sbergeron_prof = UserProfile.objects.create(user=user_sbergeron)
         user_sbergeron_prof.save()
-        return [user_sbergeron, user_pberberian,]
-
+        return [user_sbergeron, user_pberberian]
 
     def make_labs(self):
         unh_iol = User.objects.create(username="unh_iol")
         unh_iol.save()
         vlans = []
         reserved = []
-        for i in range(1,4096):
+        for i in range(1, 4096):
             vlans.append(1)
             reserved.append(0)
-        # TODO: put reserved vlans here
         iol = Lab.objects.create(
-                lab_user=unh_iol,
-                name="UNH_IOL",
-                vlan_manager=VlanManager.objects.create(
-                    vlans = json.dumps(vlans),
-                    reserved_vlans = json.dumps(reserved),
-                    allow_overlapping = False,
-                    block_size = 20,
-                    ),
-                api_token = Lab.make_api_token(),
-                contact_email = "nfv-lab@iol.unh.edu",
-                location = "University of New Hampshire, Durham NH, 03824 USA"
-                )
+            lab_user=unh_iol,
+            name="UNH_IOL",
+            vlan_manager=VlanManager.objects.create(
+                vlans=json.dumps(vlans),
+                reserved_vlans=json.dumps(reserved),
+                allow_overlapping=False,
+                block_size=20,
+            ),
+            api_token=Lab.make_api_token(),
+            contact_email="nfv-lab@iol.unh.edu",
+            location="University of New Hampshire, Durham NH, 03824 USA"
+        )
         return [iol]
 
-
     def make_configurations(self):
-        #scenarios
+        # scenarios
         scen1 = Scenario.objects.create(name="os-nosdn-nofeature-noha")
         scen2 = Scenario.objects.create(name="os-odl-kvm-ha")
         scen3 = Scenario.objects.create(name="os-nosdn-nofeature-ha")
 
-        #installers
+        # installers
         fuel = Installer.objects.create(name="Fuel")
         fuel.sup_scenarios.add(scen1)
         fuel.sup_scenarios.add(scen3)
@@ -141,7 +145,7 @@ class Populator:
         compass.sup_scenarios.add(scen3)
         compass.save()
 
-        #operating systems
+        # operating systems
         ubuntu = Opsys.objects.create(name="Ubuntu")
         ubuntu.sup_installers.add(compass)
         ubuntu.sup_installers.add(joid)
@@ -154,61 +158,61 @@ class Populator:
         suse.sup_installers.add(fuel)
         suse.save()
 
-
-        #opnfv roles
-        compute = OPNFVRole.objects.create(name="Compute", description="Does the heavy lifting")
-        controller = OPNFVRole.objects.create(name="Controller", description="Controls everything")
-        jumphost = OPNFVRole.objects.create(name="Jumphost", description="Entry Point")
+        # opnfv roles
+        OPNFVRole.objects.create(name="Compute", description="Does the heavy lifting")
+        OPNFVRole.objects.create(name="Controller", description="Controls everything")
+        OPNFVRole.objects.create(name="Jumphost", description="Entry Point")
 
         lab = Lab.objects.first()
         user = UserProfile.objects.first().user
-        image = Image.objects.create(
-                lab_id=23,
-                name="hpe centos",
-                from_lab=lab,
-                owner=user,
-                host_type=HostProfile.objects.get(name="hpe")
-                )
-        image = Image.objects.create(
-                lab_id=25,
-                name="hpe ubuntu",
-                from_lab=lab,
-                owner=user,
-                host_type=HostProfile.objects.get(name="hpe")
-                )
+        Image.objects.create(
+            lab_id=23,
+            name="hpe centos",
+            from_lab=lab,
+            owner=user,
+            host_type=HostProfile.objects.get(name="hpe")
+        )
+        Image.objects.create(
+            lab_id=25,
+            name="hpe ubuntu",
+            from_lab=lab,
+            owner=user,
+            host_type=HostProfile.objects.get(name="hpe")
+        )
 
-        image = Image.objects.create(
-                lab_id=26,
-                name="hpe suse",
-                from_lab=lab,
-                owner=user,
-                host_type=HostProfile.objects.get(name="hpe")
-                )
-        image = Image.objects.create(
-                lab_id=27,
-                name="arm ubuntu",
-                from_lab=lab,
-                owner=user,
-                host_type=HostProfile.objects.get(name="arm")
-                )
+        Image.objects.create(
+            lab_id=26,
+            name="hpe suse",
+            from_lab=lab,
+            owner=user,
+            host_type=HostProfile.objects.get(name="hpe")
+        )
+
+        Image.objects.create(
+            lab_id=27,
+            name="arm ubuntu",
+            from_lab=lab,
+            owner=user,
+            host_type=HostProfile.objects.get(name="arm")
+        )
 
     def make_lab_hosts(self, hostcount, profile, lab, data, offset=1):
         for i in range(hostcount):
-            name="Host_" + lab.name + "_" + profile.name + "_" + str(i + offset)
+            name = "Host_" + lab.name + "_" + profile.name + "_" + str(i + offset)
             host = Host.objects.create(
-                    name=name,
-                    lab=lab,
-                    profile=profile,
-                    labid=data[i]['labid']
-                    )
+                name=name,
+                lab=lab,
+                profile=profile,
+                labid=data[i]['labid']
+            )
             for iface_profile in profile.interfaceprofile.all():
                 iface_data = data[i]['interfaces'][iface_profile.name]
                 Interface.objects.create(
-                        mac_address=iface_data['mac'],
-                        bus_address=iface_data['bus'],
-                        name=iface_profile.name,
-                        host=host
-                        )
+                    mac_address=iface_data['mac'],
+                    bus_address=iface_data['bus'],
+                    name=iface_profile.name,
+                    host=host
+                )
 
     def make_profile_data(self):
         """
@@ -219,10 +223,10 @@ class Populator:
         for prof in ["hpe", "arm"]:  # TODO
             profile_dict = {}
             host = {
-                    "name": prof,
-                    "type": 0,
-                    "description": "some LaaS servers"
-                    }
+                "name": prof,
+                "type": 0,
+                "description": "some LaaS servers"
+            }
             profile_dict['host'] = host
             profile_dict['interfaces'] = []
             for interface in [{"name": "eno1", "speed": 1000}, {"name": "eno2", "speed": 10000}]:  # TODO
@@ -277,64 +281,64 @@ class Populator:
             if len(host_data_dict) < 1:
                 continue
             host_profile = HostProfile.objects.create(
-                    name=host_profile_name,
-                    description=""
-                    )
+                name=host_profile_name,
+                description=""
+            )
             host_profile.labs.add(lab)
             example_host_data = list(host_data_dict.values())[0]
 
             cpu_data = example_host_data['cpu']
             CpuProfile.objects.create(
-                    cores=cpu_data['cores'],
-                    architecture=cpu_data['arch'],
-                    cpus=cpu_data['cpus'],
-                    host=host_profile
-                    )
+                cores=cpu_data['cores'],
+                architecture=cpu_data['arch'],
+                cpus=cpu_data['cpus'],
+                host=host_profile
+            )
 
             ram_data = example_host_data['memory']
             RamProfile.objects.create(
-                    amount=int(ram_data[:-1]),
-                    channels=1,
-                    host=host_profile
-                    )
+                amount=int(ram_data[:-1]),
+                channels=1,
+                host=host_profile
+            )
 
             disks_data = example_host_data['disk']
             for disk_data in disks_data:
                 size = 0
                 try:
-                    size=int(disk_data['size'].split('.')[0])
+                    size = int(disk_data['size'].split('.')[0])
                 except:
-                    size=int(disk_data['size'].split('.')[0][:-1])
+                    size = int(disk_data['size'].split('.')[0][:-1])
                 DiskProfile.objects.create(
-                        size=size,
-                        media_type="SSD",
-                        name=disk_data['name'],
-                        host=host_profile
-                        )
+                    size=size,
+                    media_type="SSD",
+                    name=disk_data['name'],
+                    host=host_profile
+                )
 
             ifaces_data = example_host_data['interface']
             for iface_data in ifaces_data:
                 InterfaceProfile.objects.create(
-                        speed=iface_data['speed'],
-                        name=iface_data['name'],
-                        host=host_profile
-                        )
+                    speed=iface_data['speed'],
+                    name=iface_data['name'],
+                    host=host_profile
+                )
 
             # all profiles created
             for hostname, host_data in host_data_dict.items():
                 host = Host.objects.create(
-                        name=hostname,
-                        labid=hostname,
-                        profile=host_profile,
-                        lab=lab
-                        )
+                    name=hostname,
+                    labid=hostname,
+                    profile=host_profile,
+                    lab=lab
+                )
                 for iface_data in host_data['interface']:
                     Interface.objects.create(
-                            mac_address=iface_data['mac'],
-                            bus_address=iface_data['busaddr'],
-                            name=iface_data['name'],
-                            host=host
-                            )
+                        mac_address=iface_data['mac'],
+                        bus_address=iface_data['busaddr'],
+                        name=iface_data['name'],
+                        host=host
+                    )
 
     def populate(self):
         self.labs = self.make_labs()

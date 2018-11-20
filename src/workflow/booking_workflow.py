@@ -15,11 +15,11 @@ from django.utils import timezone
 import json
 from datetime import timedelta
 
-from account.models import UserProfile
 from booking.models import Booking
 from workflow.models import WorkflowStep
-from workflow.forms import ResourceSelectorForm, SWConfigSelectorForm, BookingMetaForm, ConfirmationForm
+from workflow.forms import ResourceSelectorForm, SWConfigSelectorForm, BookingMetaForm
 from resource_inventory.models import GenericResourceBundle, ResourceBundle, ConfigBundle
+
 
 class Resource_Select(WorkflowStep):
     template = 'booking/steps/resource_select.html'
@@ -62,14 +62,14 @@ class Resource_Select(WorkflowStep):
         edit = self.repo_get(self.repo.EDIT, False)
         user = self.repo_get(self.repo.SESSION_USER)
         context['form'] = ResourceSelectorForm(
-                data={"user": user},
-                chosen_resource=default,
-                bundle=bundle,
-                edit=edit
-                )
+            data={"user": user},
+            chosen_resource=default,
+            bundle=bundle,
+            edit=edit
+        )
         return context
 
-    def  post_render(self, request):
+    def post_render(self, request):
         form = ResourceSelectorForm(request.POST)
         context = self.get_context()
         if form.is_valid():
@@ -86,11 +86,14 @@ class Resource_Select(WorkflowStep):
                 gresource_bundle = GenericResourceBundle.objects.get(id=selected_id)
             except ValueError:
                 # we want the bundle in the repo
-                gresource_bundle = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS,{}).get("bundle", GenericResourceBundle())
+                gresource_bundle = self.repo_get(
+                    self.repo.GRESOURCE_BUNDLE_MODELS,
+                    {}
+                ).get("bundle", GenericResourceBundle())
             self.repo_put(
-                    self.repo_key,
-                    gresource_bundle
-                    )
+                self.repo_key,
+                gresource_bundle
+            )
             confirm = self.repo_get(self.repo.CONFIRMATION)
             if self.confirm_key not in confirm:
                 confirm[self.confirm_key] = {}
@@ -103,6 +106,7 @@ class Resource_Select(WorkflowStep):
             messages.add_message(request, messages.ERROR, "Form Didn't Validate", fail_silently=True)
             self.metastep.set_invalid("Please complete the fields highlighted in red to continue")
             return render(request, self.template, context)
+
 
 class Booking_Resource_Select(Resource_Select):
 
@@ -119,7 +123,7 @@ class Booking_Resource_Select(Resource_Select):
         try:
             config_bundle = self.repo_get(self.repo.BOOKING_MODELS)['booking'].config_bundle
             if default:
-                return default # select created grb, even if preselected config bundle
+                return default  # select created grb, even if preselected config bundle
             return config_bundle.bundle
         except:
             pass
@@ -144,6 +148,7 @@ class Booking_Resource_Select(Resource_Select):
         models['booking'] = booking
         self.repo_put(self.repo.BOOKING_MODELS, models)
         return response
+
 
 class SWConfig_Select(WorkflowStep):
     template = 'booking/steps/swconfig_select.html'
@@ -186,7 +191,6 @@ class SWConfig_Select(WorkflowStep):
 
         return self.render(request)
 
-
     def get_context(self):
         context = super(SWConfig_Select, self).get_context()
         default = []
@@ -197,7 +201,7 @@ class SWConfig_Select(WorkflowStep):
         try:
             chosen_bundle = booking.config_bundle
             default.append(chosen_bundle.id)
-            bundle=chosen_bundle
+            bundle = chosen_bundle
         except:
             if created_bundle:
                 default.append("repo bundle")
@@ -207,6 +211,7 @@ class SWConfig_Select(WorkflowStep):
         grb = self.repo_get(self.repo.BOOKING_SELECTED_GRB)
         context['form'] = SWConfigSelectorForm(chosen_software=default, bundle=bundle, edit=edit, resource=grb)
         return context
+
 
 class Booking_Meta(WorkflowStep):
     template = 'booking/steps/booking_meta.html'
@@ -231,7 +236,7 @@ class Booking_Meta(WorkflowStep):
             users = models.get("collaborators", [])
             for user in users:
                 default.append(user.id)
-        except Exception as e:
+        except Exception:
             pass
 
         default_user = self.repo_get(self.repo.SESSION_USER)
@@ -271,7 +276,7 @@ class Booking_Meta(WorkflowStep):
 
             user_data = form.cleaned_data['users']
             confirm['booking']['collaborators'] = []
-            user_data = user_data[2:-2] #fixes malformed string from querydict
+            user_data = user_data[2:-2]  # fixes malformed string from querydict
             if user_data:
                 form_users = json.loads(user_data)
                 for user_json in form_users:

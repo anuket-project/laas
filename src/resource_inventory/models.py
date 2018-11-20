@@ -40,10 +40,14 @@ class InterfaceProfile(models.Model):
     speed = models.IntegerField()
     name = models.CharField(max_length=100)
     host = models.ForeignKey(HostProfile, on_delete=models.DO_NOTHING, related_name='interfaceprofile')
-    nic_type = models.CharField(max_length=50, choices=[
-        ("onboard", "onboard"),
-        ("pcie", "pcie")
-        ], default="onboard")
+    nic_type = models.CharField(
+        max_length=50,
+        choices=[
+            ("onboard", "onboard"),
+            ("pcie", "pcie")
+        ],
+        default="onboard"
+    )
 
     def __str__(self):
         return self.name + " for " + str(self.host)
@@ -59,14 +63,18 @@ class DiskProfile(models.Model):
     name = models.CharField(max_length=50)
     host = models.ForeignKey(HostProfile, on_delete=models.DO_NOTHING, related_name='storageprofile')
     rotation = models.IntegerField(default=0)
-    interface = models.CharField(max_length=50, choices=[
+    interface = models.CharField(
+        max_length=50,
+        choices=[
             ("sata", "sata"),
             ("sas", "sas"),
             ("ssd", "ssd"),
             ("nvme", "nvme"),
             ("scsi", "scsi"),
             ("iscsi", "iscsi"),
-        ], default="sata")
+        ],
+        default="sata"
+    )
 
     def __str__(self):
         return self.name + " for " + str(self.host)
@@ -97,7 +105,7 @@ class RamProfile(models.Model):
         return str(self.amount) + "G for " + str(self.host)
 
 
-##Networking -- located here due to import order requirements
+# Networking -- located here due to import order requirements
 class Network(models.Model):
     id = models.AutoField(primary_key=True)
     vlan_id = models.IntegerField()
@@ -105,6 +113,7 @@ class Network(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Vlan(models.Model):
     id = models.AutoField(primary_key=True)
@@ -194,6 +203,7 @@ class Scenario(models.Model):
     def __str__(self):
         return self.name
 
+
 class Installer(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=200)
@@ -201,6 +211,7 @@ class Installer(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Opsys(models.Model):
     id = models.AutoField(primary_key=True)
@@ -210,15 +221,17 @@ class Opsys(models.Model):
     def __str__(self):
         return self.name
 
+
 class ConfigBundle(models.Model):
     id = models.AutoField(primary_key=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE) #consider setting to root user?
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)  # consider setting to root user?
     name = models.CharField(max_length=200, unique=True)
     description = models.CharField(max_length=1000, default="")
     bundle = models.ForeignKey(GenericResourceBundle, null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
+
 
 class OPNFVConfig(models.Model):
     id = models.AutoField(primary_key=True)
@@ -229,6 +242,7 @@ class OPNFVConfig(models.Model):
     def __str__(self):
         return "OPNFV job with " + str(self.installer) + " and " + str(self.scenario)
 
+
 class OPNFVRole(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=200)
@@ -236,6 +250,7 @@ class OPNFVRole(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Image(models.Model):
     """
@@ -247,11 +262,13 @@ class Image(models.Model):
     name = models.CharField(max_length=200)
     owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     public = models.BooleanField(default=True)
-    host_type = models.ForeignKey(HostProfile, on_delete=models.CASCADE) #may need to change to models.SET() once images are transferrable between compatible host types
+    # may need to change host_type.on_delete to models.SET() once images are transferrable between compatible host types
+    host_type = models.ForeignKey(HostProfile, on_delete=models.CASCADE)
     description = models.TextField()
 
     def __str__(self):
         return self.name
+
 
 class HostConfiguration(models.Model):
     """
@@ -262,7 +279,7 @@ class HostConfiguration(models.Model):
     host = models.ForeignKey(GenericHost, related_name="configuration", on_delete=models.CASCADE)
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
     bundle = models.ForeignKey(ConfigBundle, related_name="hostConfigurations", null=True, on_delete=models.CASCADE)
-    opnfvRole = models.ForeignKey(OPNFVRole, on_delete=models.PROTECT) #need protocol for phasing out a role if we are going to allow that to happen
+    opnfvRole = models.ForeignKey(OPNFVRole, on_delete=models.PROTECT)
 
     def __str__(self):
         return "config with " + str(self.host) + " and image " + str(self.image)

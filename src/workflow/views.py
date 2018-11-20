@@ -8,15 +8,12 @@
 ##############################################################################
 
 
-from django.http import HttpResponse, HttpRequest, HttpResponseGone
-from django.urls import reverse
-from django.shortcuts import render, redirect
-from django import forms
+from django.http import HttpResponse, HttpResponseGone
+from django.shortcuts import render
 
 import uuid
 
-from workflow.forms import *
-from workflow.workflow_manager import *
+from workflow.workflow_manager import ManagerTracker, SessionManager
 
 import logging
 logger = logging.getLogger(__name__)
@@ -31,22 +28,24 @@ def attempt_auth(request):
     except KeyError:
         return None
 
+
 def delete_session(request):
     try:
-        manager = ManagerTracker.managers[request.session['manager_session']]
         del ManagerTracker.managers[request.session['manager_session']]
         return HttpResponse('')
-    except KeyError:
+    except Exception:
         return None
+
 
 def step_view(request):
     manager = attempt_auth(request)
     if not manager:
-        #no manager found, redirect to "lost" page
+        # no manager found, redirect to "lost" page
         return no_workflow(request)
     if request.GET.get('step') is not None:
         manager.goto(int(request.GET.get('step')))
     return manager.render(request)
+
 
 def manager_view(request):
     manager = attempt_auth(request)
@@ -54,9 +53,10 @@ def manager_view(request):
     if not manager:
         return HttpResponseGone("No session found that relates to current request")
 
-    if request.method == 'GET': #no need for this statement if only intercepting post requests
+    if request.method == 'GET':
+        # no need for this statement if only intercepting post requests
 
-        #return general context for viewport page
+        # return general context for viewport page
         return manager.status(request)
 
     if request.method == 'POST':
@@ -64,17 +64,16 @@ def manager_view(request):
             logger.debug("add found")
             target_id = None
             if 'target' in request.POST:
-                target_id=int(request.POST.get('target'))
+                target_id = int(request.POST.get('target'))
             manager.add_workflow(workflow_type=int(request.POST.get('add')), target_id=target_id)
         elif request.POST.get('edit') is not None and request.POST.get('edit_id') is not None:
             logger.debug("edit found")
             manager.add_workflow(workflow_type=request.POST.get('edit'), edit_object=int(request.POST.get('edit_id')))
         elif request.POST.get('cancel') is not None:
-            mgr = ManagerTracker.managers[request.session['manager_session']]
             del ManagerTracker.managers[request.session['manager_session']]
-            del mgr
 
     return manager.status(request)
+
 
 def viewport_view(request):
     if not request.user.is_authenticated:
@@ -84,10 +83,11 @@ def viewport_view(request):
     if manager is None:
         return no_workflow(request)
 
-    if  request.method == 'GET':
+    if request.method == 'GET':
         return render(request, 'workflow/viewport-base.html')
     else:
         pass
+
 
 def create_session(wf_type, request):
     wf = int(wf_type)
@@ -98,11 +98,13 @@ def create_session(wf_type, request):
 
     return manager_uuid
 
+
 def no_workflow(request):
 
     logger.debug("There is no active workflow")
 
     return render(request, 'workflow/no_workflow.html', {'title': "Not Found"})
+
 
 def login(request):
     return render(request, "dashboard/login.html", {'title': 'Authentication Required'})

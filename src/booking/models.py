@@ -11,11 +11,8 @@
 
 from resource_inventory.models import ResourceBundle, ConfigBundle
 from account.models import Lab
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
-from jira import JIRA
-from jira import JIRAError
 import resource_inventory.resource_manager
 
 
@@ -47,7 +44,7 @@ class Opsys(models.Model):
 
 class Booking(models.Model):
     id = models.AutoField(primary_key=True)
-    owner = models.ForeignKey(User, models.CASCADE, related_name='owner')  # delete if user is deleted
+    owner = models.ForeignKey(User, models.CASCADE, related_name='owner')
     collaborators = models.ManyToManyField(User, related_name='collaborators')
     start = models.DateTimeField()
     end = models.DateTimeField()
@@ -56,7 +53,7 @@ class Booking(models.Model):
     jira_issue_status = models.CharField(max_length=50, blank=True)
     purpose = models.CharField(max_length=300, blank=False)
     ext_count = models.IntegerField(default=2)
-    resource = models.ForeignKey(ResourceBundle, on_delete=models.SET_NULL, null=True) #need to decide behavior here on delete
+    resource = models.ForeignKey(ResourceBundle, on_delete=models.SET_NULL, null=True)
     config_bundle = models.ForeignKey(ConfigBundle, on_delete=models.SET_NULL, null=True)
     project = models.CharField(max_length=100, default="", blank=True, null=True)
     lab = models.ForeignKey(Lab, null=True, on_delete=models.SET_NULL)

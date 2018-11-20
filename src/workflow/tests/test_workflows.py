@@ -6,10 +6,10 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-from django.test import TestCase, client
+
+from django.test import TestCase
 from workflow.workflow_factory import WorkflowFactory
 from dashboard.populate_db import Populator
-from resource_inventory.models import *
 
 
 """
@@ -24,6 +24,7 @@ To start a workflow:
 To remove a workflow:
     POST to /wf/workflow {"cancel": ""}
 """
+
 
 class WorkflowTestCase(TestCase):
 
@@ -62,6 +63,7 @@ class WorkflowTestCase(TestCase):
 
             self.assertIsNone(exception)
 
+
 class BookingWorkflowTestCase(WorkflowTestCase):
 
     @classmethod
@@ -73,6 +75,7 @@ class BookingWorkflowTestCase(WorkflowTestCase):
     def test_steps_render(self):
         super(BookingWorkflowTestCase, self).render_steps()
 
+
 class ResourceWorkflowTestCase(WorkflowTestCase):
 
     @classmethod
@@ -83,6 +86,7 @@ class ResourceWorkflowTestCase(WorkflowTestCase):
 
     def test_steps_render(self):
         super(ResourceWorkflowTestCase, self).render_steps()
+
 
 class ConfigWorkflowTestCase(WorkflowTestCase):
 

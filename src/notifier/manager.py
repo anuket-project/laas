@@ -36,23 +36,29 @@ class NotificationHandler(object):
             the last is the title for the collaborators'
         """
         owner_notif = Notification.objects.create(
-                title=titles[0],
-                content=render_to_string(template, context={
+            title=titles[0],
+            content=render_to_string(
+                template,
+                context={
                     "booking": booking,
                     "owner": True
-                    })
-                )
+                }
+            )
+        )
         owner_notif.recipients.add(booking.owner)
         if not booking.collaborators.all().exists():
             return  # no collaborators - were done
 
         collab_notif = Notification.objects.create(
-                title=titles[-1],
-                content=render_to_string(template, context={
+            title=titles[-1],
+            content=render_to_string(
+                template,
+                context={
                     "booking": booking,
                     "owner": False
-                    })
-                )
+                }
+            )
+        )
         for c in booking.collaborators.all():
             collab_notif.recipients.add(c)
 
@@ -67,28 +73,30 @@ class NotificationHandler(object):
             # gather up all the relevant messages from the lab
             for task in all_tasks:
                 if (not hasattr(task, "user")) or task.user == user:
-                    user_tasklist.append({
-                        "title": task.type_str + " Message: ",
-                        "content": task.message
-                        })
+                    user_tasklist.append(
+                        {
+                            "title": task.type_str + " Message: ",
+                            "content": task.message
+                        }
+                    )
             # gather up all the other needed info
             context = {
-                    "user_name": user.userprofile.full_name,
-                    "messages": user_tasklist,
-                    "booking_url": os.environ.get("DASHBOARD_URL", "<Dashboard url>") + "/booking/detail/" + str(job.booking.id) + "/"
-                    }
+                "user_name": user.userprofile.full_name,
+                "messages": user_tasklist,
+                "booking_url": os.environ.get("DASHBOARD_URL", "<Dashboard url>") + "/booking/detail/" + str(job.booking.id) + "/"
+            }
 
             # render email template
             message = render_to_string(template_name, context)
 
             # finally, send the email
             send_mail(
-                    "Your Booking is Ready",
-                    message,
-                    os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@pharos-dashboard"),
-                    user.userprofile.email_addr,
-                    fail_silently=False
-                    )
+                "Your Booking is Ready",
+                message,
+                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@pharos-dashboard"),
+                user.userprofile.email_addr,
+                fail_silently=False
+            )
 
     @classmethod
     def email_booking_over(cls, booking):
@@ -98,21 +106,21 @@ class NotificationHandler(object):
         users.append(booking.owner)
         for user in users:
             context = {
-                    "user_name": user.userprofile.full_name,
-                    "booking": booking,
-                    "hosts": hostnames,
-                    "booking_url": os.environ.get("DASHBOARD_URL", "<Dashboard url>") + "/booking/detail/" + str(booking.id) + "/"
-                    }
+                "user_name": user.userprofile.full_name,
+                "booking": booking,
+                "hosts": hostnames,
+                "booking_url": os.environ.get("DASHBOARD_URL", "<Dashboard url>") + "/booking/detail/" + str(booking.id) + "/"
+            }
 
             message = render_to_string(template_name, context)
 
             send_mail(
-                    "Your Booking has Expired",
-                    message,
-                    os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@pharos-dashboard"),
-                    user.userprofile.email_addr,
-                    fail_silently=False
-                    )
+                "Your Booking has Expired",
+                message,
+                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@pharos-dashboard"),
+                user.userprofile.email_addr,
+                fail_silently=False
+            )
 
     @classmethod
     def task_updated(cls, task):

@@ -26,7 +26,14 @@ Including another URLconf
 """
 from django.conf.urls import url
 
-from booking.views import *
+from booking.views import (
+    booking_detail_view,
+    BookingDeleteView,
+    bookingDelete,
+    BookingListView,
+    booking_stats_view,
+    booking_stats_json
+)
 
 app_name = "booking"
 urlpatterns = [

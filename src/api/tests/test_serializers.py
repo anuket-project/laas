@@ -8,12 +8,29 @@
 ##############################################################################
 from django.test import TestCase
 from booking.models import Booking
-from resource_inventory.models import *
 from account.models import Lab
-from api.serializers.booking_serializer import *
+from api.serializers.booking_serializer import BookingField
 from datetime import timedelta
 from django.utils import timezone
 from django.contrib.auth.models import Permission, User
+from resource_inventory.models import (
+    Image,
+    OPNFVRole,
+    HostConfiguration,
+    HostProfile,
+    InterfaceProfile,
+    DiskProfile,
+    CpuProfile,
+    RamProfile,
+    GenericResourceBundle,
+    GenericResource,
+    GenericHost,
+    Host,
+    Vlan,
+    Interface,
+    ConfigBundle,
+    ResourceBundle
+)
 
 
 class BookingSerializerTestCase(TestCase):
@@ -24,35 +41,34 @@ class BookingSerializerTestCase(TestCase):
         lab_user = User.objects.create(username="asfasdfasdf")
         owner = User.objects.create(username="asfasdfasdffffff")
         lab = Lab.objects.create(
-                lab_user=lab_user,
-                name="TestLab123123",
-                contact_email="mail@email.com",
-                contact_phone=""
-                )
-        jumphost=True
+            lab_user=lab_user,
+            name="TestLab123123",
+            contact_email="mail@email.com",
+            contact_phone=""
+        )
+        jumphost = True
         for host in hosts:
             image = Image.objects.create(
-                    lab_id=12,
-                    from_lab=lab,
-                    name="this is a test image",
-                    owner=owner
-                    )
+                lab_id=12,
+                from_lab=lab,
+                name="this is a test image",
+                owner=owner
+            )
             name = "jumphost"
             if not jumphost:
                 name = "compute"
             role = OPNFVRole.objects.create(
-                    name=name,
-                    description="stuff"
-                    )
+                name=name,
+                description="stuff"
+            )
 
             HostConfiguration.objects.create(
-                    host=host,
-                    image=image,
-                    bundle=config,
-                    opnfvRole=role
-                    )
-            jumphost=False
-
+                host=host,
+                image=image,
+                bundle=config,
+                opnfvRole=role
+            )
+            jumphost = False
 
     def setUp(self):
         self.serializer = BookingField()
@@ -64,30 +80,30 @@ class BookingSerializerTestCase(TestCase):
             name='Test profile',
             description='a test profile'
         )
-        interfaceProfile = InterfaceProfile.objects.create(
+        InterfaceProfile.objects.create(
             speed=1000,
             name='eno3',
             host=hostProfile
         )
-        diskProfile = DiskProfile.objects.create(
+        DiskProfile.objects.create(
             size=1000,
             media_type="SSD",
             name='/dev/sda',
             host=hostProfile
         )
-        cpuProfile = CpuProfile.objects.create(
+        CpuProfile.objects.create(
             cores=96,
             architecture="x86_64",
             cpus=2,
             host=hostProfile
         )
-        ramProfile = RamProfile.objects.create(
+        RamProfile.objects.create(
             amount=256,
             channels=4,
             host=hostProfile
         )
 
-        #create GenericResourceBundle
+        # create GenericResourceBundle
         genericBundle = GenericResourceBundle.objects.create()
 
         gres1 = GenericResource.objects.create(
@@ -119,9 +135,9 @@ class BookingSerializerTestCase(TestCase):
         conf = ConfigBundle.objects.create(owner=user1, name="test conf")
         self.makeHostConfigurations([gHost1, gHost2], conf)
 
-        #actual resource bundle
+        # actual resource bundle
         bundle = ResourceBundle.objects.create(
-            template = genericBundle
+            template=genericBundle
         )
 
         host1 = Host.objects.create(
@@ -168,8 +184,8 @@ class BookingSerializerTestCase(TestCase):
         # finally, can create booking
         self.booking = Booking.objects.create(
             owner=user1,
-            start = timezone.now(),
-            end = timezone.now() + timedelta(weeks=1),
+            start=timezone.now(),
+            end=timezone.now() + timedelta(weeks=1),
             purpose='Testing',
             resource=bundle,
             config_bundle=conf
