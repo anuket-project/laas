@@ -14,5 +14,11 @@
 {% endblock content %}
 
 {% block onleave %}
-document.getElementById("resource_meta_form").submit();
+var ajaxForm = $("#resource_meta_form");
+var formData = ajaxForm.serialize();
+req = new XMLHttpRequest();
+req.open("POST", "/wf/workflow/", false);
+req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+req.onerror = function() { alert("problem submitting form"); }
+req.send(formData);
 {% endblock %}
