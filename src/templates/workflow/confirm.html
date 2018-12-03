@@ -70,15 +70,28 @@
         req.send(formData);
     }
 
+    function submitForm()
+    {
+        var form = $("#confirmation_form");
+        var formData = form.serialize();
+        var req = new XMLHttpRequest();
+        req.open("POST", "/wf/workflow/", false);
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.onerror = function() { alert("problem submitting confirmation"); }
+        req.onreadystatechange = function() { if(req.readyState === 4 ) { delete_manager(); } }
+        req.send(formData);
+    }
+
+
     function formconfirm()
     {
         select.value = "True";
-        document.getElementById("confirmation_form").submit();
+        submitForm();
     }
     function formcancel()
     {
         select.value = "False";
-        document.getElementById("confirmation_form").submit();
+        submitForm();
     }
 
     var confirmed = {{bypassed|default:"false"}};
@@ -91,7 +104,20 @@
 
 function fixVlans() {
     document.getElementById("vlan_input").value = "True";
-    document.getElementById("vlan_form").submit();
+    var form = $("#vlan_form");
+    var formData = form.serialize();
+    var req = new XMLHttpRequest();
+    req.open("POST", "/wf/workflow/", false);
+    req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    req.onerror = function() { alert("problem submitting form"); }
+    req.onreadystatechange = function() { //replaces current page with response
+        if(req.readyState === 4 ) {
+            document.open();
+            document.write(req.responseText);
+            document.close();
+        }
+    }
+    req.send(formData);
 }
 var problem = {{vlan_warning|default:'false'}};
 if(problem){
@@ -121,5 +147,4 @@ if(problem){
 {% endblock element_messages %}
 {% endblock content %}
 {% block onleave %}
-//document.getElementById("confirmation_form").submit();
 {% endblock %}

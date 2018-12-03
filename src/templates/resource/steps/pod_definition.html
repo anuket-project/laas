@@ -596,7 +596,6 @@ function submitForm() {
     var input_elem = document.getElementById("hidden_xml_input");
     var s = encodeGraph(currentGraph);
     input_elem.value = s;
-    //form.submit();
     req = new XMLHttpRequest();
     req.open("POST", "/wf/workflow/", false);
     req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
