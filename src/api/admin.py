@@ -17,6 +17,7 @@ from api.models import (
     HardwareConfig,
     NetworkConfig,
     SoftwareConfig,
+    AccessConfig,
     AccessRelation,
     SoftwareRelation,
     HostHardwareRelation,
@@ -33,6 +34,7 @@ admin.site.register(OpnfvApiConfig)
 admin.site.register(HardwareConfig)
 admin.site.register(NetworkConfig)
 admin.site.register(SoftwareConfig)
+admin.site.register(AccessConfig)
 admin.site.register(AccessRelation)
 admin.site.register(SoftwareRelation)
 admin.site.register(HostHardwareRelation)

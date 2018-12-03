@@ -652,7 +652,7 @@ class JobFactory(object):
                     revoke=False,
                     job=job,
                     context={
-                        "key": user.userprofile.ssh_public_key.read(),
+                        "key": user.userprofile.ssh_public_key.open().read().decode(encoding="UTF-8"),
                         "hosts": [host.labid for host in hosts]
                     }
                 )
