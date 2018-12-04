@@ -14,6 +14,9 @@
         height: calc(100% - 170px);
 
     }
+    .go_btn_disabled{
+            background-color: #ffffff;
+    }
     .go_forward{
         right: 0px;
         border-left: none;
@@ -208,6 +211,30 @@
     function update_breadcrumbs(meta_json) {
         step = meta_json['active'];
         page_count = meta_json['steps'].length;
+        if( step == 0 )
+        {
+                var btn = document.getElementById("gob");
+                btn.classList.add("go_btn_disabled");
+                btn.disabled = true;
+        }
+        else
+        {
+                var btn = document.getElementById("gob");
+                btn.classList.remove("go_btn_disabled");
+                btn.disabled = false;
+        }
+        if( step == page_count - 1 )
+        {
+                var btn = document.getElementById("gof");
+                btn.classList.add("go_btn_disabled");
+                btn.disabled = true;
+        }
+        else
+        {
+                var btn = document.getElementById("gof");
+                btn.classList.remove("go_btn_disabled");
+                btn.disabled = false;
+        }
         //remove all children of breadcrumbs so we can redraw
         var container = document.getElementById("breadcrumbs");
         while(container.firstChild){
