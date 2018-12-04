@@ -2,7 +2,7 @@
 {% block content %}
 <h2>Images I Own</h2>
     {% for image in images %}
-        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+        <div class="detail_card">
             <ul>
             <li>id: {{image.id}}</li>
             <li>lab: {{image.from_lab.name}}</li>
@@ -14,7 +14,7 @@
     {% endfor %}
 <h2>Public Images</h2>
     {% for image in public_images %}
-        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+        <div class="detail_card">
             <ul>
             <li>id: {{image.id}}</li>
             <li>lab: {{image.from_lab.name}}</li>

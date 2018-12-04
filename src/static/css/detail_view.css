@@ -1,0 +1,13 @@
+.detail_card {
+        border: 2px;
+        border-color: black;
+        border-radius: 5px;
+        margin: 5px;
+        box-shadow: 0px 0px 7px 0px rgba(0,0,0,0.75);
+}
+
+.detail_btn_group {
+        margin: 3px;
+        padding: 3px;
+        padding-bottom: 5px;
+}

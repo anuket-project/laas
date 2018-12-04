@@ -16,13 +16,15 @@ function edit_configuration(pk){
 }
 </script>
     {% for config in configurations %}
-        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+        <div class="detail_card">
             <ul>
                 <li>id: {{config.id}}</li>
                 <li>name: {{config.name}}</li>
                 <li>description: {{config.description}}</li>
             </ul>
-            <button onclick="edit_configuration({{config.id}});">Edit</button>
+            <div class="detail_btn_group">
+                <button class="btn" onclick="edit_configuration({{config.id}});">Edit</button>
+            </div>
         </div>
     {% endfor %}
 {% endblock %}
