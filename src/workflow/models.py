@@ -26,13 +26,11 @@ from booking.models import Booking
 class BookingAuthManager():
     LFN_PROJECTS = ["opnfv"]  # TODO
 
-    def parse_url(self, info_url):
-        """
-        will return the PTL in the INFO file on success, or None
-        """
+    def parse_github_url(self, url):
+        project_leads = []
         try:
-            parts = info_url.split("/")
-            if parts[0].find("http") > -1:  # the url include http(s)://
+            parts = url.split("/")
+            if "http" in parts[0]:  # the url include http(s)://
                 parts = parts[2:]
             if parts[-1] != "INFO.yaml":
                 return None
@@ -47,12 +45,83 @@ class BookingAuthManager():
             info_file = requests.get(url, timeout=15).text
             info_parsed = yaml.load(info_file)
             ptl = info_parsed.get('project_lead')
-            if not ptl:
+            if ptl:
+                project_leads.append(ptl)
+            sub_ptl = info_parsed.get("subproject_lead")
+            if sub_ptl:
+                project_leads.append(sub_ptl)
+
+        except Exception:
+            pass
+
+        return project_leads
+
+    def parse_gerrit_url(self, url):
+        project_leads = []
+        try:
+            parts = url.split("/")
+            if "http" in parts[0]:  # the url include http(s)://
+                parts = parts[2:]
+            if "f=INFO.yaml" not in parts[-1].split(";"):
                 return None
-            return ptl
+            if "gerrit.opnfv.org" not in parts[0]:
+                return None
+            # now to download and parse file
+            url = "https://" + "/".join(parts)
+            info_file = requests.get(url, timeout=15).text
+            info_parsed = yaml.load(info_file)
+            ptl = info_parsed.get('project_lead')
+            if ptl:
+                project_leads.append(ptl)
+            sub_ptl = info_parsed.get("subproject_lead")
+            if sub_ptl:
+                project_leads.append(sub_ptl)
 
         except Exception:
             return None
+
+        return project_leads
+
+    def parse_opnfv_git_url(self, url):
+        project_leads = []
+        try:
+            parts = url.split("/")
+            if "http" in parts[0]:  # the url include http(s)://
+                parts = parts[2:]
+            if "INFO.yaml" not in parts[-1]:
+                return None
+            if "git.opnfv.org" not in parts[0]:
+                return None
+            if parts[-2] == "tree":
+                parts[-2] = "plain"
+            # now to download and parse file
+            url = "https://" + "/".join(parts)
+            info_file = requests.get(url, timeout=15).text
+            info_parsed = yaml.load(info_file)
+            ptl = info_parsed.get('project_lead')
+            if ptl:
+                project_leads.append(ptl)
+            sub_ptl = info_parsed.get("subproject_lead")
+            if sub_ptl:
+                project_leads.append(sub_ptl)
+
+        except Exception:
+            return None
+
+        return project_leads
+
+    def parse_url(self, info_url):
+        """
+        will return the PTL in the INFO file on success, or None
+        """
+        if "github" in info_url:
+            return self.parse_github_url(info_url)
+
+        if "gerrit.opnfv.org" in info_url:
+            return self.parse_gerrit_url(info_url)
+
+        if "git.opnfv.org" in info_url:
+            return self.parse_opnfv_git_url(info_url)
 
     def booking_allowed(self, booking, repo):
         """
