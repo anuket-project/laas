@@ -71,7 +71,7 @@
 
     .step_untouched
     {
-        background: #98B0AF;
+        background: #DDDDDD;
     }
 
     .step_invalid
@@ -96,10 +96,12 @@
 <button id="gob" onclick="go(step-1)" class="btn btn go_btn go_back">Go Back</button>
 
 <div class="options">
-    <button class="btn" onclick="cancel_wf()">Cancel</button>
+    <button id="cancel_btn" class="btn" onclick="cancel_wf()">Cancel</button>
 </div>
 <div class="btn_wrapper">
-<div id="breadcrumbs">
+<div id="breadcrumbs" class="btn-group">
+    <div class="btn-group" id="breadcrumb-wrapper">
+    </div>
 </div>
 </div>
 {% csrf_token %}
@@ -206,6 +208,14 @@
     {
         context_data = data;
         update_breadcrumbs(data);
+        if(data["workflow_count"] == 1)
+        {
+                document.getElementById("cancel_btn").innerText = "Exit Workflow";
+        }
+        else
+        {
+                document.getElementById("cancel_btn").innerText = "Return to Parent";
+        }
     }
 
     function update_breadcrumbs(meta_json) {
@@ -240,60 +250,16 @@
         while(container.firstChild){
             container.removeChild(container.firstChild);
         }
-        //draw enough rows for all steps
-        var depth = meta_json['max_depth'];
-        for(var i=0; i<=depth; i++){
-            var div = document.createElement("DIV");
-            div.id = "row"+i;
-            if(i<depth){
-                div.style['margin-bottom'] = "7px";
-            }
-            if(i>0){
-                div.style['margin-top'] = "7px";
-            }
-            container.appendChild(div);
-        }
+
         draw_steps(meta_json);
     }
 
     function draw_steps(meta_json){
-        var all_relations = meta_json['relations'];
-        var relations = [];
-        var active_steps = [];
-        var active_step = step;
-        while(active_step < meta_json['steps'].length){
-            active_steps.push(active_step);
-            var index = meta_json['parents'][active_step];
-            var relation = all_relations[index];
-            relations.push(relation);
-            active_step = relation['parent'];
-        }
-        var child_index = meta_json['children'][step];
-        var my_children = all_relations[child_index];
-        if(my_children){
-            relations.push(my_children);
-        }
-        draw_relations(relations, meta_json, active_steps);
-    }
-
-    function draw_relations(relations, meta_json, active_steps){
-        for(var i=0; i<relations.length; i++){
-            var relation = relations[i];
-            var children_container = document.createElement("DIV");
-            children_container.style['display'] = "inline";
-            children_container.style['margin'] = "3px";
-            children_container.style['padding'] = "3px";
-            console.log("meta_json: ");
-            console.log(meta_json);
-            for(var j=0; j<relation['children'].length; j++){
-                var step_json = meta_json['steps'][relation['children'][j]];
-                step_json['index'] = relation['children'][j];
-                var active = active_steps.indexOf(step_json['index']) > -1;
-                var step_button = create_step(meta_json['steps'][relation['children'][j]], active);
-                children_container.appendChild(step_button);
-            }
-            var parent_div = document.getElementById("row" + relation['depth']);
-            parent_div.appendChild(children_container);
+        for( var i = 0; i < meta_json["steps"].length; i++ )
+        {
+            meta_json["steps"][i]["index"] = i;
+            var step_btn = create_step(meta_json["steps"][i], i == meta_json["active"]);
+            document.getElementById("breadcrumbs").appendChild(step_btn);
         }
     }
 
@@ -301,7 +267,6 @@
         var step_dom = document.createElement("DIV");
         if(active){
             step_dom.className = "step_active";
-            console.log(step_json['message']);
 
         } else{
             step_dom.className = "step";
@@ -333,30 +298,45 @@
         {
             update_message(msg, stat);
         }
+        step_dom.classList.add("btn");
 
         var step_number = step_json['index'];
         step_dom.onclick = function(){ go(step_number); }
-        //TODO: background color and other style
         return step_dom;
     }
 
     function cancel_wf(){
-        $.ajax({
-            type: "POST",
-            url: "/wf/manager/",
-            data: {"cancel":"",},
-            beforeSend: function(request) {
-                request.setRequestHeader("X-CSRFToken",
-                $('input[name="csrfmiddlewaretoken"]').val()
-                );
-            },
-            success: redirect_root()
-        });
+        var form = $("#workflow_pop_form");
+        var formData = form.serialize();
+        var req = new XMLHttpRequest();
+        req.open("POST", "/wf/workflow/finish/", false);
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.onerror = function() { alert("problem occurred while trying to cancel current workflow"); }
+        req.onreadystatechange = function() { if(req.readyState === 4){
+            refresh_iframe();
+        }};
+        req.send(formData);
+    }
+
+    function refresh_iframe() {
+        req = new XMLHttpRequest();
+        url = "/wf/workflow/";
+        req.open("GET", url, true);
+        req.onload = function(e) {
+            var doc = document.getElementById("viewport-iframe").contentWindow.document;
+            doc.open(); doc.write(this.responseText); doc.close();
+        }
+        req.send();
+    }
+
+    function write_iframe(contents)
+    {
+        document.getElementById("viewport-iframe").contentWindow.document.innerHTML= contents;
     }
 
     function redirect_root()
     {
-        window.location.replace('/');
+        window.location.replace('/wf/');
     }
 
     function add_wf(type){
@@ -447,6 +427,11 @@
      window.addEventListener('resize', resize_iframe);
     </script>
     <!-- /.col-lg-12 -->
+</div>
+<div style="display: none;" id="workflow_pop_form_div">
+<form id="workflow_pop_form" action="/wf/workflow/finish/" method="post">
+    {% csrf_token %}
+</form>
 </div>
 
 <iframe src="/wf/workflow" style="position: absolute; left: 351px; right: 105px; width: calc(100% - 450px); border-style: none; border-width: 1px; border-color: #888888;" scrolling="yes" id="viewport-iframe" onload="resize_iframe();"></iframe>

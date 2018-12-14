@@ -12,6 +12,7 @@ from workflow.booking_workflow import Booking_Resource_Select, SWConfig_Select, 
 from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
 from workflow.sw_bundle_workflow import Config_Software, Define_Software, SWConf_Resource_Select
 from workflow.snapshot_workflow import Select_Host_Step, Image_Meta_Step
+from workflow.models import Repository, Confirmation_Step
 
 import uuid
 
@@ -33,23 +34,6 @@ class ResourceMetaWorkflow(object):
 class ConfigMetaWorkflow(object):
     workflow_type = 2
     color = "#00ffcc"
-
-
-class MetaRelation(object):
-    def __init__(self, *args, **kwargs):
-        self.color = "#cccccc"
-        self.parent = 0
-        self.children = []
-        self.depth = -1
-
-    def to_json(self):
-        return {
-            'color': self.color,
-            'parent': self.parent,
-            'children': self.children,
-            'depth': self.depth,
-        }
-
 
 class MetaStep(object):
 
@@ -92,12 +76,18 @@ class MetaStep(object):
     def __ne__(self, other):
         return self.id.int != other.id.int
 
+class Workflow(object):
+    def __init__(self, steps, metasteps, repository):
+        self.repository = repository
+        self.steps = steps
+        self.metasteps = metasteps
+        self.active_index = 0
 
 class WorkflowFactory():
     booking_steps = [
         Booking_Resource_Select,
         SWConfig_Select,
-        Booking_Meta
+        Booking_Meta,
     ]
 
     resource_steps = [
@@ -114,7 +104,7 @@ class WorkflowFactory():
 
     snapshot_steps = [
         Select_Host_Step,
-        Image_Meta_Step
+        Image_Meta_Step,
     ]
 
     def conjure(self, workflow_type=None, repo=None):
@@ -129,8 +119,17 @@ class WorkflowFactory():
         meta_steps = self.metaize(steps=steps, wf_type=workflow_type)
         return steps, meta_steps
 
+    def create_workflow(self, workflow_type=None, repo=None):
+        steps, meta_steps = self.conjure(workflow_type, repo)
+        c_step = self.make_step(Confirmation_Step, repo)
+        metaconfirm = MetaStep()
+        metaconfirm.short_title = "confirm"
+        metaconfirm.index = len(steps)
+        steps.append(c_step)
+        meta_steps.append(metaconfirm)
+        return Workflow(steps, meta_steps, repo)
+
     def make_steps(self, step_types, repository):
-        repository.el['steps'] += len(step_types)
         steps = []
         for step_type in step_types:
             steps.append(self.make_step(step_type, repository))

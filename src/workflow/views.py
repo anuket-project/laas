@@ -30,6 +30,17 @@ def attempt_auth(request):
 
 
 def delete_session(request):
+    manager = attempt_auth(request)
+
+    if not manager:
+        return HttpResponseGone("No session found that relates to current request")
+
+    if manager.pop_workflow():
+        return HttpResponse('')
+    else:
+        del ManagerTracker.managers[request.session['manager_session']]
+        return render(request, 'workflow/exit_redirect.html')
+
     try:
         del ManagerTracker.managers[request.session['manager_session']]
         return HttpResponse('')
@@ -70,7 +81,8 @@ def manager_view(request):
             logger.debug("edit found")
             manager.add_workflow(workflow_type=request.POST.get('edit'), edit_object=int(request.POST.get('edit_id')))
         elif request.POST.get('cancel') is not None:
-            del ManagerTracker.managers[request.session['manager_session']]
+            if not manager.pop_workflow():
+                del ManagerTracker.managers[request.session['manager_session']]
 
     return manager.status(request)
 
