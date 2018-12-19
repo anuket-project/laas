@@ -131,9 +131,12 @@ class Define_Hardware(WorkflowStep):
         try:
             self.form = HardwareDefinitionForm(request.POST)
             if self.form.is_valid():
-                self.update_models(self.form.cleaned_data)
-                self.update_confirmation()
-                self.metastep.set_valid("Step Completed")
+                if len(json.loads(self.form.cleaned_data['filter_field']).labs) != 1:
+                    self.metastep.set_invalid("Please select one lab")
+                else:
+                    self.update_models(self.form.cleaned_data)
+                    self.update_confirmation()
+                    self.metastep.set_valid("Step Completed")
             else:
                 self.metastep.set_invalid("Please complete the fields highlighted in red to continue")
                 pass
