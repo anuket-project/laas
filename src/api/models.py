@@ -343,7 +343,7 @@ class AccessConfig(TaskConfig):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     revoke = models.BooleanField(default=False)
     context = models.TextField(default="")
-    delta = models.TextField()
+    delta = models.TextField(default="{}")
 
     def to_dict(self):
         d = {}
@@ -691,12 +691,12 @@ class JobFactory(object):
             config = AccessConfig()
             config.access_type = access_type
             config.user = user
-            if context:
-                config.set_context(context)
             config.save()
             relation.config = config
             relation.save()
             config.clear_delta()
+            if context:
+                config.set_context(context)
             config.set_access_type(access_type)
             config.set_revoke(revoke)
             config.set_user(user)
