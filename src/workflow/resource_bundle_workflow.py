@@ -131,7 +131,7 @@ class Define_Hardware(WorkflowStep):
         try:
             self.form = HardwareDefinitionForm(request.POST)
             if self.form.is_valid():
-                if len(json.loads(self.form.cleaned_data['filter_field']).labs) != 1:
+                if len(json.loads(self.form.cleaned_data['filter_field'])['labs']) != 1:
                     self.metastep.set_invalid("Please select one lab")
                 else:
                     self.update_models(self.form.cleaned_data)
