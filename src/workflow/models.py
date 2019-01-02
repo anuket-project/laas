@@ -528,6 +528,12 @@ class Repository():
             booking.collaborators.add(collaborator)
 
         try:
+            booking.pdf = ResourceManager().makePDF(booking.resource)
+            booking.save()
+        except Exception as e:
+            return "BOOK, failed to create Pod Desriptor File: " + str(e)
+
+        try:
             JobFactory.makeCompleteJob(booking)
         except Exception as e:
             return "BOOK, serializing for api generated exception: " + str(e) + " CODE:0xFFFF"

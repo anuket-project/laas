@@ -112,7 +112,7 @@ def booking_detail_view(request, booking_id):
         {
             'title': 'Booking Details',
             'booking': booking,
-            'pdf': ResourceManager().makePDF(booking.resource),
+            'pdf': booking.pdf,
             'user_id': user.id
         })
 
