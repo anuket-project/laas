@@ -112,9 +112,9 @@ function fixVlans() {
     req.onerror = function() { alert("problem submitting form"); }
     req.onreadystatechange = function() { //replaces current page with response
         if(req.readyState === 4 ) {
-            document.open();
-            document.write(req.responseText);
-            document.close();
+            var d = document.getElementById("vlan_warning").innerHTML = "";
+            document.getElementById("confirm_button").disabled = false;
+            document.getElementById("cancel_button").disabled = false;
         }
     }
     req.send(formData);
