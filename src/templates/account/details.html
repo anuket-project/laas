@@ -2,8 +2,8 @@
 {% load staticfiles %}
 {% block content %}
 <h1>Account Details</h1>
-<button onclick="location.href = '{% url 'account:my-resources' %}'">My Resources</button>
-<button onclick="location.href = '{% url 'account:my-bookings' %}'">My Bookings</button>
-<button onclick="location.href = '{% url 'account:my-configurations' %}'">My Configurations</button>
-<button onclick="location.href = '{% url 'account:my-images' %}'">My Snapshots</button>
+<button class="btn" onclick="location.href = '{% url 'account:my-resources' %}'">My Resources</button>
+<button class="btn" onclick="location.href = '{% url 'account:my-bookings' %}'">My Bookings</button>
+<button class="btn" onclick="location.href = '{% url 'account:my-configurations' %}'">My Configurations</button>
+<button class="btn" onclick="location.href = '{% url 'account:my-images' %}'">My Snapshots</button>
 {% endblock content %}

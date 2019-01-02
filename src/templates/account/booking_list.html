@@ -17,7 +17,7 @@ function edit_booking(pk){
 </script>
 <h2>Bookings I Own</h2>
     {% for booking in bookings %}
-        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+        <div class="detail_card">
             <ul>
             <li>id: {{booking.id}}</li>
             <li>lab: {{booking.resource.template.lab.lab_user.username}}</li>
@@ -26,15 +26,15 @@ function edit_booking(pk){
             <li>end: {{booking.end}}</li>
             <li>purpose: {{booking.purpose}}</li>
             </ul>
-            <div style="display:inline;margin:3px;padding:3px">
-                <button onclick="edit_booking({{booking.id}});">Edit</button>
-                <button onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
+            <div class="detail_btn_group">
+                <button class="btn" onclick="edit_booking({{booking.id}});">Edit</button>
+                <button class="btn" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
             </div>
         </div>
     {% endfor %}
 <h2>Bookings I Collaborate On</h2>
     {% for booking in collab_bookings %}
-        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+        <div class="detail_card">
             <ul>
             <li>id: {{booking.id}}</li>
             <li>lab: {{booking.lab}}</li>
@@ -43,9 +43,9 @@ function edit_booking(pk){
             <li>end: {{booking.end}}</li>
             <li>purpose: {{booking.purpose}}</li>
             </ul>
-            <div style="display:inline;margin:3px;padding:3px">
-                <button disabled=true onclick="edit_booking({{booking.id}});">Edit</button>
-                <button onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
+            <div class="detail_btn_group">
+                <button class="btn" disabled=true onclick="edit_booking({{booking.id}});">Edit</button>
+                <button class="btn" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
             </div>
         </div>
     {% endfor %}

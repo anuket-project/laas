@@ -16,13 +16,15 @@ function edit_resource(pk){
 }
 </script>
     {% for resource in resources %}
-        <div style="border:2px;border-style:solid;border-color:grey;margin:5px">
+        <div class="detail_card">
             <ul>
                 <li>id: {{resource.id}}</li>
                 <li>name: {{resource.name}}</li>
                 <li>description: {{resource.description}}</li>
             </ul>
-            <button onclick="edit_resource({{resource.id}});">Edit</button>
+            <div class="detail_btn_group">
+                <button class="btn" onclick="edit_resource({{resource.id}});">Edit</button>
+            </div>
         </div>
     {% endfor %}
 {% endblock %}
