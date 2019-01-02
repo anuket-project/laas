@@ -27,8 +27,8 @@ function edit_booking(pk){
             <li>purpose: {{booking.purpose}}</li>
             </ul>
             <div class="detail_btn_group">
-                <button style="display: none" class="btn" onclick="edit_booking({{booking.id}});">Edit</button>
-                <button class="btn" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
+                <button style="display:none" class="btn btn-primary" onclick="edit_booking({{booking.id}});">Edit</button>
+                <button class="btn btn-primary" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
             </div>
         </div>
     {% endfor %}
@@ -44,8 +44,8 @@ function edit_booking(pk){
             <li>purpose: {{booking.purpose}}</li>
             </ul>
             <div class="detail_btn_group">
-                <button style="display: none" class="btn" disabled=true onclick="edit_booking({{booking.id}});">Edit</button>
-                <button class="btn" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
+                <button style="display: none" class="btn btn-primary" disabled=true onclick="edit_booking({{booking.id}});">Edit</button>
+                <button class="btn btn-primary" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
             </div>
         </div>
     {% endfor %}
