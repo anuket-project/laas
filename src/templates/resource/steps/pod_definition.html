@@ -141,6 +141,14 @@ function main(graphContainer, overviewContainer, toolbarContainer) {
         }
     });
 
+    createDeleteDialog = function(id)
+    {
+                var content = document.createElement('div');
+                var innerHTML = "<button style='width: 46%;' onclick=deleteCell('" + id + "');>Remove</button>"
+                innerHTML += "<button style='width: 46%;' onclick='currentWindow.destroy();'>Cancel</button>"
+                content.innerHTML = innerHTML;
+                showWindow(currentGraph, 'Do you want to delete this network?', content, 200, 62);
+    }
     graph.dblClick = function(evt, cell) {
 
         if( cell != null ){
@@ -148,11 +156,7 @@ function main(graphContainer, overviewContainer, toolbarContainer) {
                 cell = cell.getParent();
             }
             if( cell.isEdge() || cell.getId().indexOf("network") > -1 ) {
-                var content = document.createElement('div');
-                var innerHTML = "<button onclick=deleteCell('" + cell.getId() + "');>Remove</button>"
-                innerHTML += "<button onclick='currentWindow.destroy();'>Cancel</button>"
-                content.innerHTML = innerHTML;
-                showWindow(this, 'Delete?', content, 200, 200);
+                createDeleteDialog(cell.getId());
             }
             else {
             showDetailWindow(cell);
@@ -226,8 +230,8 @@ function deleteCell(cellId) {
 function newNetworkWindow() {
     var innerHtml = 'Name: <input type="text" name="net_name" id="net_name_input" style="margin:5px;"><br>';
     innerHtml += 'Vlan: <input type="number" step="1" name="vlan_id" id="vlan_id_input" style="margin:5px;"><br>';
-    innerHtml += '<button type="button" onclick="parseNetworkWindow()">Okay</button>';
-    innerHtml += '<button type="button" onclick="currentWindow.destroy();">Cancel</button><br>';
+    innerHtml += '<button style="width: 46%;" onclick="parseNetworkWindow()">Okay</button>';
+    innerHtml += '<button style="width: 46%;" onclick="currentWindow.destroy();">Cancel</button><br>';
     innerHtml += '<div id="current_window_vlans"/>';
     innerHtml += '<div id="current_window_errors"/>';
     var content = document.createElement("div");
@@ -503,6 +507,7 @@ function makeMxNetwork(vlan_id, net_name) {
 
 function addPublicNetwork() {
     var net = makeMxNetwork(-1, "public");
+    network_names.add("public");
     makeSidebarNetwork("public", "", net['color'], net['element_id']);
 }
 
@@ -542,14 +547,32 @@ function updateHosts(removed) {
 
 function makeSidebarNetwork(net_name, vlan_id, color, net_id){
     var newNet = document.createElement("li");
+    var colorBlob = document.createElement("div");
+    colorBlob.className = "colorblob";
+    var textContainer = document.createElement("p");
+    textContainer.className = "network_innertext";
     newNet.id = net_id;
+    var deletebutton = document.createElement("button");
+    deletebutton.className = "btn btn-danger";
+    deletebutton.style = "float: right; height: 20px; line-height: 8px; vertical-align: middle; width: 20px; padding-left: 5px;";
+    deleteButtonText = document.createTextNode("X");
+    deletebutton.appendChild(deleteButtonText);
+    deletebutton.addEventListener("click", function() {
+            createDeleteDialog(net_id);
+    }, false);
     var text = net_name;
     if(vlan_id){
         text += " : " + vlan_id;
     }
     var newNetValue = document.createTextNode(text);
-    newNet.appendChild(newNetValue);
-    newNet.style['background'] = color;
+    textContainer.appendChild(newNetValue);
+    colorBlob.style['background'] = color;
+    newNet.appendChild(colorBlob);
+    newNet.appendChild(textContainer);
+    if( net_name != "public" )
+    {
+        newNet.appendChild(deletebutton);
+    }
     document.getElementById("network_list").appendChild(newNet);
 }
 
@@ -609,7 +632,7 @@ function submitForm() {
 <!-- Calls the main function after the page has loaded. Container is dynamically created. -->
 {% block content %}
     <div id="graphParent"
-         style="position:absolute;overflow:hidden;top:0px;bottom:0px;width:65%;left:0px;">
+         style="position:absolute;overflow:hidden;top:0px;bottom:0px;width:75%;left:0px;">
         <div id="graphContainer"
             style="position:relative;overflow:hidden;top:36px;bottom:0px;left:0px;right:0px;background-image:url('/static/img/mxgraph/grid.gif');cursor:default;">
         </div>
@@ -617,7 +640,7 @@ function submitForm() {
 
         <!-- Creates a container for the sidebar -->
         <div id="toolbarContainer"
-            style="position:absolute;white-space:nowrap;overflow:hidden;top:0px;left:0px;max-height:24px;height:36px;right:0px;padding:6px;background-image:url('/static/img/mxgraph/toolbar_bg.gif');">
+            style="position:absolute;white-space:nowrap;overflow:hidden;top:0px;left:0px;right:0px;padding:6px;">
         </div>
 
         <!-- Creates a container for the outline -->
@@ -626,8 +649,60 @@ function submitForm() {
         </div>
     </div>
 
-    <div id="network_select" style="position:absolute;top:0px;bottom:0px;width:35%;right:0px;left:auto;background:grey">
-        <button type="button" onclick="newNetworkWindow();">Add Network</button>
+    <style>
+        #network_select {
+                background: inherit;
+                padding: 0px;
+                padding-top: 0px;
+        }
+        #toolbarContainer {
+                background: #DDDDDD;
+                height: 36px;
+        }
+        #toolbar_extension {
+                height: 36px;
+                background: #DDDDDD;
+        }
+        #btn_add_network {
+                width: 100%;
+        }
+        #vlan_notice {
+                margin: 20px;
+        }
+        #network_list li {
+                border-radius: 2px;
+                margin: 5px;
+                padding: 5px;
+                vertical-align: middle;
+                background: #DDDDDD;
+        }
+        #network_list {
+                list-style-type: none;
+                padding: 0;
+        }
+        .colorblob {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: inline-block;
+                vertical-align: middle;
+        }
+        .network_innertext {
+                display: inline-block;
+                padding-left: 10px;
+                vertical-align: middle;
+                padding-bottom: 0px;
+                margin-bottom: 2px;
+        }
+        .mxWindow {
+                background: #FFFFFF;
+        }
+    </style>
+
+    <div id="network_select" style="position:absolute;top:0px;bottom:0px;width:25%;right:0px;left:auto;">
+        <div id="toolbar_extension">
+        <button id="btn_add_network" type="button" class="btn btn-primary" onclick="newNetworkWindow();">Add Network</button>
+        </div>
         <ul id="network_list">
         </ul>
         <p id="vlan_notice"></p>

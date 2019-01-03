@@ -26,9 +26,6 @@ div.mxRubberband {
     margin: 0px;
 }
 div.mxWindow {
-    -webkit-box-shadow: 3px 3px 12px #C0C0C0;
-    -moz-box-shadow: 3px 3px 12px #C0C0C0;
-    box-shadow: 3px 3px 12px #C0C0C0;
     background: url('../img/mxgraph/window.gif');
     border:1px solid #c3c3c3;
     position: absolute;
@@ -67,19 +64,32 @@ td.mxWindowPane td {
     font-size: 8pt;
 }
 td.mxWindowPane input, td.mxWindowPane select, td.mxWindowPane textarea, td.mxWindowPane radio {
-      border-color: #8C8C8C;
-      border-style: solid;
-      border-width: 1px;
       font-family: Arial;
     font-size: 8pt;
      padding: 1px;
 }
 td.mxWindowPane button {
-    background: url('/static/img/mxgraph/button.gif') repeat-x;
-      font-family: Arial;
-      font-size: 8pt;
-      padding: 2px;
-    float: left;
+    color: #fff;
+    background-color: #337ab7;
+    border-color: #2e6da4;
+    display: inline-block;
+    margin: 2%;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.42857143;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    -ms-touch-action: manipulation;
+    touch-action: manipulation;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background-image: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
 }
 img.mxToolbarItem {
     margin-right: 6px;
