@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.db.models import Q
 from booking.models import Booking
 from notifier.manager import NotificationHandler
-from api.models import JobStatus, SoftwareRelation, HostHardwareRelation, HostNetworkRelation, AccessRelation
+from api.models import Job, JobStatus, SoftwareRelation, HostHardwareRelation, HostNetworkRelation, AccessRelation
 from resource_inventory.resource_manager import ResourceManager
 
 
@@ -92,12 +92,11 @@ def free_hosts():
     """
     gets all hosts from the database that need to be freed and frees them
     """
-    networks = ~Q(~Q(job__hostnetworkrelation__status=200))
-    hardware = ~Q(~Q(job__hosthardwarerelation__status=200))
+    undone_jobs = Job.objects.filter(hostnetworkrelation__status__ne=200, hosthardwarerelation__status__ne=200)
 
-    bookings = Booking.objects.filter(
-        networks,
-        hardware,
+    bookings = Booking.objects.exclude(
+        job_in=undone_jobs
+    ).filter(
         end__lt=timezone.now(),
         job__complete=True,
         resource__isnull=False
