@@ -21,9 +21,10 @@ function edit_configuration(pk){
                 <li>id: {{config.id}}</li>
                 <li>name: {{config.name}}</li>
                 <li>description: {{config.description}}</li>
+                <li>resource: {{config.bundle}}</li>
             </ul>
             <div class="detail_btn_group">
-                <button class="btn" onclick="edit_configuration({{config.id}});">Edit</button>
+                <button style="display: none" class="btn" onclick="edit_configuration({{config.id}});">Edit</button>
             </div>
         </div>
     {% endfor %}

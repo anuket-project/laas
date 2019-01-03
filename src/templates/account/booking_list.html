@@ -27,7 +27,7 @@ function edit_booking(pk){
             <li>purpose: {{booking.purpose}}</li>
             </ul>
             <div class="detail_btn_group">
-                <button class="btn" onclick="edit_booking({{booking.id}});">Edit</button>
+                <button style="display: none" class="btn" onclick="edit_booking({{booking.id}});">Edit</button>
                 <button class="btn" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
             </div>
         </div>
@@ -44,7 +44,7 @@ function edit_booking(pk){
             <li>purpose: {{booking.purpose}}</li>
             </ul>
             <div class="detail_btn_group">
-                <button class="btn" disabled=true onclick="edit_booking({{booking.id}});">Edit</button>
+                <button style="display: none" class="btn" disabled=true onclick="edit_booking({{booking.id}});">Edit</button>
                 <button class="btn" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
             </div>
         </div>
