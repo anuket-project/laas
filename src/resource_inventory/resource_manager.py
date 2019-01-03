@@ -38,6 +38,31 @@ class ResourceManager:
         hostprofileset = HostProfile.objects.filter(host__in=hostset, labs=lab)
         return set(hostprofileset)
 
+    def hostsAvailable(self, grb):
+        """
+        This method will check if the given GenericResourceBundle
+        is available. No changes to the database
+        """
+
+        # count up hosts
+        profile_count = {}
+        for host in grb.getHosts():
+            if host.profile not in profile_count:
+                profile_count[host.profile] = 0
+            profile_count[host.profile] += 1
+
+        # check that all required hosts are available
+        for profile in profile_count.keys():
+            available = Host.objects.filter(
+                booked=False,
+                lab=grb.lab,
+                profile=profile
+            ).count()
+            needed = profile_count[profile]
+            if available < needed:
+                return False
+        return True
+
     # public interface
     def deleteResourceBundle(self, resourceBundle):
         for host in Host.objects.filter(bundle=resourceBundle):
