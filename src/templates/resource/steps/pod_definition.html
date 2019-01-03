@@ -85,7 +85,11 @@ function main(graphContainer, overviewContainer, toolbarContainer) {
 
     addToolbarButton(editor, toolbarContainer, 'zoomIn', '', "/static/img/mxgraph/zoom_in.png", true);
     addToolbarButton(editor, toolbarContainer, 'zoomOut', '', "/static/img/mxgraph/zoom_out.png", true);
+
+    {% if debug %}
     addToolbarButton(editor, toolbarContainer, 'printXML', '', '/static/img/mxgraph/fit_to_size.png', true);
+    {% endif %}
+
     var outline = new mxOutline(graph, overviewContainer);
 
 
