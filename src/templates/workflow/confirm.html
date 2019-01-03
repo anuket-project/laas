@@ -66,7 +66,9 @@
         req.open("POST", "/wf/workflow/finish/", false);
         req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         req.onerror = function() { alert("problem with cleaning up session"); }
-        req.onreadystatechange = function() { if(req.readyState === 4 ) { parent.redirect_root(); } }
+        req.onreadystatechange = function() { if(req.readyState === 4 ) {
+                window.top.refresh_iframe();
+                }}
         req.send(formData);
     }
 

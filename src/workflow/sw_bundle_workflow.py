@@ -20,15 +20,8 @@ from resource_inventory.models import Image, GenericHost, ConfigBundle, HostConf
 class SWConf_Resource_Select(Resource_Select):
     def __init__(self, *args, **kwargs):
         super(SWConf_Resource_Select, self).__init__(*args, **kwargs)
-        self.repo_key = self.repo.SWCONF_SELECTED_GRB
+        self.repo_key = self.repo.SELECTED_GRESOURCE_BUNDLE
         self.confirm_key = "configuration"
-
-    def get_default_entry(self):
-        booking_grb = self.repo_get(self.repo.BOOKING_SELECTED_GRB)
-        if booking_grb:
-            return booking_grb
-        created_grb = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {}).get("bundle", None)
-        return created_grb
 
     def post_render(self, request):
         response = super(SWConf_Resource_Select, self).post_render(request)
@@ -80,7 +73,7 @@ class Define_Software(WorkflowStep):
                         break
             excluded_images = Image.objects.exclude(owner=user).exclude(public=True)
             excluded_images = excluded_images | Image.objects.exclude(host_type=host.profile)
-            lab = self.repo_get(self.repo.SWCONF_SELECTED_GRB).lab
+            lab = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE).lab
             excluded_images = excluded_images | Image.objects.exclude(from_lab=lab)
             filter_data["id_form-" + str(i) + "-image"] = []
             for image in excluded_images:
@@ -91,7 +84,7 @@ class Define_Software(WorkflowStep):
 
     def get_host_list(self, grb=None):
         if grb is None:
-            grb = self.repo_get(self.repo.SWCONF_SELECTED_GRB, False)
+            grb = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE, False)
             if not grb:
                 return []
         if grb.id:
@@ -102,7 +95,7 @@ class Define_Software(WorkflowStep):
     def get_context(self):
         context = super(Define_Software, self).get_context()
 
-        grb = self.repo_get(self.repo.SWCONF_SELECTED_GRB, False)
+        grb = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE, False)
 
         if grb:
             context["grb"] = grb
@@ -134,7 +127,7 @@ class Define_Software(WorkflowStep):
                 i += 1
                 image = form.cleaned_data['image']
                 # checks image compatability
-                grb = self.repo_get(self.repo.SWCONF_SELECTED_GRB)
+                grb = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE)
                 lab = None
                 if grb:
                     lab = grb.lab

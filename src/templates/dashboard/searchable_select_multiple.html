@@ -1,6 +1,12 @@
 <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
 
 <div class="autocomplete" style="width:400px;">
+    <div id="warning_pane" style="background: #FFFFFF; color: #CC0000;">
+        {% if incompatible == "true" %}
+        <h3>Warning: Incompatible Configuration</h3>
+        <p>Please make a different selection, as the current config conflicts with the selected pod</p>
+        {% endif %}
+    </div>
     <input id="user_field" name="ignore_this" class="form-control" autocomplete="off" type="text" placeholder="{{placeholder}}" value="{{initial.name}}" oninput="search(this.value)"
     {% if disabled %} disabled {% endif %}
     >

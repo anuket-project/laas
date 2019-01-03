@@ -10,6 +10,7 @@
 
 from django.shortcuts import render
 from django.contrib import messages
+from django.http import HttpResponse
 
 import yaml
 import requests
@@ -141,7 +142,6 @@ class BookingAuthManager():
 
 
 class WorkflowStep(object):
-
     template = 'bad_request.html'
     title = "Generic Step"
     description = "You were led here by mistake"
@@ -189,8 +189,10 @@ class Confirmation_Step(WorkflowStep):
     description = "Does this all look right?"
 
     def get_vlan_warning(self):
-        grb = self.repo_get(self.repo.BOOKING_SELECTED_GRB, False)
+        grb = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE, False)
         if not grb:
+            return 0
+        if self.repo.BOOKING_MODELS not in self.repo.el:
             return 0
         vlan_manager = grb.lab.vlan_manager
         if vlan_manager is None:
@@ -233,9 +235,10 @@ class Confirmation_Step(WorkflowStep):
                 errors = self.flush_to_db()
                 if errors:
                     messages.add_message(request, messages.ERROR, "ERROR OCCURRED: " + errors)
-                    return render(request, self.template, context)
-                messages.add_message(request, messages.SUCCESS, "Confirmed")
-                return render(request, self.template, context)
+                else:
+                    messages.add_message(request, messages.SUCCESS, "Confirmed")
+
+                return HttpResponse('')
             elif data == "False":
                 context["bypassed"] = "true"
                 messages.add_message(request, messages.SUCCESS, "Canceled")
@@ -251,7 +254,7 @@ class Confirmation_Step(WorkflowStep):
             pass
 
     def translate_vlans(self):
-        grb = self.repo_get(self.repo.BOOKING_SELECTED_GRB, False)
+        grb = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE, False)
         if not grb:
             return 0
         vlan_manager = grb.lab.vlan_manager
@@ -285,6 +288,7 @@ class Repository():
     RESOURCE_SELECT = "resource_select"
     CONFIRMATION = "confirmation"
     SELECTED_GRESOURCE_BUNDLE = "selected generic bundle pk"
+    SELECTED_CONFIG_BUNDLE = "selected config bundle pk"
     GRESOURCE_BUNDLE_MODELS = "generic_resource_bundle_models"
     GRESOURCE_BUNDLE_INFO = "generic_resource_bundle_info"
     BOOKING = "booking"
@@ -292,8 +296,6 @@ class Repository():
     GRB_LAST_HOSTLIST = "grb_network_previous_hostlist"
     BOOKING_FORMS = "booking_forms"
     SWCONF_HOSTS = "swconf_hosts"
-    SWCONF_SELECTED_GRB = "swconf_selected_grb_pk"
-    BOOKING_SELECTED_GRB = "booking_selected_grb_pk"
     BOOKING_MODELS = "booking models"
     CONFIG_MODELS = "configuration bundle models"
     SESSION_USER = "session owner user account"
@@ -306,6 +308,22 @@ class Repository():
     SNAPSHOT_NAME = "the name of the snapshot"
     SNAPSHOT_DESC = "description of the snapshot"
     BOOKING_INFO_FILE = "the INFO.yaml file for this user's booking"
+
+    #migratory elements of segmented workflow
+    #each of these is the end result of a different workflow.
+    HAS_RESULT = "whether or not workflow has a result"
+    RESULT_KEY = "key for target index that result will be put into in parent"
+    RESULT = "result object from workflow"
+
+    def get_child_defaults(self):
+        return_tuples = []
+        for key in [self.SELECTED_GRESOURCE_BUNDLE, self.SESSION_USER]:
+            return_tuples.append((key, self.el.get(key)))
+        return return_tuples
+
+    def set_defaults(self, defaults):
+        for key, value in defaults:
+            self.el[key] = value
 
     def get(self, key, default, id):
         self.add_get_history(key, id)
@@ -337,11 +355,19 @@ class Repository():
             errors = self.make_generic_resource_bundle()
             if errors:
                 return errors
+            else:
+                self.el[self.HAS_RESULT] = True
+                self.el[self.RESULT_KEY] = self.SELECTED_GRESOURCE_BUNDLE
+                return
 
         if self.CONFIG_MODELS in self.el:
             errors = self.make_software_config_bundle()
             if errors:
                 return errors
+            else:
+                self.el[self.HAS_RESULT] = True
+                self.el[self.RESULT_KEY] = self.SELECTED_CONFIG_BUNDLE
+                return
 
         if self.BOOKING_MODELS in self.el:
             errors = self.make_booking()
@@ -434,7 +460,7 @@ class Repository():
         else:
             return "GRB no models given. CODE:0x0001"
 
-        self.el[self.VALIDATED_MODEL_GRB] = bundle
+        self.el[self.RESULT] = bundle
         return False
 
     def make_software_config_bundle(self):
@@ -472,15 +498,15 @@ class Repository():
         else:
             pass
 
-        self.el[self.VALIDATED_MODEL_CONFIG] = bundle
+        self.el[self.RESULT] = bundle
         return False
 
     def make_booking(self):
         models = self.el[self.BOOKING_MODELS]
         owner = self.el[self.SESSION_USER]
 
-        if self.BOOKING_SELECTED_GRB in self.el:
-            selected_grb = self.el[self.BOOKING_SELECTED_GRB]
+        if self.SELECTED_GRESOURCE_BUNDLE in self.el:
+            selected_grb = self.el[self.SELECTED_GRESOURCE_BUNDLE]
         else:
             return "BOOK, no selected resource. CODE:0x000e"
 
@@ -570,5 +596,6 @@ class Repository():
     def __init__(self):
         self.el = {}
         self.el[self.CONFIRMATION] = {}
+        self.el["active_step"] = 0
         self.get_history = {}
         self.put_history = {}

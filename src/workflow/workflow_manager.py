@@ -13,8 +13,8 @@ from django.http import JsonResponse
 import random
 
 from booking.models import Booking
-from workflow.workflow_factory import WorkflowFactory, MetaStep, MetaRelation
-from workflow.models import Repository, Confirmation_Step
+from workflow.workflow_factory import WorkflowFactory, MetaStep
+from workflow.models import Repository
 from resource_inventory.models import (
     GenericResourceBundle,
     ConfigBundle,
@@ -27,103 +27,65 @@ logger = logging.getLogger(__name__)
 
 
 class SessionManager():
+    def active_workflow(self):
+        return self.workflows[-1]
 
     def __init__(self, request=None):
-        self.repository = Repository()
-        self.repository.el[self.repository.SESSION_USER] = request.user
-        self.repository.el['active_step'] = 0
-        self.steps = []
+        self.workflows = []
+
+        self.owner = request.user
+
         self.factory = WorkflowFactory()
-        c_step = WorkflowFactory().make_step(Confirmation_Step, self.repository)
-        self.steps.append(c_step)
-        metaconfirm = MetaStep()
-        metaconfirm.index = 0
-        metaconfirm.short_title = "confirm"
-        self.repository.el['steps'] = 1
-        self.metaworkflow = None
-        self.metaworkflows = []
-        self.metarelations = []
-        self.relationreverselookup = {}
-        self.initialized = False
-        self.active_index = 0
-        self.step_meta = [metaconfirm]
-        self.relation_depth = 0
 
     def add_workflow(self, workflow_type=None, target_id=None, **kwargs):
         if target_id is not None:
             self.prefill_repo(target_id, workflow_type)
-        factory_steps, meta_info = self.factory.conjure(workflow_type=workflow_type, repo=self.repository)
-        offset = len(meta_info)
-        for relation in self.metarelations:
-            if relation.depth > self.relation_depth:
-                self.relation_depth = relation.depth
-            if relation.parent >= self.repository.el['active_step']:
-                relation.parent += offset
-                for i in range(0, len(relation.children)):
-                    if relation.children[i] >= self.repository.el['active_step']:
-                        relation.children[i] += offset
-        self.step_meta[self.active_index:self.active_index] = meta_info
-        self.steps[self.active_index:self.active_index] = factory_steps
 
-        if self.initialized:
-            relation = MetaRelation()
-            relation.parent = self.repository.el['active_step'] + offset
-            relation.depth = self.relationreverselookup[self.step_meta[relation.parent]].depth + 1
-            if relation.depth > self.relation_depth:
-                self.relation_depth = relation.depth
-            for i in range(self.repository.el['active_step'], offset + self.repository.el['active_step']):
-                relation.children.append(i)
-                self.relationreverselookup[self.step_meta[i]] = relation
-            relation.color = "#%06x" % random.randint(0, 0xFFFFFF)
-            self.metarelations.append(relation)
-        else:
-            relation = MetaRelation()
-            relation.depth = 0
-            relation.parent = 500000000000
-            for i in range(0, len(self.step_meta)):
-                relation.children.append(i)
-                self.relationreverselookup[self.step_meta[i]] = relation
-            self.metarelations.append(relation)
-            self.initialized = True
+        repo = Repository()
+        if(len(self.workflows) >= 1):
+            defaults = self.workflows[-1].repository.get_child_defaults()
+            repo.set_defaults(defaults)
+            repo.el[repo.HAS_RESULT] = False
+        repo.el[repo.SESSION_USER] = self.owner
+        self.workflows.append(self.factory.create_workflow(workflow_type=workflow_type, repo = repo))
+
+    def pop_workflow(self):
+        if( len(self.workflows) <= 1 ):
+            return False
+
+        if self.workflows[-1].repository.el[self.workflows[-1].repository.HAS_RESULT]:
+            key = self.workflows[-1].repository.el[self.workflows[-1].repository.RESULT_KEY]
+            result = self.workflows[-1].repository.el[self.workflows[-1].repository.RESULT]
+            self.workflows[-2].repository.el[key] = result
+        self.workflows.pop()
+        return True
 
     def status(self, request):
         try:
-            steps = []
-            for step in self.step_meta:
-                steps.append(step.to_json())
-            parents = {}
-            children = {}
+            meta_steps = []
+            for step in self.active_workflow().metasteps:
+                meta_steps.append(step.to_json())
             responsejson = {}
-            responsejson["steps"] = steps
-            responsejson["active"] = self.repository.el['active_step']
-            responsejson["relations"] = []
-            i = 0
-            for relation in self.metarelations:
-                responsejson["relations"].append(relation.to_json())
-                children[relation.parent] = i
-                for child in relation.children:
-                    parents[child] = i
-                i += 1
-            responsejson['max_depth'] = self.relation_depth
-            responsejson['parents'] = parents
-            responsejson['children'] = children
+            responsejson["steps"] = meta_steps
+            responsejson["active"] = self.active_workflow().repository.el['active_step']
+            responsejson["workflow_count"] = len(self.workflows)
             return JsonResponse(responsejson, safe=False)
-        except Exception:
+        except Exception as e:
             pass
 
     def render(self, request, **kwargs):
         # filter out when a step needs to handle post/form data
         # if 'workflow' in post data, this post request was meant for me, not step
         if request.method == 'POST' and request.POST.get('workflow', None) is None:
-            return self.steps[self.active_index].post_render(request)
-        return self.steps[self.active_index].render(request)
+            return self.active_workflow().steps[self.active_workflow().active_index].post_render(request)
+        return self.active_workflow().steps[self.active_workflow().active_index].render(request)
 
     def post_render(self, request):
-        return self.steps[self.active_index].post_render(request)
+        return self.active_workflow().steps[self.active_workflow().active_index].post_render(request)
 
     def goto(self, num, **kwargs):
-        self.repository.el['active_step'] = int(num)
-        self.active_index = int(num)
+        self.active_workflow().repository.el['active_step'] = int(num)
+        self.active_workflow().active_index = int(num)
         # TODO: change to include some checking
 
     def prefill_repo(self, target_id, workflow_type):
@@ -142,29 +104,28 @@ class SessionManager():
     def prefill_booking(self, booking):
         models = self.make_booking_models(booking)
         confirmation = self.make_booking_confirm(booking)
-        self.repository.el[self.repository.BOOKING_MODELS] = models
-        self.repository.el[self.repository.CONFIRMATION] = confirmation
-        self.repository.el[self.repository.GRESOURCE_BUNDLE_MODELS] = self.make_grb_models(booking.resource.template)
-        self.repository.el[self.repository.BOOKING_SELECTED_GRB] = self.make_grb_models(booking.resource.template)['bundle']
-        self.repository.el[self.repository.CONFIG_MODELS] = self.make_config_models(booking.config_bundle)
+        self.active_workflow().repository.el[self.active_workflow().repository.BOOKING_MODELS] = models
+        self.active_workflow().repository.el[self.active_workflow().repository.CONFIRMATION] = confirmation
+        self.active_workflow().repository.el[self.active_workflow().repository.GRESOURCE_BUNDLE_MODELS] = self.make_grb_models(booking.resource.template)
+        self.active_workflow().repository.el[self.active_workflow().repository.SELECTED_GRESOURCE_BUNDLE] = self.make_grb_models(booking.resource.template)['bundle']
+        self.active_workflow().repository.el[self.active_workflow().repository.CONFIG_MODELS] = self.make_config_models(booking.config_bundle)
 
     def prefill_resource(self, resource):
         models = self.make_grb_models(resource)
         confirm = self.make_grb_confirm(resource)
-        self.repository.el[self.repository.GRESOURCE_BUNDLE_MODELS] = models
-        self.repository.el[self.repository.CONFIRMATION] = confirm
+        self.active_workflow().repository.el[self.active_workflow().repository.GRESOURCE_BUNDLE_MODELS] = models
+        self.active_workflow().repository.el[self.active_workflow().repository.CONFIRMATION] = confirm
 
     def prefill_config(self, config):
         models = self.make_config_models(config)
         confirm = self.make_config_confirm(config)
-        self.repository.el[self.repository.CONFIG_MODELS] = models
-        self.repository.el[self.repository.CONFIRMATION] = confirm
+        self.active_workflow().repository.el[self.active_workflow().repository.CONFIG_MODELS] = models
+        self.active_workflow().repository.el[self.active_workflow().repository.CONFIRMATION] = confirm
         grb_models = self.make_grb_models(config.bundle)
-        self.repository.el[self.repository.GRESOURCE_BUNDLE_MODELS] = grb_models
-        self.repository.el[self.repository.SWCONF_SELECTED_GRB] = config.bundle
+        self.active_workflow().repository.el[self.active_workflow().repository.GRESOURCE_BUNDLE_MODELS] = grb_models
 
     def make_grb_models(self, resource):
-        models = self.repository.el.get(self.repository.GRESOURCE_BUNDLE_MODELS, {})
+        models = self.active_workflow().repository.el.get(self.active_workflow().repository.GRESOURCE_BUNDLE_MODELS, {})
         models['hosts'] = []
         models['bundle'] = resource
         models['interfaces'] = {}
@@ -181,7 +142,7 @@ class SessionManager():
         return models
 
     def make_grb_confirm(self, resource):
-        confirm = self.repository.el.get(self.repository.CONFIRMATION, {})
+        confirm = self.active_workflow().repository.el.get(self.active_workflow().repository.CONFIRMATION, {})
         confirm['resource'] = {}
         confirm['resource']['hosts'] = []
         confirm['resource']['lab'] = resource.lab.lab_user.username
@@ -190,7 +151,7 @@ class SessionManager():
         return confirm
 
     def make_config_models(self, config):
-        models = self.repository.el.get(self.repository.CONFIG_MODELS, {})
+        models = self.active_workflow().repository.el.get(self.active_workflow().repository.CONFIG_MODELS, {})
         models['bundle'] = config
         models['host_configs'] = []
         for host_conf in HostConfiguration.objects.filter(bundle=config):
@@ -199,7 +160,7 @@ class SessionManager():
         return models
 
     def make_config_confirm(self, config):
-        confirm = self.repository.el.get(self.repository.CONFIRMATION, {})
+        confirm = self.active_workflow().repository.el.get(self.active_workflow().repository.CONFIRMATION, {})
         confirm['configuration'] = {}
         confirm['configuration']['hosts'] = []
         confirm['configuration']['name'] = config.name
@@ -213,7 +174,7 @@ class SessionManager():
         return confirm
 
     def make_booking_models(self, booking):
-        models = self.repository.el.get(self.repository.BOOKING_MODELS, {})
+        models = self.active_workflow().repository.el.get(self.active_workflow().repository.BOOKING_MODELS, {})
         models['booking'] = booking
         models['collaborators'] = []
         for user in booking.collaborators.all():
@@ -221,7 +182,7 @@ class SessionManager():
         return models
 
     def make_booking_confirm(self, booking):
-        confirm = self.repository.el.get(self.repository.CONFIRMATION, {})
+        confirm = self.active_workflow().repository.el.get(self.active_workflow().repository.CONFIRMATION, {})
         confirm['booking'] = {}
         confirm['booking']['length'] = (booking.end - booking.start).days
         confirm['booking']['project'] = booking.project

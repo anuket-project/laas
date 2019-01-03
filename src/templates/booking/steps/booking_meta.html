@@ -58,7 +58,6 @@
 {% block onleave %}
 var ajaxForm = $("#booking_meta_form");
 var formData = ajaxForm.serialize();
-console.log(formData);
 req = new XMLHttpRequest();
 req.open("POST", "/wf/workflow/", false);
 req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
