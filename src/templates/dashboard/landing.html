@@ -3,6 +3,11 @@
 
 {% block content %}
     <div class="">
+        {% if not request.user.userprofile.ssh_public_key %}
+        <h4 style="text-align: center; background: #AA0000; color: #FFFFFF; padding: 10px; border-radius: 3px; height: 40px;">
+            Warning: you need to upload an ssh key under <a href="/accounts/settings">account settings</a> if you wish to log into the servers you book
+        </h4>
+        {% endif %}
         <p style="text-align:center;">Welcome to the Pharos Dashboard! To get started, select one of the options below:</p>
     </div>
 {% csrf_token %}
