@@ -118,6 +118,7 @@ class Define_Software(WorkflowStep):
         HostFormset = formset_factory(HostSoftwareDefinitionForm, extra=0)
         formset = HostFormset(request.POST)
         hosts = self.get_host_list()
+        has_jumphost = False
         if formset.is_valid():
             models['host_configs'] = []
             i = 0
@@ -140,6 +141,8 @@ class Define_Software(WorkflowStep):
                 except:
                     self.metastep.set_invalid("Image " + image.name + " is not compatible with host " + host.resource.name)
                 role = form.cleaned_data['role']
+                if "jumphost" in role.name.lower():
+                    has_jumphost = True
                 bundle = models['bundle']
                 hostConfig = HostConfiguration(
                     host=host,
@@ -150,6 +153,10 @@ class Define_Software(WorkflowStep):
                 models['host_configs'].append(hostConfig)
                 confirm_host = {"name": host.resource.name, "image": image.name, "role": role.name}
                 confirm_hosts.append(confirm_host)
+
+            if not has_jumphost:
+                self.metastep.set_invalid('Must have at least one "Jumphost" per POD')
+                return self.render(request)
 
             self.repo_put(self.repo.CONFIG_MODELS, models)
             if "configuration" not in confirm:
