@@ -350,7 +350,10 @@ class AccessConfig(TaskConfig):
         d['access_type'] = self.access_type
         d['user'] = self.user.id
         d['revoke'] = self.revoke
-        d['context'] = json.loads(self.context)
+        try:
+            d['context'] = json.loads(self.context)
+        except:
+            pass
         return d
 
     def get_delta(self):
