@@ -92,10 +92,14 @@ def free_hosts():
     """
     gets all hosts from the database that need to be freed and frees them
     """
-    undone_jobs = Job.objects.filter(hostnetworkrelation__status__ne=200, hosthardwarerelation__status__ne=200)
+    undone_statuses = [JobStatus.NEW, JobStatus.CURRENT, JobStatus.ERROR]
+    undone_jobs = Job.objects.filter(
+        hostnetworkrelation__status__in=undone_statuses,
+        hosthardwarerelation__status__in=undone_statuses
+    )
 
     bookings = Booking.objects.exclude(
-        job_in=undone_jobs
+        job__in=undone_jobs
     ).filter(
         end__lt=timezone.now(),
         job__complete=True,
