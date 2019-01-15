@@ -1,20 +1,29 @@
 {% extends "base.html" %}
 {% load staticfiles %}
+{% load bootstrap3 %}
 
 {% block extrahead %}
     {{block.super}}
 <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
-<script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
 {% endblock %}
 
 {% block content %}
+
+<style>
+#modal_warning {
+    transition: max-height 0.5s ease-out;
+    overflow: hidden;
+}
+
+</style>
+
 <div class="container-fluid">
     <div class="row">
-        <div class="col-lg-6">
+        <div class="col-lg-4">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
                     <h4 style="display: inline;">Overview</h4>
-                    <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;" >Expand</a>
+                    <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;">Expand</a>
                 </div>
                 <div class="panel-body" id="panel_overview">
                     <table class="table">
@@ -50,9 +59,7 @@
                 </div>
             </div>
             <div class="row">
-
-                <div class="col-lg-6">
-
+                <div class="col-lg-12">
                     <div class="panel panel-default">
                         <div class="panel-heading clearfix">
                             <h4 style="display: inline;">Pod</h4>
@@ -79,7 +86,15 @@
                                         </tr>
                                         <tr>
                                             <td>Image:</td>
-                                            <td>{{host.config.image}}</td>
+                                            <td id="host_image_{{host.id}}">
+                                                {{host.config.image}}
+                                                <button
+                                                    style="margin-left:10px;"
+                                                    class="btn btn-primary"
+                                                    data-toggle="modal"
+                                                    data-target="#imageModal"
+                                                    onclick="set_image_dropdown('{{host.profile.name}}', {{host.id}});"
+                                                >Change/Reset</button></td>
                                         </tr>
                                         <tr>
                                             <td>RAM:</td>
@@ -152,10 +167,7 @@
                                                 </table>
                                             </td>
                                         </tr>
-
-
                                     </table>
-
                                 </td>
                             {% endfor %}
                             </tr>
@@ -163,31 +175,15 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6">
-
-                    <div class="panel panel-default">
-                        <div class="panel-heading clearfix">
-                            <h4 style="display: inline;">PDF</h4>
-                            <a data-toggle="collapse" data-target="#pdf_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
-                        </div>
-
-                        <div class="panel-body" id="pdf_panel" style="padding: 0px;">
-                            <pre class="prettyprint lang-yaml" style="margin: 0px; padding: 0px; border: none;">
-{{pdf}}
-                            </pre>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
-        <div class="col-lg-6">
+        <div class="col-lg-8">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
                     <h4 style="display: inline;">Deployment Progress</h4>
                     <p style="display: inline; margin-left: 10px;">  These are the different tasks that have to be completed before your deployment is ready</p>
                    <a data-toggle="collapse" data-target="#panel_tasks" class="btn pull-right" style="line-height: 1;" >Expand</a>
                 </div>
-
                 <div class="panel-body" id="panel_tasks">
                     <table class="table">
                         <style>
@@ -214,7 +210,6 @@
                                   background: #f3f3f3;
                                   border-radius: 50%;
                                   animation: fadeInOut 1s infinite alternate;
-
 
                               }
                               @keyframes fadeInOut {
@@ -244,9 +239,7 @@
                                 {% else %}
                                     <div class="done"></div>
                                 {% endif %}
-                                </td>
-
-
+                            </td>
                             <td>
                                 {% if task.status < 100 %}
                                     PENDING
@@ -257,7 +250,6 @@
                                 {% endif %}
                             </td>
                             <td>
-
                                 {% if task.message %}
                                 {% if task.type_str == "Access Task" and user_id != task.config.user.id %}
                                 Message from Lab: <pre>--secret--</pre>
@@ -270,11 +262,25 @@
                             </td>
                             <td>
                                 {{ task.type_str }}
-
                             </td>
                         </tr>
                         {% endfor %}
                     </table>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="panel panel-default">
+                        <div class="panel-heading clearfix">
+                            <h4 style="display: inline;">PDF</h4>
+                            <a data-toggle="collapse" data-target="#pdf_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+                        </div>
+                        <div class="panel-body" id="pdf_panel" style="padding: 0px;">
+                            <pre class="prettyprint lang-yaml" style="margin: 0px; padding: 15px; border: none;">
+{{pdf}}
+                            </pre>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -282,4 +288,78 @@
 </div>
 
 
+<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="width: 450px;" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="exampleModalLabel" style="display: inline; float: left;">Host Image</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="image_host_form">
+                    {% csrf_token %}
+                    <select class="form-control" style="width: 80%; margin-left: 10%" id="image_select" name="image_id">
+                    </select>
+                    <input id="host_id_input" type="hidden" name="host_id">
+                    </input>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('modal_warning').style['max-height'] = '500px';">Reset Host</button>
+            </div>
+            <div id="modal_warning" class="modal-footer" style="max-height:0px;" >
+                <div style="text-align:center; margin: 5px">
+                    <h3>Are You Sure?</h3>
+                    <p>This will wipe the disk and reimage the host</p>
+                    <button class="btn" onclick="document.getElementById('modal_warning').style['max-height'] = '0px';">Nevermind</button>
+                    <button class="btn btn-danger" data-dismiss="modal" onclick="submit_image_form();">I'm Sure</button>
+                </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var image_mapping = {{image_mapping|safe}};
+    var current_host_id = 0;
+    function set_image_dropdown(profile_name, host_id) {
+        document.getElementById("host_id_input").value = host_id;
+        current_host_id = host_id;
+        var dropdown = document.getElementById("image_select");
+        var length = dropdown.length;
+        //clear dropdown
+        for(i=length-1; i>=0; i--){
+            dropdown.options.remove(i);
+        }
+        var images = image_mapping[profile_name];
+        var image_length = images.length;
+        for(i=0; i<image_length; i++){
+            var opt = document.createElement("OPTION");
+            opt.value = images[i].value;
+            opt.appendChild(document.createTextNode(images[i].name));
+            dropdown.options.add(opt);
+        }
+
+        document.getElementById("modal_warning").style['max-height'] = '0px';
+    }
+
+    function submit_image_form() {
+        var ajaxForm = $("#image_host_form");
+        var formData = ajaxForm.serialize();
+        req = new XMLHttpRequest();
+        req.open("POST", "/booking/modify/{{booking.id}}/image/", true);
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.onerror = function() { alert("problem submitting form"); }
+        req.onreadystatechange = function() {
+            if(req.readyState === 4) {
+                node = document.getElementById("host_image_" + current_host_id);
+                text = document.createTextNode(req.responseText);
+                node.replaceChild(text, node.firstChild);
+            }
+        }
+        req.send(formData);
+    }
+</script>
 {% endblock content %}

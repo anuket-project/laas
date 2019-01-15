@@ -10,17 +10,20 @@
 
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 from django.shortcuts import redirect, render
+from django.db.models import Q
 
-from account.models import Lab
+from resource_inventory.models import ResourceBundle, HostProfile, Image, Host
 from resource_inventory.resource_manager import ResourceManager
-from resource_inventory.models import ResourceBundle
+from account.models import Lab
 from booking.models import Booking
 from booking.stats import StatisticsManager
+from booking.forms import HostReImageForm
+from api.models import HostHardwareRelation, JobStatus
 from workflow.views import login
 from booking.forms import QuickBookingForm
 from booking.quick_deployer import create_from_form, drop_filter
@@ -125,6 +128,19 @@ class ResourceBookingsJSON(View):
         return JsonResponse({'bookings': list(bookings)})
 
 
+def build_image_mapping(lab, user):
+    mapping = {}
+    for profile in HostProfile.objects.filter(labs=lab):
+        images = Image.objects.filter(
+            from_lab=lab,
+            host_type=profile
+        ).filter(
+            Q(public=True) | Q(owner=user)
+        )
+        mapping[profile.name] = [{"name": image.name, "value": image.id} for image in images]
+    return mapping
+
+
 def booking_detail_view(request, booking_id):
     user = None
     if request.user.is_authenticated:
@@ -138,15 +154,39 @@ def booking_detail_view(request, booking_id):
     if user not in allowed_users:
         return render(request, "dashboard/login.html", {'title': 'This page is private'})
 
+    context = {
+        'title': 'Booking Details',
+        'booking': booking,
+        'pdf': booking.pdf,
+        'user_id': user.id,
+        'image_mapping': build_image_mapping(booking.lab, user)
+    }
+
     return render(
         request,
         "booking/booking_detail.html",
-        {
-            'title': 'Booking Details',
-            'booking': booking,
-            'pdf': booking.pdf,
-            'user_id': user.id
-        })
+        context
+    )
+
+
+def booking_modify_image(request, booking_id):
+    form = HostReImageForm(request.POST)
+    if form.is_valid():
+        booking = Booking.objects.get(id=booking_id)
+        if request.user != booking.owner:
+            return HttpResponse("unauthorized")
+        if timezone.now() > booking.end:
+            return HttpResponse("unauthorized")
+        new_image = Image.objects.get(id=form.cleaned_data['image_id'])
+        host = Host.objects.get(id=form.cleaned_data['host_id'])
+        relation = HostHardwareRelation.objects.get(host=host, job__booking=booking)
+        config = relation.config
+        config.set_image(new_image.lab_id)
+        config.save()
+        relation.status = JobStatus.NEW
+        relation.save()
+        return HttpResponse(new_image.name)
+    return HttpResponse("error")
 
 
 def booking_stats_view(request):

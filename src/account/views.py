@@ -181,8 +181,8 @@ def account_booking_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
     template = "account/booking_list.html"
-    bookings = list(Booking.objects.filter(owner=request.user))
-    collab_bookings = list(request.user.collaborators.all())
+    bookings = list(Booking.objects.filter(owner=request.user).order_by("-start"))
+    collab_bookings = list(request.user.collaborators.all().order_by("-start"))
     context = {"title": "My Bookings", "bookings": bookings, "collab_bookings": collab_bookings}
     return render(request, template, context=context)
 

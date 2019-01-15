@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2018 Sawyer Bergeron, Parker Berberian, and others.
+# Copyright (c) 2018 Parker Berberian, Sawyer Bergeron, and others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -28,7 +28,7 @@ class QuickBookingForm(forms.Form):
     installer = forms.ModelChoiceField(queryset=Installer.objects.all(), required=False)
     scenario = forms.ModelChoiceField(queryset=Scenario.objects.all(), required=False)
 
-    def __init__(self, data=None, *args, user=None, **kwargs):
+    def __init__(self, data=None, user=None, *args, **kwargs):
         chosen_users = []
         if "default_user" in kwargs:
             default_user = kwargs.pop("default_user")
@@ -104,3 +104,9 @@ class QuickBookingForm(forms.Form):
             'edit': False
         }
         return attrs
+
+
+class HostReImageForm(forms.Form):
+
+    image_id = forms.IntegerField()
+    host_id = forms.IntegerField()
