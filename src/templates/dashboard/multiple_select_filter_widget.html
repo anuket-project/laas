@@ -376,6 +376,7 @@ function updateResult(nodeId){
         var node = document.getElementById(nodeId);
         var value = {}
         value[nodeId] = node.parentNode.getElementsByTagName("input")[0].value;
+        result[node.parentNode.parentNode.id] = {};
         result[node.parentNode.parentNode.id][nodeId] = value;
     }
 }
