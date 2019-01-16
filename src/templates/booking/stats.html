@@ -42,8 +42,10 @@ function getData(){
 
 {% block content %}
     <p>Number of days to plot: </p>
-    <input id="number_days" type="number" min="1" step="1"/>
-    <button onclick="getData();">Submit</button>
+    <div class="form-group">
+        <input id="number_days" type="number" class="form-control" min="1" step="1" style="display:inline;width:200px"/>
+        <button class="btn btn-primary" onclick="getData();" style="display:inline;">Submit</button>
+    </div>
     <div id="all_graph_container">
         <div id="booking_graph_wrapper">
             <div id="booking_graph_container"/>
