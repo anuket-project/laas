@@ -461,7 +461,7 @@ class SnapshotHostSelectForm(forms.Form):
 
 class SnapshotMetaForm(forms.Form):
     name = forms.CharField()
-    description = forms.CharField()
+    description = forms.CharField(widget=forms.Textarea)
 
 
 class ConfirmationForm(forms.Form):

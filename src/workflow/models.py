@@ -11,6 +11,7 @@
 from django.shortcuts import render
 from django.contrib import messages
 from django.http import HttpResponse
+from django.utils import timezone
 
 import yaml
 import requests
@@ -385,6 +386,8 @@ class Repository():
         if not booking_id:
             return "SNAP, No booking ID provided"
         booking = Booking.objects.get(pk=booking_id)
+        if booking.start > timezone.now() or booking.end < timezone.now():
+            return "Booking is not active"
         name = self.el.get(self.SNAPSHOT_NAME)
         if not name:
             return "SNAP, no name provided"
@@ -400,6 +403,13 @@ class Repository():
         image.owner = owner
         image.host_type = host.profile
         image.save()
+        try:
+            current_image = host.config.image
+            image.os = current_image.os
+            image.save()
+        except Exception:
+            pass
+        JobFactory.makeSnapshotTask(image, booking, host)
 
     def make_generic_resource_bundle(self):
         owner = self.el[self.SESSION_USER]

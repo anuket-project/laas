@@ -4,16 +4,21 @@
 {% load bootstrap3 %}
 
 {% block content %}
-
-
 <style>
+.meta_container {
+    padding: 50px;
+}
 </style>
-
 {% bootstrap_form_errors form type='non_fields' %}
-<form id="meta_form" action="/wf/workflow/" method="POST" class="form">
-{% csrf_token %}
-{{form}}
-</form>
+<div class="meta_container">
+    <form id="meta_form" action="/wf/workflow/" method="POST" class="form">
+    {% csrf_token %}
+    <div class="form-group">
+    {% bootstrap_field form.name %}
+    {% bootstrap_field form.description %}
+    </div>
+    </form>
+</div>
 {% endblock content %}
 
 {% block onleave %}

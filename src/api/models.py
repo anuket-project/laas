@@ -214,6 +214,10 @@ class Job(models.Model):
             if 'network' not in d:
                 d['network'] = {}
             d['network'][relation.task_id] = relation.config.to_dict()
+        for relation in SnapshotRelation.objects.filter(job=self):
+            if 'snapshot' not in d:
+                d['snapshot'] = {}
+            d['snapshot'][relation.task_id] = relation.config.to_dict()
 
         j['payload'] = d
 
@@ -221,7 +225,13 @@ class Job(models.Model):
 
     def get_tasklist(self, status="all"):
         tasklist = []
-        clist = [HostHardwareRelation, AccessRelation, HostNetworkRelation, SoftwareRelation]
+        clist = [
+            HostHardwareRelation,
+            AccessRelation,
+            HostNetworkRelation,
+            SoftwareRelation,
+            SnapshotRelation
+        ]
         if status == "all":
             for cls in clist:
                 tasklist += list(cls.objects.filter(job=self))
@@ -261,6 +271,10 @@ class Job(models.Model):
             if 'network' not in d:
                 d['network'] = {}
             d['network'][relation.task_id] = relation.config.get_delta()
+        for relation in SnapshotRelation.objects.filter(job=self).filter(status=status):
+            if 'snapshot' not in d:
+                d['snapshot'] = {}
+            d['snapshot'][relation.task_id] = relation.config.get_delta()
 
         j['payload'] = d
         return j
@@ -534,6 +548,61 @@ class NetworkConfig(TaskConfig):
         self.delta = json.dumps(d)
 
 
+class SnapshotConfig(TaskConfig):
+
+    host = models.ForeignKey(Host, null=True, on_delete=models.DO_NOTHING)
+    image = models.IntegerField(null=True)
+    dashboard_id = models.IntegerField()
+    delta = models.TextField(default="{}")
+
+    def to_dict(self):
+        d = {}
+        if self.host:
+            d['host'] = self.host.labid
+        if self.image:
+            d['image'] = self.image
+        d['dashboard_id'] = self.dashboard_id
+        return d
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def get_delta(self):
+        if not self.delta:
+            self.delta = self.to_json()
+            self.save()
+        d = json.loads(self.delta)
+        return d
+
+    def clear_delta(self):
+        self.delta = json.dumps(self.to_dict())
+        self.save()
+
+    def set_host(self, host):
+        self.host = host
+        d = json.loads(self.delta)
+        d['host'] = host.labid
+        self.delta = json.dumps(d)
+
+    def set_image(self, image):
+        self.image = image
+        d = json.loads(self.delta)
+        d['image'] = self.image
+        self.delta = json.dumps(d)
+
+    def clear_image(self):
+        self.image = None
+        d = json.loads(self.delta)
+        d.pop("image", None)
+        self.delta = json.dumps(d)
+
+    def set_dashboard_id(self, dash):
+        self.dashboard_id = dash
+        d = json.loads(self.delta)
+        d['dashboard_id'] = self.dashboard_id
+        self.delta = json.dumps(d)
+
+
 def get_task(task_id):
     for taskclass in [AccessRelation, SoftwareRelation, HostHardwareRelation, HostNetworkRelation]:
         try:
@@ -617,7 +686,39 @@ class HostNetworkRelation(TaskRelation):
         return super(self.__class__, self).delete(*args, **kwargs)
 
 
+class SnapshotRelation(TaskRelation):
+    snapshot = models.ForeignKey(Image, on_delete=models.CASCADE)
+    config = models.OneToOneField(SnapshotConfig, on_delete=models.CASCADE)
+
+    def type_str(self):
+        return "Snapshot Task"
+
+    def get_delta(self):
+        return self.config.to_dict()
+
+    def delete(self, *args, **kwargs):
+        self.config.delete()
+        return super(self.__class__, self).delete(*args, **kwargs)
+
+
 class JobFactory(object):
+
+    @classmethod
+    def makeSnapshotTask(cls, image, booking, host):
+        relation = SnapshotRelation()
+        job = Job.objects.get(booking=booking)
+        config = SnapshotConfig.objects.create(dashboard_id=image.id)
+
+        relation.job = job
+        relation.config = config
+        relation.config.save()
+        relation.config = relation.config
+        relation.snapshot = image
+        relation.save()
+
+        config.clear_delta()
+        config.set_host(host)
+        config.save()
 
     @classmethod
     def makeCompleteJob(cls, booking):

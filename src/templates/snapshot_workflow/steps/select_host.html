@@ -5,43 +5,73 @@
 
 {% block content %}
 
-
 <style>
     .booking {
-        border-style: solid;
+        border-style: none;
         border-color: black;
-        border-width: 2px;
-        display: inline-block;
-        padding: 3px;
+        border: 2px;
+        border-radius: 5px;
+        margin: 20px;
+        padding-left: 25px;
+        padding-right: 25px;
+        padding-bottom: 25px;
+        box-shadow: 0px 0px 7px 0px rgba(0,0,0,0.75);
+        transition-property: box-shadow;
+        transition-duration: 0.1s;
+        float: left;
+    }
+    .booking:hover {
+        box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
+        transition-property: box-shadow;
+        transition-duration: 0.1s;
     }
     .host {
+        cursor: pointer;
         border-style: solid;
         border-color: black;
         border-width: 1px;
-        margin: 2px;
+        border-radius: 5px;
+        margin: 5px;
+        padding: 5px;
+        text-align: center;
+        box-shadow: 0px 0px 2px 0px rgba(0,0,0,0.75);
+        transition-property: box-shadow;
+        transition-duration: 0.1s;
+    }
+    .host:hover {
+        box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+        transition-property: box-shadow;
+        transition-duration: 0.1s;
+        background-color: rgba(144,238,144,0.3);
+    }
+    .selected {
+        background-color: lightgreen !important;
+    }
+    .booking_container {
+        overflow: auto;
+        padding: 30px;
     }
 </style>
-
 {% bootstrap_form_errors form type='non_fields' %}
 <form id="host_select_form" action="/wf/workflow/" method="POST" class="form">
 {% csrf_token %}
 <input type="hidden" id="hidden_json_input", name="host"/>
 </form>
-<div id="host_select_container">
+<div id="host_select_container" class="booking_container">
 </div>
 <script>
 var selected_host = null;
-var initial = {{chosen|default:'null'}};
+var initial = {{chosen|safe|default:'null'}};
 
 function select(booking_id, host_name){
     var input = document.getElementById("hidden_json_input");
     input.value = JSON.stringify({"booking": booking_id, "name": host_name});
     // clear out and highlist host
     if(selected_host){
-        selected_host.style['background-color'] = "white";
+        selected_host.classList.remove("selected");
     }
     selected_host = document.getElementById("booking_" + booking_id + "_host_" + host_name);
-    selected_host.style['background-color'] = "lightgrey";
+    selected_host.classList.add("selected");
 }
 
 function draw_bookings(){
@@ -53,17 +83,20 @@ function draw_bookings(){
         var heading = document.createElement("H3");
         heading.appendChild(document.createTextNode("Booking " + booking_id));
         booking.appendChild(heading);
-        var desc = "start: " + booking_hosts[booking_id].start +
-        " end: " + booking_hosts[booking_id].end +
-        " purpose: " + booking_hosts[booking_id].purpose;
-        booking.appendChild(document.createTextNode(desc));
+        booking.appendChild(document.createTextNode("start: " + booking_hosts[booking_id].start));
+        booking.appendChild(document.createElement("BR"));
+        booking.appendChild(document.createTextNode("end: " + booking_hosts[booking_id].end));
+        booking.appendChild(document.createElement("BR"));
+        booking.appendChild(document.createTextNode("purpose: " + booking_hosts[booking_id].purpose));
+        booking.appendChild(document.createElement("BR"));
+        booking.appendChild(document.createTextNode("hosts:"));
         booking.id = "booking_" + booking_id;
         booking.className = "booking";
         var hosts = booking_hosts[booking_id].hosts;
         for(var i=0; i<hosts.length; i++){
             var host = document.createElement("DIV");
             host.id = "booking_" + booking_id + "_host_" + hosts[i].name;
-            host.className = "host";
+            host.classList.add("host");
             host.appendChild(document.createTextNode(hosts[i].name));
             var hostname = hosts[i].name;
             host.booking = booking_id;

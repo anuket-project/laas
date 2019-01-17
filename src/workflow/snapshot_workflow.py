@@ -87,7 +87,14 @@ class Image_Meta_Step(WorkflowStep):
 
     def get_context(self):
         context = super(Image_Meta_Step, self).get_context()
-        context['form'] = SnapshotMetaForm()
+        name = self.repo_get(self.repo.SNAPSHOT_NAME, False)
+        desc = self.repo_get(self.repo.SNAPSHOT_DESC, False)
+        form = None
+        if name and desc:
+            form = SnapshotMetaForm(initial={"name": name, "description": desc})
+        else:
+            form = SnapshotMetaForm()
+        context['form'] = form
         return context
 
     def post_render(self, request):

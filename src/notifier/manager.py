@@ -75,7 +75,7 @@ class NotificationHandler(object):
                 if (not hasattr(task, "user")) or task.user == user:
                     user_tasklist.append(
                         {
-                            "title": task.type_str + " Message: ",
+                            "title": task.type_str() + " Message: ",
                             "content": task.message
                         }
                     )
@@ -94,7 +94,7 @@ class NotificationHandler(object):
                 "Your Booking is Ready",
                 message,
                 os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@pharos-dashboard"),
-                user.userprofile.email_addr,
+                [user.userprofile.email_addr],
                 fail_silently=False
             )
 
