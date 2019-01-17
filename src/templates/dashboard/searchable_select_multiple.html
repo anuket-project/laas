@@ -116,6 +116,7 @@
     string_trie.isComplete = false;
 
     var added_items = [];
+    var initial_log = {{ initial|safe }};
 
     var added_template = {{ added_list|default:"{}" }};
 
@@ -128,7 +129,7 @@
         entry_p.innerText = default_entry;
     }
 
-    init();
+    search_field_init();
 
     if( show_from_noentry )
     {
@@ -149,7 +150,7 @@
         }
     }
 
-    function init() {
+    function search_field_init() {
         build_all_tries(items);
 
         var initial = {{ initial|safe }};
@@ -342,14 +343,12 @@
                 added_items.push(item);
             }
         }
-
         update_selected_list();
         document.getElementById("user_field").focus();
     }
 
     function remove_item(item_ref)
     {
-
         item = Object.values(items)[item_ref];
         var index = added_items.indexOf(item);
         added_items.splice(index, 1);

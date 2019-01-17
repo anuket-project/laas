@@ -25,7 +25,7 @@ class HostProfile(models.Model):
     labs = models.ManyToManyField(Lab, related_name="hostprofiles")
 
     def validate(self):
-        validname = re.compile("^[A-Za-z0-9\-\_\.\/\, ]+$")
+        validname = re.compile(r"^[A-Za-z0-9\-\_\.\/\, ]+$")
         if not validname.match(self.name):
             return "Invalid host profile name given. Name must only use A-Z, a-z, 0-9, hyphens, underscores, dots, commas, or spaces."
         else:
@@ -147,7 +147,7 @@ class GenericResourceBundle(models.Model):
 
 class GenericResource(models.Model):
     bundle = models.ForeignKey(GenericResourceBundle, related_name='generic_resources', on_delete=models.DO_NOTHING)
-    hostname_validchars = RegexValidator(regex='(?=^.{1,253}$)(?=(^([A-Za-z0-9\-\_]{1,62}\.)*[A-Za-z0-9\-\_]{1,63}$))', message="Enter a valid hostname. Full domain name may be 1-253 characters, each hostname 1-63 characters (including suffixed dot), and valid characters for hostnames are A-Z, a-z, 0-9, hyphen (-), and underscore (_)")
+    hostname_validchars = RegexValidator(regex=r'(?=^.{1,253}$)(?=(^([A-Za-z0-9\-\_]{1,62}\.)*[A-Za-z0-9\-\_]{1,63}$))', message="Enter a valid hostname. Full domain name may be 1-253 characters, each hostname 1-63 characters (including suffixed dot), and valid characters for hostnames are A-Z, a-z, 0-9, hyphen (-), and underscore (_)")
     name = models.CharField(max_length=200, validators=[hostname_validchars])
 
     def getHost(self):
@@ -157,7 +157,7 @@ class GenericResource(models.Model):
         return self.name
 
     def validate(self):
-        validname = re.compile('(?=^.{1,253}$)(?=(^([A-Za-z0-9\-\_]{1,62}\.)*[A-Za-z0-9\-\_]{1,63}$))')
+        validname = re.compile(r'(?=^.{1,253}$)(?=(^([A-Za-z0-9\-\_]{1,62}\.)*[A-Za-z0-9\-\_]{1,63}$))')
         if not validname.match(self.name):
             return "Enter a valid hostname. Full domain name may be 1-253 characters, each hostname 1-63 characters (including suffixed dot), and valid characters for hostnames are A-Z, a-z, 0-9, hyphen (-), and underscore (_)"
         else:
@@ -265,6 +265,7 @@ class Image(models.Model):
     # may need to change host_type.on_delete to models.SET() once images are transferrable between compatible host types
     host_type = models.ForeignKey(HostProfile, on_delete=models.CASCADE)
     description = models.TextField()
+    os = models.ForeignKey(Opsys, null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name

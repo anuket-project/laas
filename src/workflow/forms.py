@@ -330,7 +330,7 @@ class MultipleSelectFilterField(forms.Field):
 
 class FormUtils:
     @staticmethod
-    def getLabData():
+    def getLabData(multiple_selectable_hosts):
         """
         Gets all labs and thier host profiles and returns a serialized version the form can understand.
         Should be rewritten with a related query to make it faster
@@ -361,7 +361,7 @@ class FormUtils:
                 shost['selected'] = 0
                 shost['selectable'] = 1
                 shost['follow'] = 0
-                shost['multiple'] = 1
+                shost['multiple'] = multiple_selectable_hosts
                 items[shost['id']] = shost
                 mapping[slab['id']].append(shost['id'])
                 if shost['id'] not in mapping:
@@ -374,7 +374,7 @@ class FormUtils:
         context = {
             'filter_objects': filter_objects,
             'mapping': mapping,
-            'items': items
+            'filter_items': items
         }
         return context
 
@@ -384,7 +384,7 @@ class HardwareDefinitionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         selection_data = kwargs.pop("selection_data", False)
         super(HardwareDefinitionForm, self).__init__(*args, **kwargs)
-        attrs = FormUtils.getLabData()
+        attrs = FormUtils.getLabData(1)
         attrs['selection_data'] = selection_data
         self.fields['filter_field'] = MultipleSelectFilterField(
             widget=MultipleSelectFilterWidget(

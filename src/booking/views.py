@@ -15,28 +15,60 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 from django.shortcuts import redirect, render
-import json
 
-from resource_inventory.models import ResourceBundle
+from account.models import Lab
 from resource_inventory.resource_manager import ResourceManager
-from booking.models import Booking, Installer, Opsys
+from resource_inventory.models import ResourceBundle
+from booking.models import Booking
 from booking.stats import StatisticsManager
+from workflow.views import login
+from booking.forms import QuickBookingForm
+from booking.quick_deployer import create_from_form, drop_filter
 
 
-def drop_filter(context):
-    installer_filter = {}
-    for os in Opsys.objects.all():
-        installer_filter[os.id] = []
-        for installer in os.sup_installers.all():
-            installer_filter[os.id].append(installer.id)
+def quick_create_clear_fields(request):
+    request.session['quick_create_forminfo'] = None
 
-    scenario_filter = {}
-    for installer in Installer.objects.all():
-        scenario_filter[installer.id] = []
-        for scenario in installer.sup_scenarios.all():
-            scenario_filter[installer.id].append(scenario.id)
 
-    context.update({'installer_filter': json.dumps(installer_filter), 'scenario_filter': json.dumps(scenario_filter)})
+def quick_create(request):
+    if not request.user.is_authenticated:
+        return login(request)
+
+    if request.method == 'GET':
+        context = {}
+
+        r_manager = ResourceManager.getInstance()
+        profiles = {}
+        for lab in Lab.objects.all():
+            profiles[str(lab)] = r_manager.getAvailableHostTypes(lab)
+
+        context['lab_profile_map'] = profiles
+
+        context['form'] = QuickBookingForm(initial={}, chosen_users=[], default_user=request.user.username, user=request.user)
+
+        context.update(drop_filter(request.user))
+
+        return render(request, 'booking/quick_deploy.html', context)
+    if request.method == 'POST':
+        form = QuickBookingForm(request.POST, user=request.user)
+        context = {}
+        context['lab_profile_map'] = {}
+        context['form'] = form
+
+        if form.is_valid():
+            try:
+                create_from_form(form, request)
+            except Exception as e:
+                messages.error(request, "Whoops, looks like an error occurred. "
+                                        "Let the admins know that you got the following message: " + str(e))
+                return render(request, 'workflow/exit_redirect.html', context)
+
+            messages.success(request, "We've processed your request. "
+                                      "Check Account->My Bookings for the status of your new booking")
+            return render(request, 'workflow/exit_redirect.html', context)
+        else:
+            messages.error(request, "Looks like the form didn't validate. Check that you entered everything correctly")
+            return render(request, 'booking/quick_deploy.html', context)
 
 
 class BookingView(TemplateView):
@@ -128,6 +160,6 @@ def booking_stats_view(request):
 def booking_stats_json(request):
     try:
         span = int(request.GET.get("days", 14))
-    except:
+    except Exception:
         span = 14
     return JsonResponse(StatisticsManager.getContinuousBookingTimeSeries(span), safe=False)
