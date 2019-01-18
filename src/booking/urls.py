@@ -32,7 +32,8 @@ from booking.views import (
     bookingDelete,
     BookingListView,
     booking_stats_view,
-    booking_stats_json
+    booking_stats_json,
+    quick_create
 )
 
 app_name = "booking"
@@ -50,4 +51,5 @@ urlpatterns = [
     url(r'^list/$', BookingListView.as_view(), name='list'),
     url(r'^stats/$', booking_stats_view, name='stats'),
     url(r'^stats/json$', booking_stats_json, name='stats_json'),
+    url(r'^quick/$', quick_create, name='quick_create'),
 ]

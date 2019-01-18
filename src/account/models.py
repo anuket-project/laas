@@ -94,7 +94,7 @@ class VlanManager(models.Model):
         vlan_master_list = json.loads(self.vlans)
         try:
             iter(vlans)
-        except:
+        except Exception:
             vlans = [vlans]
 
         for vlan in vlans:
@@ -112,7 +112,7 @@ class VlanManager(models.Model):
 
         try:
             iter(vlans)
-        except:
+        except Exception:
             vlans = [vlans]
 
         for vlan in vlans:
@@ -125,7 +125,7 @@ class VlanManager(models.Model):
 
         try:
             iter(vlans)
-        except:
+        except Exception:
             vlans = [vlans]
 
         vlans = set(vlans)

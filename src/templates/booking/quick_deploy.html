@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+{% block content %}
+<style>
+    .grid_container {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        padding: 30px;
+    }
+    .grid_element {
+        border-radius: 3px;
+        box-shadow: 0px 0px 7px 0px rgba(0,0,0,0.75);
+        margin: 10px;
+        padding: 7px;
+    }
+    .grid_element_wide {
+        grid-column-start: span 12;
+    }
+    .grid_element_half {
+        grid-column-start: span 6;
+    }
+    .grid_element_1third {
+        grid-column-start: span 4;
+    }
+    .grid_element_2third {
+        grid-column-start: span 8;
+    }
+</style>
+{% bootstrap_form_errors form type='non_fields' %}
+<form id="quick_booking_form" action="/booking/quick/" method="POST" class="form">
+{% csrf_token %}
+<div class="grid_container">
+<div class="grid_element host_select_pane grid_element_wide">
+<p>Please select a host type you wish to book. Only available types are shown.</p>
+{% bootstrap_field form.filter_field %}
+</div>
+<div class="grid_element booking_info_pane grid_element_1third">
+    {% bootstrap_field form.purpose %}
+    {% bootstrap_field form.project %}
+    {% bootstrap_field form.length %}
+    <p style="display:inline;">Days: </p><output id="daysout" style="display:inline;">0</output>
+    <script>
+        document.getElementById("id_length").setAttribute("oninput", "daysout.value=this.value");
+        document.getElementById("daysout").value = document.getElementById("id_length").value;
+    </script>
+</div>
+<div class="grid_element collaborator_pane grid_element_1third">
+        <label>Collaborators</label>
+        {{ form.users }}
+</div>
+<div class="grid_element configuration_pane grid_element_1third">
+    {% bootstrap_field form.hostname %}
+    {% bootstrap_field form.image %}
+    {% bootstrap_field form.installer %}
+    {% bootstrap_field form.scenario %}
+</div>
+</div>
+<script type="text/javascript">
+    var normalize = function(data)
+    {
+        //converts the top level keys in data to map to lists
+        var normalized = {}
+        for( var key in data ){
+            normalized[key] = [];
+            for( var subkey in data[key] ){
+                normalized[key].push(data[key][subkey]);
+            }
+        }
+        return normalized;
+    }
+    var update_page_contents = function(response)
+    {
+        document.open();
+        document.write(response);
+        document.close();
+    }
+
+    //form hamdler code
+    submit_form = function()
+    {
+        //altered from initial prototype: form submits automatically,
+        //but needs formatting for multiple select field
+        var data = normalize(result);
+        data = JSON.stringify(data);
+        document.getElementById("filter_field").value = data;
+    }
+
+    var sup_image_dict = {{ image_filter|safe }};
+    var sup_installer_dict = {{ installer_filter|safe }};
+    var sup_scenario_dict = {{ scenario_filter|safe }};
+
+    function imageHider() {
+        var data = normalize(result);
+        var drop = document.getElementById("id_image");
+        for( var i=0; i < drop.length; i++ )
+        {
+            if ( drop.options[i].text == '---------' )
+            {
+                drop.selectedIndex = i;
+            }
+        }
+
+        $('#id_image').children().hide();
+
+        var empty_map = {}
+
+        for ( var i=0; i < drop.childNodes.length; i++ )
+        {
+            var image_object = sup_image_dict[drop.childNodes[i].value];
+            if( image_object ) //weed out empty option
+            {
+                var lab_pk = ""
+                for( var j in data["labs"][0] )
+                {
+                    if( j in {} ) { continue; }
+                    else { lab_pk = j; break; }
+                }
+                var host_pk = "";
+                for( var j in data["hosts"][0] )
+                {
+                    if( j in {} ) { continue; }
+                    else { host_pk = j; break; }
+                }
+                if( image_object.host_profile == host_pk && image_object.lab == lab_pk )
+                {
+                    drop.childNodes[i].style.display = "inherit";
+                }
+            }
+        }
+    }
+
+    $('#id_image').children().hide();
+    $('#id_installer').children().hide();
+    $('#id_scenario').children().hide();
+
+
+    Array.from(document.getElementsByClassName("grid-item-select-btn")).forEach(function(element) {
+        element.addEventListener('click', imageHider);
+    });
+
+    function installerHider() {
+        dropFilter("id_installer", sup_installer_dict, "id_image");
+        scenarioHider();
+    }
+    document.getElementById('id_image').addEventListener('change', installerHider);
+
+    function scenarioHider() {
+        dropFilter("id_scenario", sup_scenario_dict, "id_installer");
+    }
+    document.getElementById('id_installer').addEventListener('change', scenarioHider);
+
+    function dropFilter(target, target_filter, master) {
+        ob = document.getElementById(target);
+
+        for(var i=0; i<ob.options.length; i++) {
+            if ( ob.options[i].text == '---------' ) {
+                ob.selectedIndex = i;
+                }
+        }
+
+        targ_id = "#" + target;
+        $(targ_id).children().hide();
+        var drop = document.getElementById(master);
+        var opts = target_filter[drop.options[drop.selectedIndex].value];
+        if (!opts) {
+            opts = {};
+        }
+        var emptyMap = {}
+
+        var map = Object.create(null);
+        for (var i = 0; i < opts.length; i++) {
+            var j = opts[i];
+            map[j] = true;
+        }
+
+        for (var i = 0; i < document.getElementById(target).childNodes.length; i++) {
+            if (document.getElementById(target).childNodes[i].value in opts && !(document.getElementById(target).childNodes[i].value in emptyMap) ) {
+                document.getElementById(target).childNodes[i].style.display = "inherit";
+            }
+        }
+    }
+</script>
+    <button onclick="submit_form();" class="btn btn-success">Confirm</button>
+</form>
+<script>
+    //context vars
+    var prefill_host_selection = "{{host_select_field_prefill_data|default:""|safe}}";
+    var prefill_purpose = "{{prefill_purpose|default:""|safe}}";
+    var prefill_project = "{{prefill_project|default:""|safe}}";
+    var prefill_hostname = "{{prefill_hostname|default:""|safe}}";
+
+    //to handle prefill
+    function prefill_host_select_field(data)
+    {
+        //
+        if(data)
+        {
+            make_selection(data);
+        }
+    }
+
+    //call init functions
+    prefill_host_select_field(prefill_host_selection);
+</script>
+{% endblock %}

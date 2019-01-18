@@ -97,7 +97,7 @@
 <script>
 var initialized = false;
 var mapping = {{ mapping|safe }};
-var items = {{ items|safe }};
+var filter_items = {{ filter_items|safe }};
 var result = {};
 var selection = {{selection_data|default_if_none:"null"|safe}};
 var dropdown_count = 0;
@@ -108,31 +108,32 @@ make_selection({{selection_data|safe}});
 
 function make_selection( selection_data ){
     if(!initialized) {
-        init();
+        filter_field_init();
     }
     for(var k in selection_data) {
         selected_items = selection_data[k];
-        for( var item in selected_items ){
-            var node = items[item];
+        for( var selected_item in selected_items ){
+            var node = filter_items[selected_item];
             if(!node['multiple']){
-                var input_value = selected_items[item];
+                var input_value = selected_items[selected_item];
                 if( input_value != 'false' ) {
                     select(node);
                     markAndSweep(node);
                 }
-                var div = document.getElementById(item)
+                var div = document.getElementById(selected_item)
+                var inputs = div.parentNode.getElementsByTagName("input")
                 var input = div.parentNode.getElementsByTagName("input")[0]
                 input.value = input_value;
-                updateResult(item);
+                updateResult(selected_item);
             } else {
-                make_multiple_selection(selected_items, item);
+                make_multiple_selection(selected_items, selected_item);
             }
         }
     }
 }
 
 function make_multiple_selection(data, item_class){
-    var node = items[item_class];
+    var node = filter_items[item_class];
     select(node);
     markAndSweep(node);
     prepop_data = data[item_class];
@@ -143,8 +144,8 @@ function make_multiple_selection(data, item_class){
 }
 
 function markAndSweep(root){
-    for(var nodeId in items) {
-        node = items[nodeId];
+    for(var nodeId in filter_items) {
+        node = filter_items[nodeId];
         node['marked'] = true; //mark all nodes
         //clears grey background of everything
     }
@@ -164,17 +165,17 @@ function markAndSweep(root){
             var neighbors = mapping[mappingId];
             for(var neighId in neighbors) {
                 neighId = neighbors[neighId];
-                var neighbor = items[neighId];
+                var neighbor = filter_items[neighId];
                 toCheck.push(neighbor);
             }
         }
     }
 
     //now remove all nodes still marked
-    for(var nodeId in items){
-        node = items[nodeId];
+    for(var nodeId in filter_items){
+        node = filter_items[nodeId];
         if(node['marked']){
-            disable(node);
+            disable_node(node);
         }
     }
 }
@@ -186,8 +187,8 @@ function process(node) {
     else {
         var selected = []
         //remember the currently selected, then reset everything and reselect one at a time
-        for(var nodeId in items) {
-            node = items[nodeId];
+        for(var nodeId in filter_items) {
+            node = filter_items[nodeId];
             if(node['selected']) {
                 selected.push(node);
             }
@@ -205,9 +206,9 @@ function process(node) {
 function select(node) {
     elem = document.getElementById(node['id']);
     node['selected'] = true;
-    elem.classList.remove('cleared_node')
-    elem.classList.remove('disabled_node')
-    elem.classList.add('selected_node')
+    elem.classList.remove('cleared_node');
+    elem.classList.remove('disabled_node');
+    elem.classList.add('selected_node');
     var input = elem.parentNode.getElementsByTagName("input")[0];
     input.disabled = false;
     input.value = true;
@@ -218,27 +219,27 @@ function clear(node) {
     node['selected'] = false;
     node['selectable'] = true;
     elem.classList.add('cleared_node')
-    elem.classList.remove('disabled_node')
-    elem.classList.remove('selected_node')
+    elem.classList.remove('disabled_node');
+    elem.classList.remove('selected_node');
     elem.parentNode.getElementsByTagName("input")[0].disabled = true;
 }
 
-function disable(node) {
+function disable_node(node) {
     elem = document.getElementById(node['id']);
     node['selected'] = false;
     node['selectable'] = false;
-    elem.classList.remove('cleared_node')
-    elem.classList.add('disabled_node')
-    elem.classList.remove('selected_node')
+    elem.classList.remove('cleared_node');
+    elem.classList.add('disabled_node');
+    elem.classList.remove('selected_node');
     elem.parentNode.getElementsByTagName("input")[0].disabled = true;
 }
 
 function processClick(id, multiple){
     if(!initialized){
-        init();
+        filter_field_init();
     }
     var element = document.getElementById(id);
-    var node = items[id];
+    var node = filter_items[id];
     if(!node['selectable']){
         return;
     }
@@ -259,11 +260,11 @@ function processClick(id, multiple){
 
 function processClickMultipleObject(node){
     select(node);
-    add_item(node);
+    add_node(node);
     process(node);
 }
 
-function add_item(node){
+function add_node(node){
     return add_item_prepopulate(node, {});
 }
 
@@ -364,15 +365,15 @@ function remove_dropdown(id){
         }
     }
     if(deselect_class){
-        clear(items[div_class]);
+        clear(filter_items[div_class]);
     }
 }
 
 function updateResult(nodeId){
     if(!initialized){
-        init();
+        filter_field_init();
     }
-    if(!items[nodeId]['multiple']){
+    if(!filter_items[nodeId]['multiple']){
         var node = document.getElementById(nodeId);
         var value = {}
         value[nodeId] = node.parentNode.getElementsByTagName("input")[0].value;
@@ -392,10 +393,10 @@ function updateObjectResult(parentElem){
     result[node_type][parentElem.id] = input;
 }
 
-function init() {
-    for(nodeId in items) {
+function filter_field_init() {
+    for(nodeId in filter_items) {
         element = document.getElementById(nodeId);
-        node = items[nodeId];
+        node = filter_items[nodeId];
         result[element.parentNode.parentNode.id] = {}
         }
     initialized = true;
