@@ -229,6 +229,7 @@ def create_from_form(form, request):
     booking.end = timezone.now() + timedelta(days=int(length))
     booking.resource = resource_bundle
     booking.pdf = ResourceManager().makePDF(booking.resource)
+    booking.config_bundle = cbundle
     booking.save()
     print("users field:")
     print(users_field)
