@@ -1,31 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-<script>
-function edit_configuration(pk){
-    var csrf = $('input[name="csrfmiddlewaretoken"]').val();
-    $.ajax({
-        type: "POST",
-        url: "/",
-        data: { "target": pk, "create": 2, "csrfmiddlewaretoken": csrf},
-        beforeSend: function(request) {
-            request.setRequestHeader("X-CSFRToken", csrf);
-            }
-        }).done(function(){
-            window.location.replace("/wf/");
-        }).fail(function(){});
-}
-</script>
+    <div class="card_container">
     {% for config in configurations %}
         <div class="detail_card">
-            <ul>
-                <li>id: {{config.id}}</li>
-                <li>name: {{config.name}}</li>
-                <li>description: {{config.description}}</li>
-                <li>resource: {{config.bundle}}</li>
-            </ul>
-            <div class="detail_btn_group">
-                <button style="display: none" class="btn btn-primary" onclick="edit_configuration({{config.id}});">Edit</button>
+            <div>
+                <h3>Configuration {{config.id}}</h3>
+                <ul class="list-group">
+                    <li class="list-group-item">id: {{config.id}}</li>
+                    <li class="list-group-item">name: {{config.name}}</li>
+                    <li class="list-group-item">description: {{config.description}}</li>
+                    <li class="list-group-item">resource: {{config.bundle}}</li>
+                </ul>
             </div>
         </div>
     {% endfor %}
+    </div>
 {% endblock %}

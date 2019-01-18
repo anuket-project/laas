@@ -1,27 +1,37 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Images I Own</h2>
+<div class="card_container">
     {% for image in images %}
         <div class="detail_card">
-            <ul>
-            <li>id: {{image.id}}</li>
-            <li>lab: {{image.from_lab.name}}</li>
-            <li>name: {{image.name}}</li>
-            <li>description: {{image.description}}</li>
-            <li>host profile: {{image.host_type.name}}</li>
-            </ul>
+            <div>
+                <h3>Image {{image.id}}</h3>
+                <ul class="list-group">
+                    <li class="list-group-item">id: {{image.id}}</li>
+                    <li class="list-group-item">lab: {{image.from_lab.name}}</li>
+                    <li class="list-group-item">name: {{image.name}}</li>
+                    <li class="list-group-item">description: {{image.description}}</li>
+                    <li class="list-group-item">host profile: {{image.host_type.name}}</li>
+                </ul>
+            </div>
         </div>
     {% endfor %}
+</div>
 <h2>Public Images</h2>
+<div class="card_container">
     {% for image in public_images %}
         <div class="detail_card">
-            <ul>
-            <li>id: {{image.id}}</li>
-            <li>lab: {{image.from_lab.name}}</li>
-            <li>name: {{image.name}}</li>
-            <li>description: {{image.description}}</li>
-            <li>host profile: {{image.host_type.name}}</li>
-            </ul>
+            <div>
+                <h3>Image {{image.id}}</h3>
+                <ul class="list-group">
+                    <li class="list-group-item">id: {{image.id}}</li>
+                    <li class="list-group-item">lab: {{image.from_lab.name}}</li>
+                    <li class="list-group-item">name: {{image.name}}</li>
+                    <li class="list-group-item">description: {{image.description}}</li>
+                    <li class="list-group-item">host profile: {{image.host_type.name}}</li>
+                </ul>
+            </div>
         </div>
     {% endfor %}
+</div>
 {% endblock %}

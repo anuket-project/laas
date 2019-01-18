@@ -1,52 +1,41 @@
 {% extends "base.html" %}
 {% block content %}
-<script>
-function edit_booking(pk){
-    var csrf = $('input[name="csrfmiddlewaretoken"]').val();
-    $.ajax({
-        type: "POST",
-        url: "/",
-        data: { "target": pk, "create": 0, "csrfmiddlewaretoken": csrf},
-        beforeSend: function(request) {
-            request.setRequestHeader("X-CSFRToken", csrf);
-        }
-    }).done(function(){
-        window.location.replace("/wf/");
-    }).fail(function(){})
-}
-</script>
 <h2>Bookings I Own</h2>
+    <div class="card_container">
     {% for booking in bookings %}
         <div class="detail_card">
-            <ul>
-            <li>id: {{booking.id}}</li>
-            <li>lab: {{booking.resource.template.lab.lab_user.username}}</li>
-            <li>resource: {{booking.resource.template.name}}</li>
-            <li>start: {{booking.start}}</li>
-            <li>end: {{booking.end}}</li>
-            <li>purpose: {{booking.purpose}}</li>
-            </ul>
-            <div class="detail_btn_group">
-                <button style="display:none" class="btn btn-primary" onclick="edit_booking({{booking.id}});">Edit</button>
-                <button class="btn btn-primary" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
+            <div>
+                <h3>Booking {{booking.id}}</h3>
+                <ul class="list-group">
+                    <li class="list-group-item">id: {{booking.id}}</li>
+                    <li class="list-group-item">lab: {{booking.resource.template.lab.lab_user.username}}</li>
+                    <li class="list-group-item">resource: {{booking.resource.template.name}}</li>
+                    <li class="list-group-item">start: {{booking.start}}</li>
+                    <li class="list-group-item">end: {{booking.end}}</li>
+                    <li class="list-group-item">purpose: {{booking.purpose}}</li>
+                </ul>
             </div>
+            <a class="btn btn-primary" href="/booking/detail/{{booking.id}}/">Details</a>
         </div>
     {% endfor %}
+    </div>
 <h2>Bookings I Collaborate On</h2>
+    <div class="card_container">
     {% for booking in collab_bookings %}
         <div class="detail_card">
-            <ul>
-            <li>id: {{booking.id}}</li>
-            <li>lab: {{booking.lab}}</li>
-            <li>resource: {{booking.resource_name}}</li>
-            <li>start: {{booking.start}}</li>
-            <li>end: {{booking.end}}</li>
-            <li>purpose: {{booking.purpose}}</li>
-            </ul>
-            <div class="detail_btn_group">
-                <button style="display: none" class="btn btn-primary" disabled=true onclick="edit_booking({{booking.id}});">Edit</button>
-                <button class="btn btn-primary" onclick="location.href='/booking/detail/{{booking.id}}/';">Details</button>
+            <div>
+                <h3>Booking {{booking.id}}</h3>
+                <ul class="list-group">
+                    <li class="list-group-item">id: {{booking.id}}</li>
+                    <li class="list-group-item">lab: {{booking.lab}}</li>
+                    <li class="list-group-item">resource: {{booking.resource_name}}</li>
+                    <li class="list-group-item">start: {{booking.start}}</li>
+                    <li class="list-group-item">end: {{booking.end}}</li>
+                    <li class="list-group-item">purpose: {{booking.purpose}}</li>
+                </ul>
             </div>
+            <a class="btn btn-primary" href="/booking/detail/{{booking.id}}/">Details</a>
         </div>
     {% endfor %}
+    </div>
 {% endblock %}
