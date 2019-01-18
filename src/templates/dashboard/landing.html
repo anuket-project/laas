@@ -2,16 +2,14 @@
 {% load staticfiles %}
 
 {% block content %}
-    <div class="">
+    <div class="" style="text-align: center;">
         {% if not request.user.is_anonymous %}
         {% if not request.user.userprofile.ssh_public_key %}
-        <h4 style="text-align: center; background: #AA0000; color: #FFFFFF; padding: 10px; border-radius: 3px; height: 40px;">
+        <h4 style="display: inline; text-align: center; border: 3px solid red; padding: 10px; border-radius: 10000px; height: 40px;">
             Warning: you need to upload an ssh key under <a href="/accounts/settings">account settings</a> if you wish to log into the servers you book
         </h4>
         {% endif %}
-            <p style="text-align:center;">Welcome to the Pharos Dashboard! For more info on LaaS, <a href="https://wiki.opnfv.org/display/INF/Lab+as+a+Service+2.0">check here</a>. To get started, select one of the options below:</p>
         {% else %}
-            <p style="text-align:center;">Welcome to the Pharos Dashboard! For more info on LaaS, <a href="https://wiki.opnfv.org/display/INF/Lab+as+a+Service+2.0">check here</a>. To get started, please log in with your <a href="/accounts/login">Linux Foundation Jira account</a></p>
         {% endif %}
     </div>
 {% csrf_token %}
@@ -36,19 +34,62 @@
         display: grid;
         grid-template-columns: 33% 34% 33%;
     }
+
+    .landing_container {
+        display: grid;
+        grid-template-columns: 1fr 30px 1fr;
+    }
+    .grid_panel {
+        padding: 30px;
+    }
+    .btn-primary {
+        margin: 10px;
+    }
+    h2 {
+        border-bottom: 1px solid #cccccc;
+    }
+    h1 {
+    }
 </style>
-{% if not request.user.is_anonymous %}
-<div class='wf_create_div'>
-<a class="wf_create btn btn-primary" style="color: #FFF;" href="/booking/quick/">Create a Quick Booking</a>
-<button class="wf_create btn btn-primary" onclick="cwf(0)">Create a Booking</button>
-<button class="wf_create btn btn-primary" onclick="cwf(1)">Create a Pod</button>
-<button class="wf_create btn btn-primary" onclick="cwf(2)">Configure a Pod</button>
-<button class="wf_create btn btn-primary" onclick="cwf(3)">Create a Snapshot</button>
-{% if manager == True %}
-<button class="wf_continue btn btn-primary" onclick="continue_wf()">Finish Unfinished Business</button>
-{% endif %}
-{% endif %}
+<div class="landing_container">
+    <div class="info_panel grid_panel">
+        <h2>About Us:</h2>
+        <p>The Lab as a Service (LaaS) project aims to help in the development and testing of LFN projects such as OPNFV by hosting hardware and providing access to the community. Currently, the only participating lab is the University of New Hampshire Interoperability Lab (UNH-IOL).</p>
+        <p>To get started, you can request access to a server at the right. PTL's have the ability to design and book a whole block of servers with customized layer2 networks (e.g. a Pharos Pod). Read more here: <a href="https://wiki.opnfv.org/display/INF/Lab+as+a+Service+2.0">LaaS Wiki</a></p>
+
+        {% if not request.user.is_anonymous %}
+        <h2 style="margin-top: 50px;">Returning Users:</h2>
+        <p>If you're a returning user, some of the following options may be of interest:</p>
+        <button class="wf_create btn btn-primary" onclick="cwf(3)">Snapshot a Host</button>
+        <a class="wf_create btn btn-primary" href="{% url 'account:my-bookings' %}">My Bookings</a>
+        {% if manager == True %}
+        <button class="wf_continue btn btn-primary" onclick="continue_wf()">Continue Unfinished Workflow</button>
+        {% endif %}
+        {% endif %}
+    </div>
+    <div class="">
+    </div>
+    <div class="actions_panel grid_panel">
+        <h2>Get Started:</h2>
+        {% if request.user.is_anonymous %}
+            <h4 style="text-align:center;">To get started, please log in with your <a href="/accounts/login">Linux Foundation Jira account</a></h4>
+        {% else %}
+        <p>To get started, book a server below:</p>
+        <a class="wf_create btn btn-primary" style="display: flex; flex-direction: column; justify-content: center; margin: 20px; height: 100pt; vertical-align: middle; text-align: center; color: #FFF;" href="/booking/quick/"><p style="font-size: xx-large">Book a Server</p></a>
+        <p>PTLs can use our advanced options to book multi-node pods. If you are a PTL, you may use the options below:</p>
+        <div class='wf_create_div'>
+
+                <button class="wf_create btn btn-primary" onclick="cwf(0)">Book a Pod</button>
+                <button class="wf_create btn btn-primary" onclick="cwf(1)">Design a Pod</button>
+                <button class="wf_create btn btn-primary" onclick="cwf(2)">Configure a Pod</button>
+        {% endif %}
+        </div>
+    </div>
 </div>
+
+
+
+
 
 <script type="text/javascript">
     function cwf(type)
