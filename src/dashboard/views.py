@@ -78,7 +78,7 @@ def landing_view(request):
         manager_detected = True
 
     if request.method == 'GET':
-        return render(request, 'dashboard/landing.html', {'manager': manager_detected, 'title': "Welcome!"})
+        return render(request, 'dashboard/landing.html', {'manager': manager_detected, 'title': "Welcome to the Lab as a Service Dashboard"})
 
     if request.method == 'POST':
         try:
