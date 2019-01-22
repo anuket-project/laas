@@ -8,7 +8,7 @@
 ##############################################################################
 
 
-import datetime
+from django.utils import timezone
 import json
 
 from booking.models import Booking
@@ -27,7 +27,7 @@ class Select_Host_Step(WorkflowStep):
         context = super(Select_Host_Step, self).get_context()
         context['form'] = SnapshotHostSelectForm()
         booking_hosts = {}
-        now = datetime.datetime.now()
+        now = timezone.now()
         user = self.repo_get(self.repo.SESSION_USER)
         bookings = Booking.objects.filter(start__lt=now, end__gt=now, owner=user)
         for booking in bookings:
