@@ -604,7 +604,7 @@ class SnapshotConfig(TaskConfig):
 
 
 def get_task(task_id):
-    for taskclass in [AccessRelation, SoftwareRelation, HostHardwareRelation, HostNetworkRelation]:
+    for taskclass in [AccessRelation, SoftwareRelation, HostHardwareRelation, HostNetworkRelation, SnapshotRelation]:
         try:
             ret = taskclass.objects.get(task_id=task_id)
             return ret
@@ -702,6 +702,33 @@ class SnapshotRelation(TaskRelation):
 
 
 class JobFactory(object):
+
+    @classmethod
+    def reimageHost(cls, new_image, booking, host):
+        """
+        This method will make all necessary changes to make a lab
+        reimage a host.
+        """
+        job = Job.objects.get(booking=booking)
+        # make hardware task new
+        hardware_relation = HostHardwareRelation.objects.get(host=host, job=job)
+        hardware_relation.config.set_image(new_image.lab_id)
+        hardware_relation.config.save()
+        hardware_relation.status = JobStatus.NEW
+
+        # re-apply networking after host is reset
+        net_relation = HostNetworkRelation.objects.get(host=host, job=job)
+        net_relation.status = JobStatus.NEW
+
+        # re-apply ssh access after host is reset
+        ssh_relation = AccessRelation.objects.get(job=job, config__access_type="ssh")
+        ssh_relation.status = JobStatus.NEW
+
+        # save them all at once to reduce the chance
+        # of a lab polling and only seeing partial change
+        hardware_relation.save()
+        net_relation.save()
+        ssh_relation.save()
 
     @classmethod
     def makeSnapshotTask(cls, image, booking, host):

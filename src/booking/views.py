@@ -23,7 +23,7 @@ from account.models import Lab
 from booking.models import Booking
 from booking.stats import StatisticsManager
 from booking.forms import HostReImageForm
-from api.models import HostHardwareRelation, JobStatus
+from api.models import JobFactory
 from workflow.views import login
 from booking.forms import QuickBookingForm
 from booking.quick_deployer import create_from_form, drop_filter
@@ -179,12 +179,9 @@ def booking_modify_image(request, booking_id):
             return HttpResponse("unauthorized")
         new_image = Image.objects.get(id=form.cleaned_data['image_id'])
         host = Host.objects.get(id=form.cleaned_data['host_id'])
-        relation = HostHardwareRelation.objects.get(host=host, job__booking=booking)
-        config = relation.config
-        config.set_image(new_image.lab_id)
-        config.save()
-        relation.status = JobStatus.NEW
-        relation.save()
+        host.config.image = new_image
+        host.config.save()
+        JobFactory.reimageHost(new_image, booking, host)
         return HttpResponse(new_image.name)
     return HttpResponse("error")
 
