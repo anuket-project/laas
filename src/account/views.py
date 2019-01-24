@@ -14,6 +14,7 @@ import urllib
 
 import oauth2 as oauth
 from django.conf import settings
+from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import logout, authenticate, login
 from django.contrib.auth.decorators import login_required
@@ -21,7 +22,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.http import HttpResponse
-from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.generic import RedirectView, TemplateView, UpdateView
@@ -198,9 +198,17 @@ def account_booking_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
     template = "account/booking_list.html"
-    bookings = list(Booking.objects.filter(owner=request.user).order_by("-start"))
-    collab_bookings = list(request.user.collaborators.all().order_by("-start"))
-    context = {"title": "My Bookings", "bookings": bookings, "collab_bookings": collab_bookings}
+    bookings = list(Booking.objects.filter(owner=request.user, end__gt=timezone.now()).order_by("-start"))
+    my_old_bookings = Booking.objects.filter(owner=request.user, end__lt=timezone.now()).order_by("-start")
+    collab_old_bookings = request.user.collaborators.filter(end__lt=timezone.now()).order_by("-start")
+    expired_bookings = list(my_old_bookings.union(collab_old_bookings))
+    collab_bookings = list(request.user.collaborators.filter(end__gt=timezone.now()).order_by("-start"))
+    context = {
+        "title": "My Bookings",
+        "bookings": bookings,
+        "collab_bookings": collab_bookings,
+        "expired_bookings": expired_bookings
+    }
     return render(request, template, context=context)
 
 
