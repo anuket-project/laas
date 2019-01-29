@@ -61,15 +61,25 @@ class BookingAuthManager():
     def parse_gerrit_url(self, url):
         project_leads = []
         try:
-            parts = url.split("/")
+            halfs = url.split("?")
+            parts = halfs[0].split("/")
+            args = halfs[1].split(";")
             if "http" in parts[0]:  # the url include http(s)://
                 parts = parts[2:]
-            if "f=INFO.yaml" not in parts[-1].split(";"):
+            if "f=INFO.yaml" not in args:
                 return None
             if "gerrit.opnfv.org" not in parts[0]:
                 return None
+            try:
+                i = args.index("a=blob")
+                args[i] = "a=blob_plain"
+            except ValueError:
+                pass
+            # recreate url
+            halfs[1] = ";".join(args)
+            halfs[0] = "/".join(parts)
             # now to download and parse file
-            url = "https://" + "/".join(parts)
+            url = "https://" + "?".join(halfs)
             info_file = requests.get(url, timeout=15).text
             info_parsed = yaml.load(info_file)
             ptl = info_parsed.get('project_lead')
@@ -138,8 +148,11 @@ class BookingAuthManager():
             return True  # admin override for this user
         if repo.BOOKING_INFO_FILE not in repo.el:
             return False  # INFO file not provided
-        ptl_info = self.parse_url(repo.BOOKING_INFO_FILE)
-        return ptl_info and ptl_info == booking.owner.userprofile.email_addr
+        ptl_info = self.parse_url(repo.el.get(repo.BOOKING_INFO_FILE))
+        for ptl in ptl_info:
+            if ptl['email'] == booking.owner.userprofile.email_addr:
+                return True
+        return False
 
 
 class WorkflowStep(object):
