@@ -10,6 +10,19 @@
     font-size: 16px;
 }
 
+.detail_button_container .btn {
+    width: 49%;
+}
+
+.detail_button_container .btn-danger {
+    float: right;
+}
+
+#modal_warning {
+    transition: max-height 0.5s ease-out;
+    overflow: hidden;
+}
+
 .detail_card {
     border: 2px;
     border-color: black;

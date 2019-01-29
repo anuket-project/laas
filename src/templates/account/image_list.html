@@ -2,20 +2,29 @@
 {% block content %}
 <h2>Images I Own</h2>
 <div class="card_container">
-    {% for image in images %}
-        <div class="detail_card">
-            <div>
-                <h3>Image {{image.id}}</h3>
-                <ul class="list-group">
-                    <li class="list-group-item">id: {{image.id}}</li>
-                    <li class="list-group-item">lab: {{image.from_lab.name}}</li>
-                    <li class="list-group-item">name: {{image.name}}</li>
-                    <li class="list-group-item">description: {{image.description}}</li>
-                    <li class="list-group-item">host profile: {{image.host_type.name}}</li>
-                </ul>
-            </div>
+{% for image in images %}
+    <div class="detail_card">
+        <div>
+            <h3>Image {{image.id}}</h3>
+            <ul class="list-group">
+                <li class="list-group-item">id: {{image.id}}</li>
+                <li class="list-group-item">lab: {{image.from_lab.name}}</li>
+                <li class="list-group-item">name: {{image.name}}</li>
+                <li class="list-group-item">description: {{image.description}}</li>
+                <li class="list-group-item">host profile: {{image.host_type.name}}</li>
+            </ul>
         </div>
-    {% endfor %}
+        <div class="detail_button_container">
+            <button
+                class="btn btn-danger"
+                style="width:49%;float:right;"
+                onclick='delete_image({{image.id}});'
+                data-toggle="modal"
+                data-target="#imageModal"
+            >Delete</button>
+        </div>
+    </div>
+{% endfor %}
 </div>
 <h2>Public Images</h2>
 <div class="card_container">
@@ -33,5 +42,79 @@
             </div>
         </div>
     {% endfor %}
+</div>
+
+<script>
+    var current_image_id = -1;
+    var used_images = {{used_images|safe|default:"{}"}};
+    function delete_image(image_id) {
+        current_image_id = image_id;
+        document.getElementById('modal_warning').style['max-height'] = '0px';
+        var warning_header = document.getElementById("warning_header");
+        var warning_text = document.getElementById("warning_text");
+        var delete_image_button = document.getElementById("final_delete_b");
+        clear(warning_header);
+        clear(warning_text);
+        if(used_images[image_id]) {
+            warning_header.appendChild(
+                document.createTextNode("Cannot Delete")
+            );
+            warning_text.appendChild(
+                document.createTextNode("This snapshot is being used in a booking.")
+            );
+            delete_image_button.disabled = true;
+        } else {
+            warning_header.appendChild(
+                document.createTextNode("Are You Sure?")
+            );
+            warning_text.appendChild(
+                document.createTextNode("This cannot be undone")
+            );
+            delete_image_button.removeAttribute("disabled");
+        }
+    }
+
+    function submit_delete_form() {
+        var ajaxForm = $("#image_delete_form");
+        var formData = ajaxForm.serialize();
+        req = new XMLHttpRequest();
+        var url = "delete/" + current_image_id;
+        req.open("POST", url, true);
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.onerror = function() { alert("problem submitting form"); }
+        req.send(formData);
+    }
+
+    function clear(node) {
+        while(node.lastChild) {
+            node.removeChild(node.lastChild);
+        }
+    }
+</script>
+<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="my_modal" aria-hidden="true">
+    <div class="modal-dialog" style="width: 450px;" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="my_modal" style="display: inline; float: left;">Delete Configuration?</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="image_delete_form">
+                {% csrf_token %}
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('modal_warning').style['max-height'] = '500px';">Delete</button>
+            </div>
+            <div id="modal_warning" class="modal-footer" style="max-height:0px;" >
+                <div style="text-align:center; margin: 5px">
+                    <h3 id="warning_header">Are You Sure?</h3>
+                    <p id="warning_text">This cannot be undone</p>
+                    <button class="btn" onclick="document.getElementById('modal_warning').style['max-height'] = '0px';">Nevermind</button>
+                    <button id="final_delete_b" class="btn btn-danger" data-dismiss="modal" onclick="submit_delete_form();">I'm Sure</button>
+                </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

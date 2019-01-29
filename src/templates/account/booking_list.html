@@ -15,7 +15,15 @@
                     <li class="list-group-item">purpose: {{booking.purpose}}</li>
                 </ul>
             </div>
-            <a class="btn btn-primary" href="/booking/detail/{{booking.id}}/">Details</a>
+            <div class="detail_button_container">
+                <a class="btn btn-primary" href="/booking/detail/{{booking.id}}/">Details</a>
+                <button
+                    class="btn btn-danger"
+                    onclick='cancel_booking({{booking.id}});'
+                    data-toggle="modal"
+                    data-target="#resModal"
+                >Cancel</button>
+            </div>
         </div>
     {% endfor %}
     </div>
@@ -38,4 +46,51 @@
         </div>
     {% endfor %}
     </div>
+
+<script>
+    var current_booking_id = -1;
+    function cancel_booking(booking_id) {
+        current_booking_id = booking_id;
+        document.getElementById('modal_warning').style['max-height'] = '0px';
+    }
+
+    function submit_cancel_form() {
+        var ajaxForm = $("#booking_cancel_form");
+        var formData = ajaxForm.serialize();
+        req = new XMLHttpRequest();
+        var url = "cancel/" + current_booking_id;
+        req.open("POST", url, true);
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.onerror = function() { alert("problem submitting form"); }
+        req.send(formData);
+    }
+</script>
+<div class="modal fade" id="resModal" tabindex="-1" role="dialog" aria-labelledby="my_modal" aria-hidden="true">
+    <div class="modal-dialog" style="width: 450px;" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="my_modal" style="display: inline; float: left;">Cancel Booking?</h4>
+                <p>Everthing on your machine(s) will be lost</p>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="booking_cancel_form">
+                {% csrf_token %}
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('modal_warning').style['max-height'] = '500px';">Cancel Booking</button>
+            </div>
+            <div id="modal_warning" class="modal-footer" style="max-height:0px;" >
+                <div style="text-align:center; margin: 5px">
+                    <h3>Are You Sure?</h3>
+                    <p>This cannot be undone</p>
+                    <button class="btn" onclick="document.getElementById('modal_warning').style['max-height'] = '0px';">Nevermind</button>
+                    <button class="btn btn-danger" id="confirm_cancel_button" data-dismiss="modal" onclick="submit_cancel_form();">I'm Sure</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

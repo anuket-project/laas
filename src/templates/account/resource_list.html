@@ -1,17 +1,116 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="card_container">
-    {% for resource in resources %}
-        <div class="detail_card">
-            <div>
-                <h3>Resource {{resource.id}}</h3>
-                <ul class="list-group">
-                    <li class="list-group-item">id: {{resource.id}}</li>
-                    <li class="list-group-item">name: {{resource.name}}</li>
-                    <li class="list-group-item">description: {{resource.description}}</li>
-                </ul>
-            </div>
+<div class="card_container">
+{% for resource in resources %}
+    <div class="detail_card">
+        <div>
+            <h3>Resource {{resource.id}}</h3>
+            <ul class="list-group">
+                <li class="list-group-item">id: {{resource.id}}</li>
+                <li class="list-group-item">name: {{resource.name}}</li>
+                <li class="list-group-item">description: {{resource.description}}</li>
+            </ul>
         </div>
-    {% endfor %}
+        <div class="detail_button_container">
+            <button
+                class="btn btn-danger"
+                onclick='delete_resource({{resource.id}});'
+                data-toggle="modal"
+                data-target="#resModal"
+            >Delete</button>
+        </div>
     </div>
+{% endfor %}
+</div>
+<script>
+    var grb_mapping = {{grb_mapping|safe|default:"{}"}};
+    var booking_mapping = {{booking_mapping|safe|default:"{}"}};
+    var current_resource_id = -1;
+    function delete_resource(resource_id) {
+        document.getElementById("confirm_delete_button").removeAttribute("disabled");
+        var configs = grb_mapping[resource_id];
+        var warning = document.createTextNode("Are You Sure?");
+        var warning_subtext = document.createTextNode("This cannot be undone");
+        if(booking_mapping[resource_id]){
+            var warning = document.createTextNode("This resource is being used. It cannot be deleted.");
+            var warning_subtext = document.createTextNode("If your booking just ended, you may need to give us a few minutes to clean it up before this can be removed.");
+
+            document.getElementById("confirm_delete_button").disabled = true;
+        }
+        else if(configs.length > 0) {
+            list_configs(configs);
+            warning_text = "Are You Sure? The following Configurations will also be deleted.";
+            warning = document.createTextNode(warning_text);
+        }
+
+        current_resource_id = resource_id;
+        set_modal_text(warning, warning_subtext);
+    }
+
+    function set_modal_text(title, text) {
+        var clear = function(node) {
+            while(node.lastChild) {
+            node.removeChild(node.lastChild);
+            }
+        }
+        var warning_title = document.getElementById("config_warning");
+        var warning_text = document.getElementById("warning_subtext");
+
+        clear(warning_title);
+        clear(warning_text);
+
+        warning_title.appendChild(title);
+        warning_text.appendChild(text);
+        document.getElementById('modal_warning').style['max-height'] = '0px';
+    }
+
+    function list_configs(configs) {
+        var list = document.getElementById("config_list");
+        for(var i=0; i<configs.length; i++){
+            var str = configs[i].name;
+            var list_item = document.createElement("LI");
+            list_item.appendChild(document.createTextNode(str));
+            list.appendChild(list_item);
+        }
+    }
+
+    function submit_delete_form() {
+        var ajaxForm = $("#res_delete_form");
+        var formData = ajaxForm.serialize();
+        req = new XMLHttpRequest();
+        var url = "delete/" + current_resource_id;
+        req.open("POST", url, true);
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.onerror = function() { alert("problem submitting form"); }
+        req.send(formData);
+    }
+</script>
+<div class="modal fade" id="resModal" tabindex="-1" role="dialog" aria-labelledby="my_modal" aria-hidden="true">
+    <div class="modal-dialog" style="width: 450px;" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="my_modal" style="display: inline; float: left;">Delete Resource?</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="res_delete_form">
+                {% csrf_token %}
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('modal_warning').style['max-height'] = '500px';">Delete</button>
+            </div>
+            <div id="modal_warning" class="modal-footer" style="max-height:0px;" >
+                <div style="text-align:center; margin: 5px">
+                    <h3 id="config_warning">Are You Sure?</h3>
+                    <p id="warning_subtext">This cannot be undone</p>
+                    <ul id="config_list"></ul>
+                    <button class="btn" onclick="document.getElementById('modal_warning').style['max-height'] = '0px';">Nevermind</button>
+                    <button class="btn btn-danger" id="confirm_delete_button" data-dismiss="modal" onclick="submit_delete_form();">I'm Sure</button>
+                </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

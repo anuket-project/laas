@@ -20,6 +20,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.http import HttpResponse
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.generic import RedirectView, TemplateView, UpdateView
 from django.shortcuts import render
@@ -30,7 +33,7 @@ from account.forms import AccountSettingsForm
 from account.jira_util import SignatureMethod_RSA_SHA1
 from account.models import UserProfile
 from booking.models import Booking
-from resource_inventory.models import GenericResourceBundle, ConfigBundle, Image
+from resource_inventory.models import GenericResourceBundle, ConfigBundle, Image, Host
 
 
 @method_decorator(login_required, name='dispatch')
@@ -172,8 +175,22 @@ def account_resource_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
     template = "account/resource_list.html"
-    resources = list(GenericResourceBundle.objects.filter(owner=request.user))
-    context = {"resources": resources, "title": "My Resources"}
+    resources = GenericResourceBundle.objects.filter(
+        owner=request.user).prefetch_related("configbundle_set")
+    mapping = {}
+    resource_list = []
+    booking_mapping = {}
+    for grb in resources:
+        resource_list.append(grb)
+        mapping[grb.id] = [{"id": x.id, "name": x.name} for x in grb.configbundle_set.all()]
+        if Booking.objects.filter(resource__template=grb, end__gt=timezone.now()).exists():
+            booking_mapping[grb.id] = "true"
+    context = {
+        "resources": resource_list,
+        "grb_mapping": mapping,
+        "booking_mapping": booking_mapping,
+        "title": "My Resources"
+    }
     return render(request, template, context=context)
 
 
@@ -202,5 +219,66 @@ def account_images_view(request):
     template = "account/image_list.html"
     my_images = Image.objects.filter(owner=request.user)
     public_images = Image.objects.filter(public=True)
-    context = {"title": "Images", "images": my_images, "public_images": public_images}
+    used_images = {}
+    for image in my_images:
+        if Host.objects.filter(booked=True, config__image=image).exists():
+            used_images[image.id] = "true"
+    context = {
+        "title": "Images",
+        "images": my_images,
+        "public_images": public_images,
+        "used_images": used_images
+        }
     return render(request, template, context=context)
+
+
+def resource_delete_view(request, resource_id=None):
+    if not request.user.is_authenticated:
+        return HttpResponse('no')  # 403?
+    grb = get_object_or_404(GenericResourceBundle, pk=resource_id)
+    if not request.user.id == grb.owner.id:
+        return HttpResponse('no')  # 403?
+    if Booking.objects.filter(resource__template=grb, end__gt=timezone.now()).exists():
+        return HttpResponse('no')  # 403?
+    grb.delete()
+    return HttpResponse('')
+
+
+def configuration_delete_view(request, config_id=None):
+    if not request.user.is_authenticated:
+        return HttpResponse('no')  # 403?
+    config = get_object_or_404(ConfigBundle, pk=config_id)
+    if not request.user.id == config.owner.id:
+        return HttpResponse('no')  # 403?
+    if Booking.objects.filter(config_bundle=config, end__gt=timezone.now()).exists():
+        return HttpResponse('no')
+    config.delete()
+    return HttpResponse('')
+
+
+def booking_cancel_view(request, booking_id=None):
+    if not request.user.is_authenticated:
+        return HttpResponse('no')  # 403?
+    booking = get_object_or_404(Booking, pk=booking_id)
+    if not request.user.id == booking.owner.id:
+        return HttpResponse('no')  # 403?
+
+    if booking.end < timezone.now():  # booking already over
+        return HttpResponse('')
+
+    booking.end = timezone.now()
+    booking.save()
+    return HttpResponse('')
+
+
+def image_delete_view(request, image_id=None):
+    if not request.user.is_authenticated:
+        return HttpResponse('no')  # 403?
+    image = get_object_or_404(Image, pk=image_id)
+    if image.public or image.owner.id != request.user.id:
+        return HttpResponse('no')  # 403?
+    # check if used in booking
+    if Host.objects.filter(booked=True, config__image=image).exists():
+        return HttpResponse('no')  # 403?
+    image.delete()
+    return HttpResponse('')
