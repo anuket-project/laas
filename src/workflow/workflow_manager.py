@@ -10,10 +10,8 @@
 
 from django.http import JsonResponse
 
-import random
-
 from booking.models import Booking
-from workflow.workflow_factory import WorkflowFactory, MetaStep
+from workflow.workflow_factory import WorkflowFactory
 from workflow.models import Repository
 from resource_inventory.models import (
     GenericResourceBundle,
@@ -47,10 +45,15 @@ class SessionManager():
             repo.set_defaults(defaults)
             repo.el[repo.HAS_RESULT] = False
         repo.el[repo.SESSION_USER] = self.owner
-        self.workflows.append(self.factory.create_workflow(workflow_type=workflow_type, repo = repo))
+        self.workflows.append(
+            self.factory.create_workflow(
+                workflow_type=workflow_type,
+                repo=repo
+            )
+        )
 
     def pop_workflow(self):
-        if( len(self.workflows) <= 1 ):
+        if(len(self.workflows) <= 1):
             return False
 
         if self.workflows[-1].repository.el[self.workflows[-1].repository.HAS_RESULT]:
@@ -70,7 +73,7 @@ class SessionManager():
             responsejson["active"] = self.active_workflow().repository.el['active_step']
             responsejson["workflow_count"] = len(self.workflows)
             return JsonResponse(responsejson, safe=False)
-        except Exception as e:
+        except Exception:
             pass
 
     def render(self, request, **kwargs):

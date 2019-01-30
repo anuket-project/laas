@@ -11,7 +11,6 @@
 
 from celery import shared_task
 from django.utils import timezone
-from django.db.models import Q
 from booking.models import Booking
 from notifier.manager import NotificationHandler
 from api.models import Job, JobStatus, SoftwareRelation, HostHardwareRelation, HostNetworkRelation, AccessRelation
@@ -41,7 +40,7 @@ def booking_poll():
                     if vlan.public:
                         try:
                             host.lab.vlan_manager.release_public_vlan(vlan.vlan_id)
-                        except:  # will fail if we already released in this loop
+                        except Exception:  # will fail if we already released in this loop
                             pass
                     else:
                         vlans.append(vlan.vlan_id)

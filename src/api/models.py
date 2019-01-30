@@ -42,7 +42,7 @@ class LabManagerTracker(object):
         """
         try:
             lab = Lab.objects.get(name=lab_name)
-        except:
+        except Exception:
             raise PermissionDenied("Lab not found")
         if lab.api_token == token:
             return LabManager(lab)
@@ -366,7 +366,7 @@ class AccessConfig(TaskConfig):
         d['revoke'] = self.revoke
         try:
             d['context'] = json.loads(self.context)
-        except:
+        except Exception:
             pass
         return d
 
@@ -753,7 +753,7 @@ class JobFactory(object):
         job = None
         try:
             job = Job.objects.get(booking=booking)
-        except:
+        except Exception:
             job = Job.objects.create(status=JobStatus.NEW, booking=booking)
         cls.makeHardwareConfigs(
             hosts=hosts,
@@ -796,7 +796,7 @@ class JobFactory(object):
             hardware_config = None
             try:
                 hardware_config = HardwareConfig.objects.get(relation__host=host)
-            except:
+            except Exception:
                 hardware_config = HardwareConfig()
 
             relation = HostHardwareRelation()
@@ -839,7 +839,7 @@ class JobFactory(object):
             network_config = None
             try:
                 network_config = NetworkConfig.objects.get(relation__host=host)
-            except:
+            except Exception:
                 network_config = NetworkConfig.objects.create()
 
             relation = HostNetworkRelation()
@@ -878,5 +878,5 @@ class JobFactory(object):
             software_relation = SoftwareRelation.objects.create(job=job, config=software_config)
             software_relation.save()
             return software_relation
-        except:
+        except Exception:
             return None

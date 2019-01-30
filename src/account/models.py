@@ -61,7 +61,7 @@ class VlanManager(models.Model):
             new_vlan = vlans.index(1)  # will throw if none available
             vlans[new_vlan] = 0
             allocated.append(new_vlan)
-        if count is 1:
+        if count == 1:
             return allocated[0]
         return allocated
 
@@ -131,7 +131,7 @@ class VlanManager(models.Model):
         vlans = set(vlans)
 
         for vlan in vlans:
-            if my_vlans[vlan] is 0:
+            if my_vlans[vlan] == 0:
                 raise ValueError("vlan " + str(vlan) + " is not available")
 
             my_vlans[vlan] = 0

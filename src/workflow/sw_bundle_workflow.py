@@ -72,7 +72,7 @@ class Define_Software(WorkflowStep):
                         host_profile = host.profile
                         break
             excluded_images = Image.objects.exclude(owner=user).exclude(public=True)
-            excluded_images = excluded_images | Image.objects.exclude(host_type=host.profile)
+            excluded_images = excluded_images | Image.objects.exclude(host_type=host_profile)
             lab = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE).lab
             excluded_images = excluded_images | Image.objects.exclude(from_lab=lab)
             filter_data["id_form-" + str(i) + "-image"] = []
@@ -138,7 +138,7 @@ class Define_Software(WorkflowStep):
                     q.filter(host_type=host.profile)
                     q.filter(from_lab=lab)
                     q.get(id=image.id)  # will throw exception if image is not in q
-                except:
+                except Exception:
                     self.metastep.set_invalid("Image " + image.name + " is not compatible with host " + host.resource.name)
                 role = form.cleaned_data['role']
                 if "jumphost" in role.name.lower():

@@ -310,8 +310,8 @@ class Repository():
     SNAPSHOT_DESC = "description of the snapshot"
     BOOKING_INFO_FILE = "the INFO.yaml file for this user's booking"
 
-    #migratory elements of segmented workflow
-    #each of these is the end result of a different workflow.
+    # migratory elements of segmented workflow
+    # each of these is the end result of a different workflow.
     HAS_RESULT = "whether or not workflow has a result"
     RESULT_KEY = "key for target index that result will be put into in parent"
     RESULT = "result object from workflow"
@@ -445,7 +445,7 @@ class Repository():
                         try:
                             interface.host = interface.host
                             interface.save()
-                        except Exception as e:
+                        except Exception:
                             return "GRB, saving interface " + str(interface) + " failed. CODE:0x0019"
             else:
                 return "GRB, no interface set provided. CODE:0x001a"
