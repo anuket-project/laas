@@ -1,18 +1,71 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="card_container">
-    {% for config in configurations %}
-        <div class="detail_card">
-            <div>
-                <h3>Configuration {{config.id}}</h3>
-                <ul class="list-group">
-                    <li class="list-group-item">id: {{config.id}}</li>
-                    <li class="list-group-item">name: {{config.name}}</li>
-                    <li class="list-group-item">description: {{config.description}}</li>
-                    <li class="list-group-item">resource: {{config.bundle}}</li>
-                </ul>
-            </div>
+<div class="card_container">
+{% for config in configurations %}
+    <div class="detail_card">
+        <div>
+            <h3>Configuration {{config.id}}</h3>
+            <ul class="list-group">
+                <li class="list-group-item">id: {{config.id}}</li>
+                <li class="list-group-item">name: {{config.name}}</li>
+                <li class="list-group-item">description: {{config.description}}</li>
+                <li class="list-group-item">resource: {{config.bundle}}</li>
+            </ul>
         </div>
-    {% endfor %}
+        <div class="detail_button_container">
+            <button
+                class="btn btn-danger"
+                style="width:49%;float:right;"
+                onclick='delete_config({{config.id}});'
+                data-toggle="modal"
+                data-target="#configModal"
+            >Delete</button>
+        </div>
     </div>
+{% endfor %}
+</div>
+<script>
+    var current_config_id = -1;
+    function delete_config(config_id) {
+        current_config_id = config_id;
+        document.getElementById('modal_warning').style['max-height'] = '0px';
+    }
+
+    function submit_delete_form() {
+        var ajaxForm = $("#config_delete_form");
+        var formData = ajaxForm.serialize();
+        req = new XMLHttpRequest();
+        var url = "delete/" + current_config_id;
+        req.open("POST", url, true);
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.onerror = function() { alert("problem submitting form"); }
+        req.send(formData);
+    }
+</script>
+<div class="modal fade" id="configModal" tabindex="-1" role="dialog" aria-labelledby="my_modal" aria-hidden="true">
+    <div class="modal-dialog" style="width: 450px;" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="my_modal" style="display: inline; float: left;">Delete Configuration?</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="config_delete_form">
+                {% csrf_token %}
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('modal_warning').style['max-height'] = '500px';">Delete</button>
+            </div>
+            <div id="modal_warning" class="modal-footer" style="max-height:0px;" >
+                <div style="text-align:center; margin: 5px">
+                    <h3>Are You Sure?</h3>
+                    <p>This cannot be undone</p>
+                    <button class="btn" onclick="document.getElementById('modal_warning').style['max-height'] = '0px';">Nevermind</button>
+                    <button class="btn btn-danger" data-dismiss="modal" onclick="submit_delete_form();">I'm Sure</button>
+                </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

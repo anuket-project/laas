@@ -18,7 +18,7 @@ import resource_inventory.resource_manager
 
 class Booking(models.Model):
     id = models.AutoField(primary_key=True)
-    owner = models.ForeignKey(User, models.CASCADE, related_name='owner')
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='owner')
     collaborators = models.ManyToManyField(User, related_name='collaborators')
     start = models.DateTimeField()
     end = models.DateTimeField()

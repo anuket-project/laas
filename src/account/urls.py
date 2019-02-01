@@ -25,6 +25,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url
+from django.urls import path
 
 from account.views import (
     AccountSettingsView,
@@ -36,7 +37,11 @@ from account.views import (
     account_booking_view,
     account_images_view,
     account_configuration_view,
-    account_detail_view
+    account_detail_view,
+    resource_delete_view,
+    booking_cancel_view,
+    image_delete_view,
+    configuration_delete_view
 )
 
 app_name = "account"
@@ -46,9 +51,13 @@ urlpatterns = [
     url(r'^login/$', JiraLoginView.as_view(), name='login'),
     url(r'^logout/$', JiraLogoutView.as_view(), name='logout'),
     url(r'^users/$', UserListView.as_view(), name='users'),
-    url(r'^my/resources', account_resource_view, name="my-resources"),
-    url(r'^my/bookings', account_booking_view, name="my-bookings"),
-    url(r'^my/images', account_images_view, name="my-images"),
-    url(r'^my/configurations', account_configuration_view, name="my-configurations"),
+    url(r'^my/resources/$', account_resource_view, name="my-resources"),
+    path('my/resources/delete/<int:resource_id>', resource_delete_view),
+    url(r'^my/bookings/$', account_booking_view, name="my-bookings"),
+    path('my/bookings/cancel/<int:booking_id>', booking_cancel_view),
+    url(r'^my/images/$', account_images_view, name="my-images"),
+    path('my/images/delete/<int:image_id>', image_delete_view),
+    url(r'^my/configurations/$', account_configuration_view, name="my-configurations"),
+    path('my/configurations/delete/<int:config_id>', configuration_delete_view),
     url(r'^my/$', account_detail_view, name="my-account"),
 ]
