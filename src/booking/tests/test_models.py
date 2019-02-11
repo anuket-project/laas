@@ -230,10 +230,3 @@ class BookingModelTestCase(TestCase):
             booking.save()
         except Exception:
             self.fail("save() threw an exception")
-        booking.end = booking.end + timedelta(weeks=2)
-        self.assertRaises(ValueError, booking.save)
-        booking.end = booking.end - timedelta(days=8)
-        try:
-            self.assertTrue(booking.save())
-        except Exception:
-            self.fail("save() threw an exception")

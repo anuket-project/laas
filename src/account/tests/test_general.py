@@ -47,7 +47,7 @@ class AccountMiddlewareTestCase(TestCase):
         self.user1profile.timezone = 'Etc/Greenwich'
         self.user1profile.save()
         self.client.get(url)
-        self.assertEqual(timezone.get_current_timezone_name(), 'Etc/Greenwich')
+        self.assertEqual(timezone.get_current_timezone_name(), 'GMT')
 
         # if there is no profile for a user, it should be created
         user2 = User.objects.create(username='user2')

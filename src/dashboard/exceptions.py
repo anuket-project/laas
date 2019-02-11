@@ -50,3 +50,7 @@ class InvalidVlanConfigurationException(Exception):
 
 class NetworkExistsException(Exception):
     pass
+
+
+class BookingLengthException(Exception):
+    pass
