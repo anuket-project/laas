@@ -307,7 +307,7 @@ class Populator:
                 size = 0
                 try:
                     size = int(disk_data['size'].split('.')[0])
-                except:
+                except Exception:
                     size = int(disk_data['size'].split('.')[0][:-1])
                 DiskProfile.objects.create(
                     size=size,

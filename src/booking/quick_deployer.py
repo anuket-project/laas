@@ -124,7 +124,7 @@ def create_from_form(form, request):
         raise InvalidHostnameException("Hostname must comply to RFC 952 and all extensions to it until this point")
     # check that image os is compatible with installer
     if installer in image.os.sup_installers.all():
-        #if installer not here, we can omit that and not check for scenario
+        # if installer not here, we can omit that and not check for scenario
         if not scenario:
             raise IncompatibleScenarioForInstaller("An OPNFV Installer needs a scenario to be chosen to work properly")
         if scenario not in installer.sup_scenarios.all():
@@ -137,9 +137,9 @@ def create_from_form(form, request):
         raise ImageOwnershipInvalid("You are not the owner of the chosen private image")
 
     # check if host type is available
-    #ResourceManager.getInstance().acquireHost(ghost, lab.name)
+    # ResourceManager.getInstance().acquireHost(ghost, lab.name)
     available_host_types = ResourceManager.getInstance().getAvailableHostTypes(lab)
-    if not profile in available_host_types:
+    if profile not in available_host_types:
         # TODO: handle deleting generic resource in this instance along with grb
         raise HostNotAvailable("Could not book selected host due to changed availability. Try again later")
 
@@ -231,12 +231,8 @@ def create_from_form(form, request):
     booking.pdf = ResourceManager().makePDF(booking.resource)
     booking.config_bundle = cbundle
     booking.save()
-    print("users field:")
-    print(users_field)
-    print(type(users_field))
-    #users_field = json.loads(users_field)
     users_field = users_field[2:-2]
-    if users_field: #may be empty after split, if no collaborators entered
+    if users_field:  # may be empty after split, if no collaborators entered
         users_field = json.loads(users_field)
         for collaborator in users_field:
             user = User.objects.get(id=collaborator['id'])

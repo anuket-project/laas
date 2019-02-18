@@ -12,7 +12,7 @@ from workflow.booking_workflow import Booking_Resource_Select, SWConfig_Select, 
 from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
 from workflow.sw_bundle_workflow import Config_Software, Define_Software, SWConf_Resource_Select
 from workflow.snapshot_workflow import Select_Host_Step, Image_Meta_Step
-from workflow.models import Repository, Confirmation_Step
+from workflow.models import Confirmation_Step
 
 import uuid
 
@@ -34,6 +34,7 @@ class ResourceMetaWorkflow(object):
 class ConfigMetaWorkflow(object):
     workflow_type = 2
     color = "#00ffcc"
+
 
 class MetaStep(object):
 
@@ -76,12 +77,14 @@ class MetaStep(object):
     def __ne__(self, other):
         return self.id.int != other.id.int
 
+
 class Workflow(object):
     def __init__(self, steps, metasteps, repository):
         self.repository = repository
         self.steps = steps
         self.metasteps = metasteps
         self.active_index = 0
+
 
 class WorkflowFactory():
     booking_steps = [

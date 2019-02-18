@@ -115,7 +115,7 @@ class Booking_Resource_Select(Resource_Select):
         if resource:
             try:
                 booking.resource.template = resource
-            except:
+            except Exception:
                 booking.resource = ResourceBundle(template=resource)
         models['booking'] = booking
         self.repo_put(self.repo.BOOKING_MODELS, models)
@@ -182,7 +182,7 @@ class SWConfig_Select(WorkflowStep):
             chosen_bundle = booking.config_bundle
             default.append(chosen_bundle.id)
             bundle = chosen_bundle
-        except:
+        except Exception:
             if created_bundle:
                 default.append(created_bundle.id)
                 bundle = created_bundle
