@@ -348,6 +348,8 @@ class FormUtils:
             slab['selected'] = 0
             slab['selectable'] = 1
             slab['follow'] = 1
+            if not multiple_selectable_hosts:
+                slab['follow'] = 0
             slab['multiple'] = 0
             items[slab['id']] = slab
             mapping[slab['id']] = []

@@ -228,7 +228,7 @@ def account_images_view(request):
         "images": my_images,
         "public_images": public_images,
         "used_images": used_images
-        }
+    }
     return render(request, template, context=context)
 
 

@@ -266,7 +266,7 @@ class Image(models.Model):
     public = models.BooleanField(default=True)
     host_type = models.ForeignKey(HostProfile, on_delete=models.CASCADE)
     description = models.TextField()
-    os = models.ForeignKey(Opsys, null=True, on_delete=models.CASCADE) #sentinal?
+    os = models.ForeignKey(Opsys, null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
