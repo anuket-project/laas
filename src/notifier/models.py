@@ -14,7 +14,9 @@ from account.models import UserProfile
 class Notification(models.Model):
     title = models.CharField(max_length=150)
     content = models.TextField()
-    recipients = models.ManyToManyField(UserProfile)
+    recipients = models.ManyToManyField(UserProfile, related_name='notifications')
+    is_html = models.BooleanField(default=True)
+    read_by = models.ManyToManyField(UserProfile, related_name='read_notifications')
 
     def __str__(self):
         return self.title

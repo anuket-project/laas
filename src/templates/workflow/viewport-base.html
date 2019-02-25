@@ -419,7 +419,6 @@
             var page_rect = document.getElementById("wrapper").getBoundingClientRect();
             var title_rect = document.getElementById("iframe_header").getBoundingClientRect();
             var iframe_height = page_rect.bottom - title_rect.bottom;
-            console.log("setting height to " + iframe_height);
             document.getElementById("viewport-iframe").height = iframe_height;
 
         }

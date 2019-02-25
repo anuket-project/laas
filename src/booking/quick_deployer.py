@@ -33,6 +33,7 @@ from resource_inventory.models import (
     OPNFVConfig
 )
 from resource_inventory.resource_manager import ResourceManager
+from notifier.manager import NotificationHandler
 from booking.models import Booking
 from dashboard.exceptions import (
     InvalidHostnameException,
@@ -241,6 +242,7 @@ def create_from_form(form, request):
 
     # generate job
     JobFactory.makeCompleteJob(booking)
+    NotificationHandler.notify_new_booking(booking)
 
 
 def drop_filter(user):

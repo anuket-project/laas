@@ -2,19 +2,55 @@
 {% block extrahead %}
 <base target="_parent">
 {% endblock %}
-{% block basecontent %}
-<div class="card-container">
-<h3 class="msg_header">{{notification.title}}</h3>
-<p class="content"></p>
-<pre>
-{{notification.content|safe}}
-</pre>
 
+{% block basecontent %}
+<script>
+    function send_request(post_data){
+        var form = $("#notification_action_form");
+        var formData = form.serialize() + '&' + post_data + '=true';
+        var req = new XMLHttpRequest();
+        req.open("POST", ".", false);
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        req.onerror = function() { alert("problem occurred while trying to cancel current workflow"); }
+        req.onreadystatechange = function() { if(req.readyState === 4){
+            window.top.location.href += '';
+        }};
+        req.send(formData);
+    }
+    function delete_notification()
+    {
+        send_request("delete");
+    }
+    function mark_unread()
+    {
+        send_request("unread");
+    }
+</script>
+
+<div>
+    <h3 class="msg_header">{{notification.title}}
+    <div class="btn_group">
+        <button class="btn btn-primary inbox-btn" onclick="mark_unread()">Mark Unread</button>
+        <button class="btn btn-danger inbox-btn" onclick="delete_notification()">Delete</button>
+    </div>
+    </h3>
 </div>
+
+<p class="content-divider"></p>
+
+{% if not notification.is_html %}
+<pre>
+{% endif %}
+    {{notification.content|safe}}
+{% if not notification.is_html %}
+</pre>
+{% endif %}
+<form id="notification_action_form" action="." method="post">
+    {% csrf_token %}
+</form>
 
 <style media="screen">
   .card-container {
-    box-shadow: 0 0 5px 2px #cccccc;
     border: 1px solid #ffffff;
     margin-top: 11px;
   }
@@ -28,11 +64,20 @@
     background-color: #ffffff;
     z-index: 5;
   }
-
   .sender {
     color: #636363;
   }
-
-
+  .content-divider {
+    border-bottom: 1px solid #cccccc;
+    padding-bottom: 15px;
+    clear: right;
+  }
+  .inbox-btn{
+    display: inline;
+    margin: 3px;
+  }
+  .btn_group{
+    float: right;
+  }
 </style>
 {% endblock %}

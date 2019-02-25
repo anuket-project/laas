@@ -18,13 +18,13 @@ class NotificationHandler(object):
     @classmethod
     def notify_new_booking(cls, booking):
         template = "notifier/new_booking.html"
-        titles = ["You have a new Booking", "You have been added to a Booking"]
+        titles = ["You have a new booking (" + str(booking.id) + ")", "You have been added to a booking (" + str(booking.id) + ")"]
         cls.booking_notify(booking, template, titles)
 
     @classmethod
     def notify_booking_end(cls, booking):
         template = "notifier/end_booking.html"
-        titles = ["Your booking has ended", "A booking you collaborate on has ended"]
+        titles = ["Your booking (" + str(booking.id) + ") has ended", "A booking (" + str(booking.id) + ") that you collaborate on has ended"]
         cls.booking_notify(booking, template, titles)
 
     @classmethod
