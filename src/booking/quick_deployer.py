@@ -33,6 +33,7 @@ from resource_inventory.models import (
     OPNFVConfig
 )
 from resource_inventory.resource_manager import ResourceManager
+from resource_inventory.pdf_templater import PDFTemplater
 from notifier.manager import NotificationHandler
 from booking.models import Booking
 from dashboard.exceptions import (
@@ -229,7 +230,7 @@ def create_from_form(form, request):
     booking.start = timezone.now()
     booking.end = timezone.now() + timedelta(days=int(length))
     booking.resource = resource_bundle
-    booking.pdf = ResourceManager().makePDF(booking.resource)
+    booking.pdf = PDFTemplater.makePDF(booking.resource)
     booking.config_bundle = cbundle
     booking.save()
     users_field = users_field[2:-2]

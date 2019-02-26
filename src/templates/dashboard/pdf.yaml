@@ -1,95 +1,92 @@
 ---
 version: {{version|default:"1.0"}}
 details:
-    pod_owner: {{details.owner}}
-    contact: {{details.contact}}
-    lab: {{details.lab}}
-    location: {{details.location}}
-    type: {{details.type}}
-    link: {{details.link}}
-
+  contact: {{details.contact}}
+  lab: {{details.lab}}
+  link: {{details.link}}
+  location: {{details.location}}
+  pod_owner: {{details.owner}}
+  type: {{details.type}}
 jumphost:
-    name: {{jumphost.name}}
-    node:
-        type: {{jumphost.node.type}}
-        vendor: {{jumphost.node.vendor}}
-        model: {{jumphost.node.model}}
-        arch: {{jumphost.node.arch}}
-        cpus: {{jumphost.node.cpus}}
-        cpu_cflags: {{jumphost.node.cpu_cflags}}
-        cores: {{jumphost.node.cores}}
-        memory: {{jumphost.node.memory}}
-    disks:
-        {% for disk in jumphost.disks %}
-          - name: {{disk.name}}
-            disk_capacity: {{disk.capacity}}
-            disk_type: {{disk.type}}
-            disk_interface: {{disk.interface}}
-            disk_rotation: {{disk.rotation}}
-
-        {% endfor %}
-    os: {{jumphost.os}}
-    remote_params:
-        type: {{jumphost.remote.type}}
-        versions:
-            {% for version in jumphost.remote.versions %}
-          - {{version}}
-            {% endfor %}
-        user: {{jumphost.remote.user}}
-        pass: {{jumphost.remote.pass}}
-    remote_management:
-        type: {{jumphost.remote.type}}
-        versions:
-            {% for version in jumphost.remote.versions %}
-          - {{version}}
-            {% endfor %}
-        user: {{jumphost.remote.user}}
-        pass: {{jumphost.remote.pass}}
-        address: {{jumphost.remote.address}}
-        mac_address: {{jumphost.remote.mac_address}}
-    interfaces:
-        {% for interface in jumphost.interfaces %}
-      - name: {{interface.name}}
-        address: {{interface.address}}
-        mac_address: {{interface.mac_address}}
-        vlan: {{interface.vlan}}
-        {% endfor %}
-nodes:
-    {% for node in nodes %}
-  - name: {{node.name}}
-    node:
-        type: {{node.node.type}}
-        vendor: {{node.node.vendor}}
-        model: {{node.node.model}}
-        arch: {{node.node.arch}}
-        cpus: {{node.node.cpus}}
-        cpu_cflags: {{node.node.cpu_cflags}}
-        cores: {{node.node.cores}}
-        memory: {{node.node.memory}}
-    disks:
-        {% for disk in node.disks %}
-      - name: {{disk.name}}
-        disk_capacity: {{disk.capacity}}
-        disk_type: {{disk.type}}
-        disk_interface: {{disk.interface}}
-        disk_rotation: {{disk.rotation}}
-
-        {% endfor %}
-    remote_management:
-        type: {{node.remote.type}}
-        versions:
-            {% for version in node.remote.versions %}
-          - {{version}}
-            {% endfor %}
-        user: {{node.remote.user}}
-        pass: {{node.remote.pass}}
-        address: {{node.remote.address}}
-        mac_address: {{node.remote.mac_address}}
-    interfaces:
-        {% for interface in node.interfaces %}
-      - name: {{interface.name}}
-        address: {{interface.address}}
-        mac_address: {{interface.mac_address}}
-        vlan: {{interface.vlan}}
-        {% endfor %}
+  disks:
+  {% for disk in jumphost.disks %}
+  - disk_capacity: {{disk.capacity}}
+    disk_interface: {{disk.interface}}
+    disk_rotation: {{disk.rotation}}
+    disk_type: {{disk.type}}
+    name: {{disk.name}}
+  {% endfor %}
+  interfaces:
+    {% for interface in jumphost.interfaces %}
+  - features: {{interface.features}}
+    mac_address: {{interface.mac_address}}
+    name: {{interface.name}}
+    speed: {{interface.speed}}
     {% endfor %}
+  name: {{jumphost.name}}
+  node:
+    arch: {{jumphost.node.arch}}
+    cores: {{jumphost.node.cores}}
+    cpu_cflags: {{jumphost.node.cpu_cflags}}
+    cpus: {{jumphost.node.cpus}}
+    memory: {{jumphost.node.memory}}
+    model: {{jumphost.node.model}}
+    type: {{jumphost.node.type}}
+    vendor: {{jumphost.node.vendor}}
+  os: {{jumphost.os}}
+  remote_management:
+    address: {{jumphost.remote.address}}
+    mac_address: {{jumphost.remote.mac_address}}
+    pass: {{jumphost.remote.pass}}
+    type: {{jumphost.remote.type}}
+    user: {{jumphost.remote.user}}
+    versions:
+      {% for version in jumphost.remote.versions %}
+    - {{version}}
+      {% endfor %}
+  remote_params:
+    pass: {{jumphost.remote.pass}}
+    type: {{jumphost.remote.type}}
+    user: {{jumphost.remote.user}}
+    versions:
+      {% for version in jumphost.remote.versions %}
+    - {{version}}
+      {% endfor %}
+nodes:
+{% for node in nodes %}
+- disks:
+    {% for disk in node.disks %}
+  - disk_capacity: {{disk.capacity}}
+    disk_interface: {{disk.interface}}
+    disk_rotation: {{disk.rotation}}
+    disk_type: {{disk.type}}
+    name: {{disk.name}}
+    {% endfor %}
+  interfaces:
+    {% for interface in node.interfaces %}
+  - features: {{interface.features}}
+    mac_address: {{interface.mac_address}}
+    name: {{interface.name}}
+    speed: {{interface.speed}}
+    {% endfor %}
+  name: {{node.name}}
+  node:
+    arch: {{node.node.arch}}
+    cores: {{node.node.cores}}
+    cpu_cflags: {{node.node.cpu_cflags}}
+    cpus: {{node.node.cpus}}
+    memory: {{node.node.memory}}
+    model: {{node.node.model}}
+    type: {{node.node.type}}
+    vendor: {{node.node.vendor}}
+  remote_management:
+    address: {{node.remote.address}}
+    mac_address: {{node.remote.mac_address}}
+    pass: {{node.remote.pass}}
+    type: {{node.remote.type}}
+    user: {{node.remote.user}}
+    versions:
+      {% for version in node.remote.versions %}
+    - {{version}}
+      {% endfor %}
+{% endfor %}
