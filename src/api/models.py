@@ -11,6 +11,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
 
 import json
 import uuid
@@ -21,7 +22,8 @@ from resource_inventory.models import (
     HostProfile,
     Host,
     Image,
-    Interface
+    Interface,
+    RemoteInfo
 )
 
 
@@ -59,6 +61,32 @@ class LabManager(object):
 
     def __init__(self, lab):
         self.lab = lab
+
+    def update_host_remote_info(self, data, host_id):
+        host = get_object_or_404(Host, labid=host_id, lab=self.lab)
+        info = {}
+        try:
+            info['address'] = data['address']
+            info['mac_address'] = data['mac_address']
+            info['password'] = data['password']
+            info['user'] = data['user']
+            info['type'] = data['type']
+            info['versions'] = json.dumps(data['versions'])
+        except Exception as e:
+            return {"error": "invalid arguement: " + str(e)}
+        remote_info = host.remote_management
+        if "default" in remote_info.mac_address:
+            remote_info = RemoteInfo()
+        remote_info.address = info['address']
+        remote_info.mac_address = info['mac_address']
+        remote_info.password = info['password']
+        remote_info.user = info['user']
+        remote_info.type = info['type']
+        remote_info.versions = info['versions']
+        remote_info.save()
+        host.remote_management = remote_info
+        host.save()
+        return {"status": "success"}
 
     def get_profile(self):
         prof = {}

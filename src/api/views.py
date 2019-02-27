@@ -62,6 +62,17 @@ def lab_status(request, lab_name=""):
     return JsonResponse(lab_manager.get_status(), safe=False)
 
 
+def update_host_bmc(request, lab_name="", host_id=""):
+    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_manager = LabManagerTracker.get(lab_name, lab_token)
+    if request.method == "POST":
+        # update / create RemoteInfo for host
+        return JsonResponse(
+            lab_manager.update_host_remote_info(request.POST, host_id),
+            safe=False
+        )
+
+
 def lab_profile(request, lab_name=""):
     lab_token = request.META.get('HTTP_AUTH_TOKEN')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)

@@ -291,6 +291,26 @@ class HostConfiguration(models.Model):
         return "config with " + str(self.host) + " and image " + str(self.image)
 
 
+class RemoteInfo(models.Model):
+    address = models.CharField(max_length=15)
+    mac_address = models.CharField(max_length=17)
+    password = models.CharField(max_length=100)
+    user = models.CharField(max_length=100)
+    management_type = models.CharField(max_length=50, default="ipmi")
+    versions = models.CharField(max_length=100)  # json serialized list of floats
+
+
+def get_default_remote_info():
+    RemoteInfo.objects.get_or_create(
+        address="default",
+        mac_address="default",
+        password="default",
+        user="default",
+        management_type="default",
+        versions="[default]"
+    )
+
+
 # Concrete host, actual machine in a lab
 class Host(models.Model):
     id = models.AutoField(primary_key=True)
@@ -305,6 +325,7 @@ class Host(models.Model):
     working = models.BooleanField(default=True)
     vendor = models.CharField(max_length=100, default="unknown")
     model = models.CharField(max_length=150, default="unknown")
+    remote_management = models.ForeignKey(RemoteInfo, default=get_default_remote_info, on_delete=models.SET(get_default_remote_info))
 
     def __str__(self):
         return self.name
