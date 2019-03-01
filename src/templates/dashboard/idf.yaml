@@ -1,0 +1,52 @@
+idf:
+  version: {{version|default:"0.1"}}
+  net_config:
+    oob:
+      ip-range: {{net_config.oob.ip-range}}
+      vlan: {{net_config.oob.vlan}}
+    admin:
+      interface: {{net_config.admin.interface}}
+      vlan: {{net_config.admin.vlan}}
+      network: {{net_config.admin.network}}
+      mask: {{net_config.admin.mask}}
+    mgmt:
+      interface: {{net_config.mgmt.interface}}
+      vlan: {{net_config.mgmt.vlan}}
+      network: {{net_config.mgmt.network}}
+      mask: {{net_config.mgmt.mask}}
+    private:
+      interface: {{net_config.private.interface}}
+      vlan: {{net_config.private.vlan}}
+      network: {{net_config.private.network}}
+      mask: {{net_config.private.mask}}
+    public:
+      interface: {{net_config.public.interface}}
+      vlan: {{net_config.public.vlan}}
+      network: {{net_config.public.network}}
+      mask: {{net_config.public.mask}}
+      ip-range: {{net_config.public.ip-range}}
+      mask: {{net_config.public.mask}}
+      gateway: {{net_config.public.gateway}}
+      dns:
+      {% for serv in net_config.public.dns %}
+      - {{serv}}
+      {% endfor %}
+  fuel:
+    jumphost:
+      bridges:
+        admin: {{fuel.jumphost.bridges.admin}}
+        mgmt: {{fuel.jumphost.bridges.mgmt}}
+        private: {{fuel.jumphost.bridges.private}}
+        public: {{fuel.jumphost.bridges.public}}
+    network:
+      {% for node in fuel.network.nodes %}
+      node:
+      - interfaces:
+        {% for iface in node.interfaces %}
+        - {{ iface }}
+        {% endfor %}
+      - busaddr:
+        {% for addr in node.bus_addrs %}
+        - {{addr}}
+        {% endfor %}
+      {% endfor %}

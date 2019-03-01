@@ -21,6 +21,7 @@ from api.models import JobFactory
 from dashboard.exceptions import ResourceAvailabilityException, ModelValidationException
 from resource_inventory.models import Image, GenericInterface
 from resource_inventory.resource_manager import ResourceManager
+from resource_inventory.pdf_templater import PDFTemplater
 from notifier.manager import NotificationHandler
 from booking.models import Booking
 
@@ -577,7 +578,7 @@ class Repository():
             booking.collaborators.add(collaborator)
 
         try:
-            booking.pdf = ResourceManager().makePDF(booking.resource)
+            booking.pdf = PDFTemplater.makePDF(booking.resource)
             booking.save()
         except Exception as e:
             return "BOOK, failed to create Pod Desriptor File: " + str(e)
