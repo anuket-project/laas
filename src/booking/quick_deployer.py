@@ -38,7 +38,8 @@ from booking.models import Booking
 from dashboard.exceptions import (
     InvalidHostnameException,
     ResourceAvailabilityException,
-    ModelValidationException
+    ModelValidationException,
+    BookingLengthException
 )
 from api.models import JobFactory
 
@@ -88,22 +89,8 @@ class NoRemainingPublicNetwork(Exception):
     pass
 
 
-def create_from_form(form, request):
-    quick_booking_id = str(uuid.uuid4())
-
-    host_field = form.cleaned_data['filter_field']
-    host_json = json.loads(host_field)
-    purpose_field = form.cleaned_data['purpose']
-    project_field = form.cleaned_data['project']
-    users_field = form.cleaned_data['users']
-    host_name = form.cleaned_data['hostname']
-    length = form.cleaned_data['length']
-
-    image = form.cleaned_data['image']
-    scenario = form.cleaned_data['scenario']
-    installer = form.cleaned_data['installer']
-
-    # get all initial info we need to validate
+def parse_host_field(host_field_contents):
+    host_json = json.loads(host_field_contents)
     lab_dict = host_json['labs'][0]
     lab_id = list(lab_dict.keys())[0]
     lab_user_id = int(lab_id.split("_")[-1])
@@ -115,14 +102,112 @@ def create_from_form(form, request):
     profile = HostProfile.objects.get(id=profile_id)
 
     # check validity of field data before trying to apply to models
+    if len(host_json['labs']) != 1:
+        raise NoLabSelectedError("No lab was selected")
     if not lab:
         raise LabDNE("Lab with provided ID does not exist")
     if not profile:
         raise HostProfileDNE("Host type with provided ID does not exist")
 
-    # check that hostname is valid
-    if not re.match(r"(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})$", host_name):
+    return lab, profile
+
+
+def check_available_matching_host(lab, hostprofile):
+    available_host_types = ResourceManager.getInstance().getAvailableHostTypes(lab)
+    if hostprofile not in available_host_types:
+        # TODO: handle deleting generic resource in this instance along with grb
+        raise HostNotAvailable("Could not book selected host due to changed availability. Try again later")
+
+    hostset = Host.objects.filter(lab=lab, profile=hostprofile).filter(booked=False).filter(working=True)
+    if not hostset.exists():
+        raise HostNotAvailable("Couldn't find any matching unbooked hosts")
+
+    return True
+
+
+def generate_grb(owner, lab, common_id):
+    grbundle = GenericResourceBundle(owner=owner)
+    grbundle.lab = lab
+    grbundle.name = "grbundle for quick booking with uid " + common_id
+    grbundle.description = "grbundle created for quick-deploy booking"
+    grbundle.save()
+
+    return grbundle
+
+
+def generate_gresource(bundle, hostname):
+    if not re.match(r"(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})$", hostname):
         raise InvalidHostnameException("Hostname must comply to RFC 952 and all extensions to it until this point")
+    gresource = GenericResource(bundle=bundle, name=hostname)
+    gresource.save()
+
+    return gresource
+
+
+def generate_ghost(generic_resource, host_profile):
+    ghost = GenericHost()
+    ghost.resource = generic_resource
+    ghost.profile = host_profile
+    ghost.save()
+
+    return ghost
+
+
+def generate_config_bundle(owner, common_id, grbundle):
+    cbundle = ConfigBundle()
+    cbundle.owner = owner
+    cbundle.name = "configbundle for quick booking with uid " + common_id
+    cbundle.description = "configbundle created for quick-deploy booking"
+    cbundle.bundle = grbundle
+    cbundle.save()
+
+    return cbundle
+
+
+def generate_opnfvconfig(scenario, installer, config_bundle):
+    opnfvconfig = OPNFVConfig()
+    opnfvconfig.scenario = scenario
+    opnfvconfig.installer = installer
+    opnfvconfig.bundle = config_bundle
+    opnfvconfig.save()
+
+    return opnfvconfig
+
+
+def generate_hostconfig(generic_host, image, config_bundle):
+    hconf = HostConfiguration()
+    hconf.host = generic_host
+    hconf.image = image
+
+    opnfvrole = OPNFVRole.objects.get(name="Jumphost")
+    if not opnfvrole:
+        raise OPNFVRoleDNE("No jumphost role was found.")
+
+    hconf.opnfvRole = opnfvrole
+    hconf.bundle = config_bundle
+    hconf.save()
+
+    return hconf
+
+
+def generate_resource_bundle(generic_resource_bundle, config_bundle):  # warning: requires cleanup
+    try:
+        resource_manager = ResourceManager.getInstance()
+        resource_bundle = resource_manager.convertResourceBundle(generic_resource_bundle, config=config_bundle)
+        return resource_bundle
+    except ResourceAvailabilityException:
+        raise ResourceAvailabilityException("Requested resources not available")
+    except ModelValidationException:
+        raise ModelValidationException("Encountered error while saving grbundle")
+
+
+def check_invariants(request, **kwargs):
+    installer = kwargs['installer']
+    image = kwargs['image']
+    scenario = kwargs['scenario']
+    lab = kwargs['lab']
+    host_profile = kwargs['host_profile']
+    length = kwargs['length']
     # check that image os is compatible with installer
     if installer in image.os.sup_installers.all():
         # if installer not here, we can omit that and not check for scenario
@@ -132,93 +217,70 @@ def create_from_form(form, request):
             raise IncompatibleScenarioForInstaller("The chosen installer does not support the chosen scenario")
     if image.from_lab != lab:
         raise ImageNotAvailableAtLab("The chosen image is not available at the chosen hosting lab")
-    if image.host_type != profile:
+    if image.host_type != host_profile:
         raise IncompatibleImageForHost("The chosen image is not available for the chosen host type")
     if not image.public and image.owner != request.user:
         raise ImageOwnershipInvalid("You are not the owner of the chosen private image")
+    if length < 1 or length > 21:
+        raise BookingLengthException("Booking must be between 1 and 21 days long")
 
-    # check if host type is available
-    # ResourceManager.getInstance().acquireHost(ghost, lab.name)
-    available_host_types = ResourceManager.getInstance().getAvailableHostTypes(lab)
-    if profile not in available_host_types:
-        # TODO: handle deleting generic resource in this instance along with grb
-        raise HostNotAvailable("Could not book selected host due to changed availability. Try again later")
 
-    # check if any hosts with profile at lab are still available
-    hostset = Host.objects.filter(lab=lab, profile=profile).filter(booked=False).filter(working=True)
-    if not hostset.first():
-        raise HostNotAvailable("Couldn't find any matching unbooked hosts")
+def create_from_form(form, request):
+    quick_booking_id = str(uuid.uuid4())
 
-    # generate GenericResourceBundle
-    if len(host_json['labs']) != 1:
-        raise NoLabSelectedError("No lab was selected")
+    host_field = form.cleaned_data['filter_field']
+    purpose_field = form.cleaned_data['purpose']
+    project_field = form.cleaned_data['project']
+    users_field = form.cleaned_data['users']
+    hostname = form.cleaned_data['hostname']
+    length = form.cleaned_data['length']
 
-    grbundle = GenericResourceBundle(owner=request.user)
-    grbundle.lab = lab
-    grbundle.name = "grbundle for quick booking with uid " + quick_booking_id
-    grbundle.description = "grbundle created for quick-deploy booking"
-    grbundle.save()
+    image = form.cleaned_data['image']
+    scenario = form.cleaned_data['scenario']
+    installer = form.cleaned_data['installer']
 
-    # generate GenericResource, GenericHost
-    gresource = GenericResource(bundle=grbundle, name=host_name)
-    gresource.save()
+    lab, host_profile = parse_host_field(host_field)
+    data = form.cleaned_data
+    data['lab'] = lab
+    data['host_profile'] = host_profile
+    check_invariants(request, **data)
 
-    ghost = GenericHost()
-    ghost.resource = gresource
-    ghost.profile = profile
-    ghost.save()
+    check_available_matching_host(lab, host_profile)  # requires cleanup if failure after this point
 
-    # generate config bundle
-    cbundle = ConfigBundle()
-    cbundle.owner = request.user
-    cbundle.name = "configbundle for quick booking  with uid " + quick_booking_id
-    cbundle.description = "configbundle created for quick-deploy booking"
-    cbundle.bundle = grbundle
-    cbundle.save()
+    grbundle = generate_grb(request.user, lab, quick_booking_id)
 
-    # generate OPNFVConfig pointing to cbundle
+    gresource = generate_gresource(grbundle, hostname)
+
+    ghost = generate_ghost(gresource, host_profile)
+
+    cbundle = generate_config_bundle(request.user, quick_booking_id, grbundle)
+
+    # if no installer provided, just create blank host
     if installer:
-        opnfvconfig = OPNFVConfig()
-        opnfvconfig.scenario = scenario
-        opnfvconfig.installer = installer
-        opnfvconfig.bundle = cbundle
-        opnfvconfig.save()
+        generate_opnfvconfig(scenario, installer, cbundle)
 
-    # generate HostConfiguration pointing to cbundle
-    hconf = HostConfiguration()
-    hconf.host = ghost
-    hconf.image = image
-    hconf.opnfvRole = OPNFVRole.objects.get(name="Jumphost")
-    if not hconf.opnfvRole:
-        raise OPNFVRoleDNE("No jumphost role was found")
-    hconf.bundle = cbundle
-    hconf.save()
+    generate_hostconfig(ghost, image, cbundle)
 
     # construct generic interfaces
-    for interface_profile in profile.interfaceprofile.all():
+    for interface_profile in host_profile.interfaceprofile.all():
         generic_interface = GenericInterface.objects.create(profile=interface_profile, host=ghost)
         generic_interface.save()
-    ghost.save()
 
     # get vlan, assign to first interface
     publicnetwork = lab.vlan_manager.get_public_vlan()
-    publicvlan = publicnetwork.vlan
     if not publicnetwork:
         raise NoRemainingPublicNetwork("No public networks were available for your pod")
+    publicvlan = publicnetwork.vlan
     lab.vlan_manager.reserve_public_vlan(publicvlan)
 
     vlan = Vlan.objects.create(vlan_id=publicvlan, tagged=False, public=True)
     vlan.save()
+
     ghost.generic_interfaces.first().vlans.add(vlan)
     ghost.generic_interfaces.first().save()
 
     # generate resource bundle
-    try:
-        resource_bundle = ResourceManager.getInstance().convertResourceBundle(grbundle, config=cbundle)
-    except ResourceAvailabilityException:
-        raise ResourceAvailabilityException("Requested resources not available")
-    except ModelValidationException:
-        raise ModelValidationException("Encountered error while saving grbundle")
+    resource_bundle = generate_resource_bundle(grbundle, cbundle)
 
     # generate booking
     booking = Booking()
