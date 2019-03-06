@@ -301,14 +301,14 @@ class RemoteInfo(models.Model):
 
 
 def get_default_remote_info():
-    RemoteInfo.objects.get_or_create(
+    return RemoteInfo.objects.get_or_create(
         address="default",
         mac_address="default",
         password="default",
         user="default",
         management_type="default",
         versions="[default]"
-    )
+    )[0].pk
 
 
 # Concrete host, actual machine in a lab
