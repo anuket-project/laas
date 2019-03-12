@@ -54,6 +54,16 @@ def lab_inventory(request, lab_name=""):
     return JsonResponse(lab_manager.get_inventory(), safe=False)
 
 
+@csrf_exempt
+def lab_host(request, lab_name="", host_id=""):
+    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_manager = LabManagerTracker.get(lab_name, lab_token)
+    if request.method == "GET":
+        return JsonResponse(lab_manager.get_host(host_id), safe=False)
+    if request.method == "POST":
+        return JsonResponse(lab_manager.update_host(host_id, request.POST), safe=False)
+
+
 def lab_status(request, lab_name=""):
     lab_token = request.META.get('HTTP_AUTH_TOKEN')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
@@ -62,6 +72,7 @@ def lab_status(request, lab_name=""):
     return JsonResponse(lab_manager.get_status(), safe=False)
 
 
+@csrf_exempt
 def update_host_bmc(request, lab_name="", host_id=""):
     lab_token = request.META.get('HTTP_AUTH_TOKEN')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
@@ -104,6 +115,7 @@ def specific_task(request, lab_name="", job_id="", task_id=""):
         return JsonResponse(get_task(task_id).config.get_delta())
 
 
+@csrf_exempt
 def specific_job(request, lab_name="", job_id=""):
     lab_token = request.META.get('HTTP_AUTH_TOKEN')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)

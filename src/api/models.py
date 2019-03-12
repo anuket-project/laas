@@ -116,6 +116,22 @@ class LabManager(object):
         inventory['host_types'] = self.serialize_host_profiles(profiles)
         return inventory
 
+    def get_host(self, hostname):
+        host = get_object_or_404(Host, labid=hostname, lab=self.lab)
+        return {
+            "booked": host.booked,
+            "working": host.working,
+            "type": host.profile.name
+        }
+
+    def update_host(self, hostname, data):
+        host = get_object_or_404(Host, labid=hostname, lab=self.lab)
+        if "working" in data:
+            working = data['working'] == "true"
+            host.working = working
+        host.save()
+        return self.get_host(hostname)
+
     def get_status(self):
         return {"status": self.lab.status}
 
