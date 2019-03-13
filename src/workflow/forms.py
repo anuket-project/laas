@@ -186,9 +186,9 @@ class BookingMetaForm(forms.Form):
         widget=NumberInput(
             attrs={
                 "type": "range",
-                'min': "0",
+                'min': "1",
                 "max": "21",
-                "value": "0"
+                "value": "1"
             }
         )
     )
