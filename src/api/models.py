@@ -343,8 +343,8 @@ class TaskConfig(models.Model):
 
 class OpnfvApiConfig(models.Model):
 
-    installer = models.CharField(max_length=100)
-    scenario = models.CharField(max_length=100)
+    installer = models.CharField(max_length=200)
+    scenario = models.CharField(max_length=300)
     roles = models.ManyToManyField(Host)
     delta = models.TextField()
 
