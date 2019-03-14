@@ -101,6 +101,8 @@ def specific_task(request, lab_name="", job_id="", task_id=""):
             task.status = request.POST.get('status')
         if 'message' in request.POST:
             task.message = request.POST.get('message')
+        if 'lab_token' in request.POST:
+            task.lab_token = request.POST.get('lab_token')
         task.save()
         NotificationHandler.task_updated(task)
         d = {}
