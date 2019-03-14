@@ -203,27 +203,6 @@ class Confirmation_Step(WorkflowStep):
     title = "Confirm Changes"
     description = "Does this all look right?"
 
-    def get_vlan_warning(self):
-        grb = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE, False)
-        if not grb:
-            return 0
-        if self.repo.BOOKING_MODELS not in self.repo.el:
-            return 0
-        vlan_manager = grb.lab.vlan_manager
-        if vlan_manager is None:
-            return 0
-        hosts = grb.getHosts()
-        for host in hosts:
-            for interface in host.generic_interfaces.all():
-                for vlan in interface.vlans.all():
-                    if vlan.public:
-                        if not vlan_manager.public_vlan_is_available(vlan.vlan_id):
-                            return 1
-                    else:
-                        if not vlan_manager.is_available(vlan.vlan_id):
-                            return 1  # There is a problem with these vlans
-        return 0
-
     def get_context(self):
         context = super(Confirmation_Step, self).get_context()
         context['form'] = ConfirmationForm()
@@ -231,7 +210,6 @@ class Confirmation_Step(WorkflowStep):
             self.repo_get(self.repo.CONFIRMATION),
             default_flow_style=False
         ).strip()
-        context['vlan_warning'] = self.get_vlan_warning()
 
         return context
 
@@ -262,32 +240,7 @@ class Confirmation_Step(WorkflowStep):
                 pass
 
         else:
-            if "vlan_input" in request.POST:
-                if request.POST.get("vlan_input") == "True":
-                    self.translate_vlans()
-                    return self.render(request)
             pass
-
-    def translate_vlans(self):
-        grb = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE, False)
-        if not grb:
-            return 0
-        vlan_manager = grb.lab.vlan_manager
-        if vlan_manager is None:
-            return 0
-        hosts = grb.getHosts()
-        for host in hosts:
-            for interface in host.generic_interfaces.all():
-                for vlan in interface.vlans.all():
-                    if not vlan.public:
-                        if not vlan_manager.is_available(vlan.vlan_id):
-                            vlan.vlan_id = vlan_manager.get_vlan()
-                            vlan.save()
-                    else:
-                        if not vlan_manager.public_vlan_is_available(vlan.vlan_id):
-                            pub_vlan = vlan_manager.get_public_vlan()
-                            vlan.vlan_id = pub_vlan.vlan
-                            vlan.save()
 
 
 class Workflow():
@@ -453,6 +406,11 @@ class Repository():
             except Exception as e:
                 return "GRB, saving hosts generated exception: " + str(e) + " CODE:0x0005"
 
+            if 'networks' in models:
+                for net in models['networks'].values():
+                    net.bundle = bundle
+                    net.save()
+
             if 'interfaces' in models:
                 for interface_set in models['interfaces'].values():
                     for interface in interface_set:
@@ -464,20 +422,21 @@ class Repository():
             else:
                 return "GRB, no interface set provided. CODE:0x001a"
 
-            if 'vlans' in models:
-                for resource_name, mapping in models['vlans'].items():
-                    for profile_name, vlan_set in mapping.items():
+            if 'connections' in models:
+                for resource_name, mapping in models['connections'].items():
+                    for profile_name, connection_set in mapping.items():
                         interface = GenericInterface.objects.get(
                             profile__name=profile_name,
                             host__resource__name=resource_name,
                             host__resource__bundle=models['bundle']
                         )
-                        for vlan in vlan_set:
+                        for connection in connection_set:
                             try:
-                                vlan.save()
-                                interface.vlans.add(vlan)
+                                connection.network = connection.network
+                                connection.save()
+                                interface.connections.add(connection)
                             except Exception as e:
-                                return "GRB, saving vlan " + str(vlan) + " failed. Exception: " + str(e) + ". CODE:0x0017"
+                                return "GRB, saving vlan " + str(connection) + " failed. Exception: " + str(e) + ". CODE:0x0017"
             else:
                 return "GRB, no vlan set provided. CODE:0x0018"
 
@@ -534,9 +493,6 @@ class Repository():
         else:
             return "BOOK, no selected resource. CODE:0x000e"
 
-        if not self.reserve_vlans(selected_grb):
-            return "BOOK, vlans not available"
-
         if 'booking' in models:
             booking = models['booking']
         else:
@@ -592,30 +548,6 @@ class Repository():
             booking.save()
         except Exception as e:
             return "BOOK, saving booking generated exception: " + str(e) + " CODE:0x0016"
-
-    def reserve_vlans(self, grb):
-        """
-        True is success
-        """
-        vlans = []
-        public_vlan = None
-        vlan_manager = grb.lab.vlan_manager
-        if vlan_manager is None:
-            return True
-        for host in grb.getHosts():
-            for interface in host.generic_interfaces.all():
-                for vlan in interface.vlans.all():
-                    if vlan.public:
-                        public_vlan = vlan
-                    else:
-                        vlans.append(vlan.vlan_id)
-
-        try:
-            vlan_manager.reserve_vlans(vlans)
-            vlan_manager.reserve_public_vlan(public_vlan.vlan_id)
-            return True
-        except Exception:
-            return False
 
     def __init__(self):
         self.el = {}

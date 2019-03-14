@@ -22,7 +22,6 @@ from resource_inventory.models import (
     Image,
     GenericResourceBundle,
     ConfigBundle,
-    Vlan,
     Host,
     HostProfile,
     HostConfiguration,
@@ -30,7 +29,10 @@ from resource_inventory.models import (
     GenericHost,
     GenericInterface,
     OPNFVRole,
-    OPNFVConfig
+    OPNFVConfig,
+    Network,
+    NetworkConnection,
+    NetworkRole
 )
 from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.pdf_templater import PDFTemplater
@@ -226,6 +228,20 @@ def check_invariants(request, **kwargs):
         raise BookingLengthException("Booking must be between 1 and 21 days long")
 
 
+def configure_networking(grb, config):
+    # create network
+    net = Network.objects.create(name="public", bundle=grb, is_public=True)
+    # connect network to generic host
+    grb.getHosts()[0].generic_interfaces.first().connections.add(
+        NetworkConnection.objects.create(network=net, vlan_is_tagged=False)
+    )
+    # asign network role
+    role = NetworkRole.objects.create(name="public", network=net)
+    opnfv_config = config.opnfv_config.first()
+    if opnfv_config:
+        opnfv_config.networks.add(role)
+
+
 def create_from_form(form, request):
     quick_booking_id = str(uuid.uuid4())
 
@@ -267,18 +283,7 @@ def create_from_form(form, request):
         generic_interface = GenericInterface.objects.create(profile=interface_profile, host=ghost)
         generic_interface.save()
 
-    # get vlan, assign to first interface
-    publicnetwork = lab.vlan_manager.get_public_vlan()
-    if not publicnetwork:
-        raise NoRemainingPublicNetwork("No public networks were available for your pod")
-    publicvlan = publicnetwork.vlan
-    lab.vlan_manager.reserve_public_vlan(publicvlan)
-
-    vlan = Vlan.objects.create(vlan_id=publicvlan, tagged=False, public=True)
-    vlan.save()
-
-    ghost.generic_interfaces.first().vlans.add(vlan)
-    ghost.generic_interfaces.first().save()
+    configure_networking(grbundle, cbundle)
 
     # generate resource bundle
     resource_bundle = generate_resource_bundle(grbundle, cbundle)
