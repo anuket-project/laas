@@ -12,23 +12,25 @@
 
     <p>And a description:</p>
     {{ form.description }}
-    <p>Install OPNFV?</p>
-    {{ form.opnfv }}
-    <p>Choose your:</p>
-    <table>
-        <thead>
-            <tr>
-                <th>Installer</th>
-                <th>Scenario</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>{{form.installer}}</td>
-                <td>{{form.scenario}}</td>
-            </tr>
-        </tbody>
-    </table>
+    <div id="hidden" style="display:none;">
+        <p>Install OPNFV?</p>
+        {{ form.opnfv }}
+        <p>Choose your:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Installer</th>
+                    <th>Scenario</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{form.installer}}</td>
+                    <td>{{form.scenario}}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
 </form>
 

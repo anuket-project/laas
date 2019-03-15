@@ -62,8 +62,7 @@ def quick_create(request):
             try:
                 create_from_form(form, request)
             except Exception as e:
-                messages.error(request, "Whoops, looks like an error occurred. "
-                                        "Let the admins know that you got the following message: " + str(e))
+                messages.error(request, "Whoops, an error occurred: " + str(e))
                 return render(request, 'workflow/exit_redirect.html', context)
 
             messages.success(request, "We've processed your request. "

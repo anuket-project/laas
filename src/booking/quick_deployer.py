@@ -117,7 +117,7 @@ def check_available_matching_host(lab, hostprofile):
     available_host_types = ResourceManager.getInstance().getAvailableHostTypes(lab)
     if hostprofile not in available_host_types:
         # TODO: handle deleting generic resource in this instance along with grb
-        raise HostNotAvailable("Could not book selected host due to changed availability. Try again later")
+        raise HostNotAvailable('Requested host type is not available. Please try again later. Host availability can be viewed in the "Hosts" tab to the left.')
 
     hostset = Host.objects.filter(lab=lab, profile=hostprofile).filter(booked=False).filter(working=True)
     if not hostset.exists():
