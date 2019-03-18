@@ -6,12 +6,16 @@
 }
 .class_grid_wrapper {
     border: 0px;
-    border-left: 1px;
+    text-align: center;
     border-right: 1px;
     border-style: solid;
     border-color: grey;
-    text-align: center;
 }
+
+.class_grid_wrapper:last-child {
+    border-right: none;
+}
+
 .grid_wrapper {
     display: grid;
     grid-template-columns: 1fr 1fr;
