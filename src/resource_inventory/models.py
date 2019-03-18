@@ -184,6 +184,9 @@ class ResourceBundle(models.Model):
             return "Resource bundle " + str(self.id) + " with no template"
         return "instance of " + str(self.template)
 
+    def get_host(self, role="Jumphost"):
+        return Host.objects.filter(bundle=self, config__opnfvRole__name=role).first()
+
 
 # Networking
 
