@@ -67,6 +67,45 @@
     margin-top: 10px;
 }
 
+#dropdown_wrapper > div > h5 {
+    margin: 12px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#dropdown_wrapper > div > button {
+    padding: 7px;
+    margin: 2px;
+    float: right;
+    width: 80px;
+}
+#dropdown_wrapper > div > input {
+    padding: 7px;
+    margin: 2px;
+    float: right;
+    width: 300px;
+    width: calc(100% - 240px);
+}
+
+#dropdown_wrapper > div {
+    border:2px;
+    border-style:none;
+    border-color:black;
+    border-radius: 5px;
+    margin:20px;
+    padding: 2px;
+    box-shadow: 0px 0px 7px 0px rgba(0,0,0,0.75);
+    transition-property: box-shadow, background-color;
+    transition-duration: .2s;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#dropdown_wrapper {
+    display: grid;
+    grid-template-columns: 3fr 5fr;
+}
+
 </style>
 <input name="filter_field" id="filter_field" type="hidden"/>
 <div id="grid_wrapper" class="grid_wrapper">
@@ -305,9 +344,14 @@ function add_item_prepopulate(node, prepopulate){
     div.id = "dropdown_" + dropdown_count;
     dropdown_count++;
     var label = document.createElement("H5");
-    label.style['display'] = 'inline';
     label.appendChild(document.createTextNode(node['name']));
     div.appendChild(label);
+    button = document.createElement("BUTTON");
+    button.type = "button";
+    button.appendChild(document.createTextNode("Remove"));
+    button.classList.add("btn-danger");
+    button.classList.add("btn");
+    div.appendChild(button);
     for(var i=0; i<node['forms'].length; i++){
         form = node['forms'][i];
         var input = document.createElement("INPUT");
@@ -330,14 +374,12 @@ function add_item_prepopulate(node, prepopulate){
     hiddenInput.name = "class";
     hiddenInput.value = node['id'];
     div.appendChild(hiddenInput);
-    button = document.createElement("BUTTON");
     button.onclick = function(){
         remove_dropdown(div.id);
     }
-    button.type = "button";
-    button.appendChild(document.createTextNode("Remove"));
-    div.appendChild(button);
     document.getElementById("dropdown_wrapper").appendChild(div);
+    var linebreak = document.createElement("BR");
+    document.getElementById("dropdown_wrapper").appendChild(linebreak);
     updateObjectResult(div);
     return div;
 }
