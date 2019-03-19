@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Available at</h4>
+                <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body" id="panel_overview">
+                <table class="table">
+                    <tr>
+                        <td>
+                            <ul>
+                            {% for lab in hostprofile.labs.all %}
+                                <li>{{lab.name}}</li>
+                            {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">RAM</h4>
+                <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body" id="panel_overview">
+                <table class="table">
+                    <tr>
+                        <td>{{hostprofile.ramprofile.first.amount}}G,
+                            {{hostprofile.ramprofile.first.channels}} channels</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">CPU</h4>
+                <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body" id="panel_overview">
+                <table class="table">
+                    <tr>
+                        <td>Arch:</td>
+                        <td>{{hostprofile.cpuprofile.first.architecture}}</td>
+                    </tr>
+                    <tr>
+                        <td>Cores:</td>
+                        <td>{{hostprofile.cpuprofile.first.cores}}</td>
+                    </tr>
+                    <tr>
+                        <td>Sockets:</td>
+                        <td>{{hostprofile.cpuprofile.first.cpus}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Interfaces</h4>
+                <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body" id="panel_overview">
+                <table class="table">
+                            {% for intprof in hostprofile.interfaceprofile.all %}
+                            <tr>
+                                <td>
+                                <table class="table borderless">
+                                    <tr>
+                                        <td>Name:</td>
+                                        <td>{{intprof.name}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Speed:</td>
+                                        <td>{{intprof.speed}}</td>
+                                    </tr>
+                                </table>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h4 style="display: inline;">Disk</h4>
+                <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            </div>
+            <div class="panel-body" id="panel_overview">
+                <table class="table">
+                    <tr>
+                        <td>Size:</td>
+                        <td>{{hostprofile.storageprofile.first.size}} GiB</td>
+                    </tr>
+                    <tr>
+                        <td>Type:</td>
+                        <td>{{hostprofile.storageprofile.first.media_type}}</td>
+                    </tr>
+                    <tr>
+                        <td>Mount Point:</td>
+                        <td>{{hostprofile.storageprofile.first.name}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

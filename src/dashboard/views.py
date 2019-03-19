@@ -46,7 +46,7 @@ def lab_detail_view(request, lab_name):
             'title': "Lab Overview",
             'lab': lab,
             'hostprofiles': lab.hostprofiles.all(),
-            'images': images
+            'images': images,
         }
     )
 
