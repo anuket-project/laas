@@ -5,11 +5,10 @@
 <tr>
     <th>Owner</th>
     <th>Purpose</th>
+    <th>Project</th>
     <th>Start</th>
     <th>End</th>
     <th>Operating System</th>
-    <th>Installer</th>
-    <th>Scenario</th>
 </tr>
 </thead>
 <tbody>
@@ -22,19 +21,16 @@
             {{ booking.purpose }}
         </td>
         <td>
+            {{ booking.project }}
+        </td>
+        <td>
             {{ booking.start }}
         </td>
         <td>
             {{ booking.end }}
         </td>
         <td>
-            {{ booking.opsys }}
-        </td>
-        <td>
-            {{ booking.installer }}
-        </td>
-        <td>
-            {{ booking.scenario }}
+            {{ booking.resource.get_host.config.image.os.name }}
         </td>
     </tr>
 {% endfor %}
