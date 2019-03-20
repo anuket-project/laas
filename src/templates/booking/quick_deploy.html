@@ -33,7 +33,7 @@
 <div class="grid_container">
 <div class="grid_element host_select_pane grid_element_wide">
 <p>Please select a host type you wish to book. Only available types are shown.</p>
-{% bootstrap_field form.filter_field %}
+{% bootstrap_field form.filter_field show_label=False %}
 </div>
 <div class="grid_element booking_info_pane grid_element_1third">
     {% bootstrap_field form.purpose %}
@@ -49,11 +49,16 @@
         <label>Collaborators</label>
         {{ form.users }}
 </div>
-<div class="grid_element configuration_pane grid_element_1third">
-    {% bootstrap_field form.hostname %}
-    {% bootstrap_field form.image %}
-    {% bootstrap_field form.installer %}
-    {% bootstrap_field form.scenario %}
+<div class="grid_element_1third">
+    <div class="configuration_pane grid_element">
+        {% bootstrap_field form.hostname %}
+        {% bootstrap_field form.image %}
+    </div>
+    <div class="configuration_pane grid_element">
+        <strong>OPNFV: (Optional)</strong>
+        {% bootstrap_field form.installer %}
+        {% bootstrap_field form.scenario %}
+    </div>
 </div>
 </div>
 <script type="text/javascript">
