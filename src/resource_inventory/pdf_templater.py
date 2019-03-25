@@ -154,8 +154,13 @@ class PDFTemplater:
         iface_info['features'] = "none"
         iface_info['mac_address'] = interface.mac_address
         iface_info['name'] = interface.name
-        profile = InterfaceProfile.objects.get(host=interface.host.profile, name=interface.name)
-        iface_info['speed'] = str(int(profile.speed / 1000)) + "gb"
+        speed = "unknown"
+        try:
+            profile = InterfaceProfile.objects.get(host=interface.host.profile, name=interface.name)
+            speed = str(int(profile.speed / 1000)) + "gb"
+        except Exception:
+            pass
+        iface_info['speed'] = speed
         return iface_info
 
     @classmethod
