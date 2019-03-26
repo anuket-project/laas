@@ -84,12 +84,19 @@
         background: #0FD57D;
     }
 
- #viewport-iframe
- {
-     height: calc(100vh - 450);
- }
+    .iframe_div {
 
-
+        width: calc(100% - 450px);
+        margin-left: 70px;
+        height: calc(100vh - 155px);
+        position: absolute;
+        border: none;
+    }
+    .iframe_elem {
+        width: 100%;
+        height: calc(100vh - 155px);
+        border: none;
+    }
 </style>
 
 <button id="gof" onclick="go(step+1)" class="btn go_btn go_forward">Go Forward</button>
@@ -415,15 +422,7 @@
             document.getElementById("view_message").className = "step_message";
             document.getElementById("view_message").classList.add("message_" + stepstatus);
         }
-        function resize_iframe(){
-            var page_rect = document.getElementById("wrapper").getBoundingClientRect();
-            var title_rect = document.getElementById("iframe_header").getBoundingClientRect();
-            var iframe_height = page_rect.bottom - title_rect.bottom;
-            document.getElementById("viewport-iframe").height = iframe_height;
 
-        }
-     window.addEventListener('load', resize_iframe);
-     window.addEventListener('resize', resize_iframe);
     </script>
     <!-- /.col-lg-12 -->
 </div>
@@ -433,5 +432,7 @@
 </form>
 </div>
 
-<iframe src="/wf/workflow" style="position: absolute; left: 351px; right: 105px; width: calc(100% - 450px); border-style: none; border-width: 1px; border-color: #888888;" scrolling="yes" id="viewport-iframe" onload="resize_iframe();"></iframe>
+<div class="iframe_div">
+        <iframe src="/wf/workflow" class="iframe_elem" scrolling="yes" id="viewport-iframe"></iframe>
+</div>
 {% endblock content %}
