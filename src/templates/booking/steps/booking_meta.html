@@ -21,6 +21,15 @@
         grid-template-columns: 45% 10% 45%;
         border: none;
     }
+
+    #id_length {
+        -moz-appearance: none;
+        border: none;
+        box-shadow: none;
+    }
+    input[type=range]::-moz-range-track {
+        background: #cccccc;
+    }
 </style>
 
 {% bootstrap_form_errors form type='non_fields' %}
