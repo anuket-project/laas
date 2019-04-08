@@ -143,10 +143,12 @@ class BookingAuthManager():
         currently checks if the booking uses multiple servers. if it does, then the owner must be a PTL,
         which is checked using the provided info file
         """
-        if len(booking.resource.template.getHosts()) < 2:
-            return True  # if they only have one server, we dont care
         if booking.owner.userprofile.booking_privledge:
             return True  # admin override for this user
+        if Booking.objects.filter(owner=booking.owner, end__gt=timezone.now()).count() >= 3:
+            return False
+        if len(booking.resource.template.getHosts()) < 2:
+            return True  # if they only have one server, we dont care
         if repo.BOOKING_INFO_FILE not in repo.el:
             return False  # INFO file not provided
         ptl_info = self.parse_url(repo.el.get(repo.BOOKING_INFO_FILE))
