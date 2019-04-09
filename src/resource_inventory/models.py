@@ -191,7 +191,7 @@ class ResourceBundle(models.Model):
         return "instance of " + str(self.template)
 
     def get_host(self, role="Jumphost"):
-        return Host.objects.filter(bundle=self, config__opnfvRole__name=role).first()
+        return Host.objects.filter(bundle=self, config__is_head_node=True).first()  # should only ever be one, but it is not an invariant in the models
 
 
 class GenericInterface(models.Model):
@@ -252,6 +252,8 @@ class OPNFVConfig(models.Model):
     scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE)
     bundle = models.ForeignKey(ConfigBundle, related_name="opnfv_config", on_delete=models.CASCADE)
     networks = models.ManyToManyField(NetworkRole)
+    name = models.CharField(max_length=300, blank=True, default="")
+    description = models.CharField(max_length=600, blank=True, default="")
 
     def __str__(self):
         return "OPNFV job with " + str(self.installer) + " and " + str(self.scenario)
@@ -297,10 +299,16 @@ class HostConfiguration(models.Model):
     host = models.ForeignKey(GenericHost, related_name="configuration", on_delete=models.CASCADE)
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
     bundle = models.ForeignKey(ConfigBundle, related_name="hostConfigurations", null=True, on_delete=models.CASCADE)
-    opnfvRole = models.ForeignKey(OPNFVRole, on_delete=models.SET(get_sentinal_opnfv_role))
+    is_head_node = models.BooleanField(default=False)
 
     def __str__(self):
         return "config with " + str(self.host) + " and image " + str(self.image)
+
+
+class HostOPNFVConfig(models.Model):
+    role = models.ForeignKey(OPNFVRole, related_name="host_opnfv_configs", on_delete=models.CASCADE)
+    host_config = models.ForeignKey(HostConfiguration, related_name="host_opnfv_config", on_delete=models.CASCADE)
+    opnfv_config = models.ForeignKey(OPNFVConfig, related_name="host_opnfv_config", on_delete=models.CASCADE)
 
 
 class RemoteInfo(models.Model):
@@ -353,3 +361,11 @@ class Interface(models.Model):
 
     def __str__(self):
         return self.mac_address + " on host " + str(self.host)
+
+
+class OPNFV_SETTINGS():
+    """
+    This is a static configuration class
+    """
+    # all the required network types in PDF/IDF spec
+    NETWORK_ROLES = ["public", "private", "admin", "mgmt"]

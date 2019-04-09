@@ -23,7 +23,8 @@ from resource_inventory.models import (
     Host,
     Image,
     Interface,
-    RemoteInfo
+    RemoteInfo,
+    OPNFVConfig
 )
 from resource_inventory.idf_templater import IDFTemplater
 from resource_inventory.pdf_templater import PDFTemplater
@@ -93,7 +94,7 @@ class LabManager(object):
         return {"status": "success"}
 
     def update_xdf(self, booking):
-        booking.pdf = PDFTemplater.makePDF(booking.resource)
+        booking.pdf = PDFTemplater.makePDF(booking)
         booking.idf = IDFTemplater().makeIDF(booking)
         booking.save()
 
@@ -356,9 +357,12 @@ class OpnfvApiConfig(models.Model):
     scenario = models.CharField(max_length=300)
     roles = models.ManyToManyField(Host)
     delta = models.TextField()
+    opnfv_config = models.ForeignKey(OPNFVConfig, null=True, on_delete=models.SET_NULL)
 
     def to_dict(self):
         d = {}
+        if not self.opnfv_config:
+            return d
         if self.installer:
             d['installer'] = self.installer
         if self.scenario:
@@ -367,8 +371,12 @@ class OpnfvApiConfig(models.Model):
         hosts = self.roles.all()
         if hosts.exists():
             d['roles'] = []
-        for host in self.roles.all():
-            d['roles'].append({host.labid: host.config.opnfvRole.name})
+            for host in hosts:
+                d['roles'].append({
+                    host.labid: self.opnfv_config.host_opnfv_config.get(
+                        host_config__pk=host.config.pk
+                    ).role.name
+                })
 
         return d
 
@@ -818,6 +826,7 @@ class JobFactory(object):
         )
         cls.makeSoftware(
             hosts=hosts,
+            booking=booking,
             job=job
         )
         all_users = list(booking.collaborators.all())
@@ -908,28 +917,19 @@ class JobFactory(object):
             network_config.save()
 
     @classmethod
-    def makeSoftware(cls, hosts=[], job=Job()):
-        def init_config(host):
-            opnfv_config = OpnfvApiConfig()
-            if host is not None:
-                opnfv = host.config.bundle.opnfv_config.first()
-                opnfv_config.installer = opnfv.installer.name
-                opnfv_config.scenario = opnfv.scenario.name
-            opnfv_config.save()
-            return opnfv_config
+    def makeSoftware(cls, hosts=[], booking=None, job=Job()):
 
-        try:
-            host = None
-            if len(hosts) > 0:
-                host = hosts[0]
-            opnfv_config = init_config(host)
-
-            for host in hosts:
-                opnfv_config.roles.add(host)
-            software_config = SoftwareConfig.objects.create(opnfv=opnfv_config)
-            software_config.save()
-            software_relation = SoftwareRelation.objects.create(job=job, config=software_config)
-            software_relation.save()
-            return software_relation
-        except Exception:
+        if not booking.opnfv_config:
             return None
+
+        opnfv_api_config = OpnfvApiConfig.objects.create(
+            opnfv_config=booking.opnfv_config,
+            installer=booking.opnfv_config.installer,
+            scenario=booking.opnfv_config.scenario,
+        )
+
+        for host in hosts:
+            opnfv_api_config.roles.add(host)
+        software_config = SoftwareConfig.objects.create(opnfv=opnfv_api_config)
+        software_relation = SoftwareRelation.objects.create(job=job, config=software_config)
+        return software_relation

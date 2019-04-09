@@ -12,10 +12,7 @@ from django.template.loader import render_to_string
 
 from account.models import PublicNetwork
 
-from resource_inventory.models import (
-    OPNFVConfig,
-    Vlan
-)
+from resource_inventory.models import Vlan
 
 
 class IDFTemplater:
@@ -67,7 +64,7 @@ class IDFTemplater:
 
     def get_public_net(self, booking):
         public = {}
-        config = OPNFVConfig.objects.get(bundle=booking.config_bundle)
+        config = booking.opnfv_config
         public_role = config.networks.get(name="public")
         public_vlan = Vlan.objects.filter(network=public_role.network).first()
         public_network = PublicNetwork.objects.get(vlan=public_vlan.vlan_id, lab=booking.lab)
@@ -91,7 +88,7 @@ class IDFTemplater:
         return net
 
     def get_single_net_config(self, booking, net_name):
-        config = OPNFVConfig.objects.get(bundle=booking.config_bundle)
+        config = booking.opnfv_config
         role = config.networks.get(name=net_name)
         vlan = Vlan.objects.filter(network=role.network).first()
         self.networks[net_name]['vlan'] = vlan.vlan_id
@@ -127,7 +124,10 @@ class IDFTemplater:
         return bridges
 
     def get_fuel_nodes(self, booking):
-        hosts = booking.resource.hosts.exclude(config__opnfvRole__name="jumphost")
+        jumphost = booking.opnfv_config.host_opnfv_config.get(
+            role__name__iexact="jumphost"
+        )
+        hosts = booking.resource.hosts.exclude(pk=jumphost.pk)
         nodes = []
         for host in hosts:
             node = {}

@@ -9,7 +9,7 @@
 ##############################################################################
 
 
-from resource_inventory.models import ResourceBundle, ConfigBundle
+from resource_inventory.models import ResourceBundle, ConfigBundle, OPNFVConfig
 from account.models import Lab
 from django.contrib.auth.models import User
 from django.db import models
@@ -29,6 +29,7 @@ class Booking(models.Model):
     ext_count = models.IntegerField(default=2)
     resource = models.ForeignKey(ResourceBundle, on_delete=models.SET_NULL, null=True)
     config_bundle = models.ForeignKey(ConfigBundle, on_delete=models.SET_NULL, null=True)
+    opnfv_config = models.ForeignKey(OPNFVConfig, on_delete=models.SET_NULL, null=True)
     project = models.CharField(max_length=100, default="", blank=True, null=True)
     lab = models.ForeignKey(Lab, null=True, on_delete=models.SET_NULL)
     pdf = models.TextField(blank=True, default="")
