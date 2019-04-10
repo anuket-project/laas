@@ -116,6 +116,12 @@
 
         $('#id_image').children().hide();
 
+        for( var i = 0; i < drop.childNodes.length; i++ )
+        {
+            drop.childNodes[i].disabled = true; // closest we can get on safari to hiding it outright
+        }
+
+
         var empty_map = {}
 
         for ( var i=0; i < drop.childNodes.length; i++ )
@@ -138,12 +144,13 @@
                 if( image_object.host_profile == host_pk && image_object.lab == lab_pk )
                 {
                     drop.childNodes[i].style.display = "inherit";
+                    drop.childNodes[i].disabled = false;
                 }
             }
         }
     }
 
-    $('#id_image').children().hide();
+    imageHider();
     $('#id_installer').children().hide();
     $('#id_scenario').children().hide();
 
@@ -173,7 +180,13 @@
         }
 
         targ_id = "#" + target;
+
         $(targ_id).children().hide();
+
+        for (var i = 0; i < document.getElementById(target).childNodes.length; i++)
+        {
+            document.getElementById(target).childNodes[i].disabled = true;
+        }
         var drop = document.getElementById(master);
         var opts = target_filter[drop.options[drop.selectedIndex].value];
         if (!opts) {
@@ -190,6 +203,7 @@
         for (var i = 0; i < document.getElementById(target).childNodes.length; i++) {
             if (document.getElementById(target).childNodes[i].value in opts && !(document.getElementById(target).childNodes[i].value in emptyMap) ) {
                 document.getElementById(target).childNodes[i].style.display = "inherit";
+                document.getElementById(target).childNodes[i].disabled = false;
             }
         }
     }
