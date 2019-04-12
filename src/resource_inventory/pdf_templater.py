@@ -69,10 +69,6 @@ class PDFTemplater:
         """
         jumphost = Host.objects.get(bundle=resource, config__opnfvRole__name__iexact="jumphost")
         jumphost_info = cls.get_pdf_host(jumphost)
-        remote_params = jumphost_info['remote_management']  # jumphost has extra block not in normal hosts
-        remote_params.pop("address")
-        remote_params.pop("mac_address")
-        jumphost_info['remote_params'] = remote_params
         jumphost_info['os'] = jumphost.config.image.os.name
         return jumphost_info
 
@@ -105,7 +101,7 @@ class PDFTemplater:
         for interface in host.interfaces.all():
             host_info['interfaces'].append(cls.get_pdf_host_iface(interface))
 
-        host_info['remote_management'] = cls.get_pdf_host_remote_management(host)
+        host_info['remote'] = cls.get_pdf_host_remote_management(host)
 
         return host_info
 
@@ -163,11 +159,12 @@ class PDFTemplater:
         """
         gives the remote params of the host
         """
+        man = host.remote_management
         mgmt = {}
-        mgmt['address'] = "I dunno"
-        mgmt['mac_address'] = "I dunno"
-        mgmt['pass'] = "I dunno"
-        mgmt['type'] = "I dunno"
-        mgmt['user'] = "I dunno"
-        mgmt['versions'] = ["I dunno"]
+        mgmt['address'] = man.address
+        mgmt['mac_address'] = man.mac_address
+        mgmt['pass'] = man.password
+        mgmt['type'] = man.management_type
+        mgmt['user'] = man.user
+        mgmt['versions'] = [man.versions]
         return mgmt

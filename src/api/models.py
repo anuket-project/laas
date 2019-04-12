@@ -25,6 +25,8 @@ from resource_inventory.models import (
     Interface,
     RemoteInfo
 )
+from resource_inventory.idf_templater import IDFTemplater
+from resource_inventory.pdf_templater import PDFTemplater
 
 
 class JobStatus(object):
@@ -86,7 +88,14 @@ class LabManager(object):
         remote_info.save()
         host.remote_management = remote_info
         host.save()
+        booking = Booking.objects.get(resource=host.bundle)
+        self.update_xdf(booking)
         return {"status": "success"}
+
+    def update_xdf(self, booking):
+        booking.pdf = PDFTemplater.makePDF(booking.resource)
+        booking.idf = IDFTemplater().makeIDF(booking)
+        booking.save()
 
     def get_profile(self):
         prof = {}
