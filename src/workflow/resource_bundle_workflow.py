@@ -10,6 +10,7 @@
 
 from django.shortcuts import render
 from django.forms import formset_factory
+from django.conf import settings
 
 import json
 import re
@@ -25,11 +26,12 @@ from workflow.forms import (
 )
 from resource_inventory.models import (
     GenericResourceBundle,
-    Vlan,
     GenericInterface,
     GenericHost,
     GenericResource,
-    HostProfile
+    HostProfile,
+    Network,
+    NetworkConnection
 )
 from dashboard.exceptions import (
     InvalidVlanConfigurationException,
@@ -185,6 +187,7 @@ class Define_Nets(WorkflowStep):
             hostlist = self.repo_get(self.repo.GRB_LAST_HOSTLIST, None)
             added_list = []
             added_dict = {}
+            context['debug'] = settings.DEBUG
             context['added_hosts'] = []
             if hostlist is not None:
                 new_hostlist = []
@@ -239,15 +242,15 @@ class Define_Nets(WorkflowStep):
             self.metastep.set_valid("Networks applied successfully")
         except ResourceAvailabilityException:
             self.metastep.set_invalid("Public network not availble")
-        except Exception:
-            self.metastep.set_invalid("An error occurred when applying networks")
+        except Exception as e:
+            self.metastep.set_invalid("An error occurred when applying networks: " + str(e))
         return self.render(request)
 
     def updateModels(self, xmlData):
         models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
-        models["vlans"] = {}
-        given_hosts, interfaces = self.parseXml(xmlData)
-        vlan_manager = models['bundle'].lab.vlan_manager
+        models["connections"] = {}
+        models['networks'] = {}
+        given_hosts, interfaces, networks = self.parseXml(xmlData)
         existing_host_list = models.get("hosts", [])
         existing_hosts = {}  # maps id to host
         for host in existing_host_list:
@@ -255,104 +258,133 @@ class Define_Nets(WorkflowStep):
 
         bundle = models.get("bundle", GenericResourceBundle(owner=self.repo_get(self.repo.SESSION_USER)))
 
+        for net_id, net in networks.items():
+            network = Network()
+            network.name = net['name']
+            network.bundle = bundle
+            network.is_public = net['public']
+            models['networks'][net_id] = network
+
         for hostid, given_host in given_hosts.items():
             existing_host = existing_hosts[hostid[5:]]
 
             for ifaceId in given_host['interfaces']:
                 iface = interfaces[ifaceId]
-                if existing_host.resource.name not in models['vlans']:
-                    models['vlans'][existing_host.resource.name] = {}
-                models['vlans'][existing_host.resource.name][iface['profile_name']] = []
-                for network in iface['networks']:
-                    vlan_id = network['network']['vlan']
-                    is_public = network['network']['public']
-                    if is_public:
-                        public_net = vlan_manager.get_public_vlan()
-                        if public_net is None:
-                            raise ResourceAvailabilityException("No public networks available")
-                        vlan_id = vlan_manager.get_public_vlan().vlan
-                    vlan = Vlan(vlan_id=vlan_id, tagged=network['tagged'], public=is_public)
-                    models['vlans'][existing_host.resource.name][iface['profile_name']].append(vlan)
+                if existing_host.resource.name not in models['connections']:
+                    models['connections'][existing_host.resource.name] = {}
+                models['connections'][existing_host.resource.name][iface['profile_name']] = []
+                for connection in iface['connections']:
+                    network_id = connection['network']
+                    net = models['networks'][network_id]
+                    connection = NetworkConnection(vlan_is_tagged=connection['tagged'], network=net)
+                    models['connections'][existing_host.resource.name][iface['profile_name']].append(connection)
         bundle.xml = xmlData
         self.repo_put(self.repo.GRESOURCE_BUNDLE_MODELS, models)
 
-    # serialize and deserialize xml from mxGraph
-    def parseXml(self, xmlString):
-        parent_nets = {}  # map network ports to networks
-        networks = {}  # maps net id to network object
-        hosts = {}  # cotains id -> hosts, each containing interfaces, referencing networks
-        interfaces = {}  # maps id -> interface
+    def decomposeXml(self, xmlString):
+        """
+        This function takes in an xml doc from our front end
+        and returns dictionaries that map cellIds to the xml
+        nodes themselves. There is no unpacking of the
+        xml objects, just grouping and organizing
+        """
+
+        connections = {}
+        networks = {}
+        hosts = {}
+        interfaces = {}
+        network_ports = {}
+
         xmlDom = minidom.parseString(xmlString)
         root = xmlDom.documentElement.firstChild
-        netids = {}
-        untagged_ints = {}
         for cell in root.childNodes:
             cellId = cell.getAttribute('id')
+            group = cellId.split("_")[0]
+            parentGroup = cell.getAttribute("parent").split("_")[0]
+            # place cell into correct group
 
             if cell.getAttribute("edge"):
-                # cell is a network connection
-                escaped_json_str = cell.getAttribute("value")
-                json_str = escaped_json_str.replace('&quot;', '"')
-                attributes = json.loads(json_str)
-                tagged = attributes['tagged']
-                interface = None
-                network = None
-                src = cell.getAttribute("source")
-                tgt = cell.getAttribute("target")
-                if src in parent_nets:
-                    # src is a network port
-                    network = networks[parent_nets[src]]
-                    if tgt in untagged_ints and not tagged:
-                        raise InvalidVlanConfigurationException("More than one untagged vlan on an interface")
-                    interface = interfaces[tgt]
-                    untagged_ints[tgt] = True
-                else:
-                    network = networks[parent_nets[tgt]]
-                    if src in untagged_ints and not tagged:
-                        raise InvalidVlanConfigurationException("More than one untagged vlan on an interface")
-                    interface = interfaces[src]
-                    untagged_ints[src] = True
-                interface['networks'].append({"network": network, "tagged": tagged})
+                connections[cellId] = cell
 
-            elif "network" in cellId:  # cell is a network
-                escaped_json_str = cell.getAttribute("value")
-                json_str = escaped_json_str.replace('&quot;', '"')
-                net_info = json.loads(json_str)
-                nid = net_info['vlan_id']
-                public = net_info['public']
-                try:
-                    int_netid = int(nid)
-                    assert public or int_netid > 1, "Net id is 1 or lower"
-                    assert int_netid < 4095, "Net id is 4095 or greater"
-                except Exception:
-                    raise InvalidVlanConfigurationException("VLAN ID is not an integer more than 1 and less than 4095")
-                if nid in netids:
-                    raise NetworkExistsException("Non unique network id found")
-                else:
-                    pass
-                network = {"name": net_info['name'], "vlan": net_info['vlan_id'], "public": public}
-                netids[net_info['vlan_id']] = True
-                networks[cellId] = network
+            elif "network" in group:
+                networks[cellId] = cell
 
-            elif "host" in cellId:  # cell is a host/machine
-                # TODO gather host info
-                cell_json_str = cell.getAttribute("value")
-                cell_json = json.loads(cell_json_str)
-                host = {"interfaces": [], "name": cellId, "profile_name": cell_json['name']}
-                hosts[cellId] = host
+            elif "host" in group:
+                hosts[cellId] = cell
 
-            elif cell.hasAttribute("parent"):
-                parentId = cell.getAttribute('parent')
-                if "network" in parentId:
-                    parent_nets[cellId] = parentId
-                elif "host" in parentId:
-                    # TODO gather iface info
-                    cell_json_str = cell.getAttribute("value")
-                    cell_json = json.loads(cell_json_str)
-                    iface = {"name": cellId, "networks": [], "profile_name": cell_json['name']}
-                    hosts[parentId]['interfaces'].append(cellId)
-                    interfaces[cellId] = iface
-        return hosts, interfaces
+            elif "host" in parentGroup:
+                interfaces[cellId] = cell
+
+            # make network ports also map to thier network
+            elif "network" in parentGroup:
+                network_ports[cellId] = cell.getAttribute("parent")  # maps port ID to net ID
+
+        return connections, networks, hosts, interfaces, network_ports
+
+    # serialize and deserialize xml from mxGraph
+    def parseXml(self, xmlString):
+        networks = {}  # maps net name to network object
+        hosts = {}  # cotains id -> hosts, each containing interfaces, referencing networks
+        interfaces = {}  # maps id -> interface
+        untagged_ifaces = set()  # used to check vlan config
+        network_names = set()  # used to check network names
+        xml_connections, xml_nets, xml_hosts, xml_ifaces, xml_ports = self.decomposeXml(xmlString)
+
+        # parse Hosts
+        for cellId, cell in xml_hosts.items():
+            cell_json_str = cell.getAttribute("value")
+            cell_json = json.loads(cell_json_str)
+            host = {"interfaces": [], "name": cellId, "profile_name": cell_json['name']}
+            hosts[cellId] = host
+
+        # parse networks
+        for cellId, cell in xml_nets.items():
+            escaped_json_str = cell.getAttribute("value")
+            json_str = escaped_json_str.replace('&quot;', '"')
+            net_info = json.loads(json_str)
+            net_name = net_info['name']
+            public = net_info['public']
+            if net_name in network_names:
+                raise NetworkExistsException("Non unique network name found")
+            network = {"name": net_name, "public": public, "id": cellId}
+            networks[cellId] = network
+            network_names.add(net_name)
+
+        # parse interfaces
+        for cellId, cell in xml_ifaces.items():
+            parentId = cell.getAttribute('parent')
+            cell_json_str = cell.getAttribute("value")
+            cell_json = json.loads(cell_json_str)
+            iface = {"name": cellId, "connections": [], "profile_name": cell_json['name']}
+            hosts[parentId]['interfaces'].append(cellId)
+            interfaces[cellId] = iface
+
+        # parse connections
+        for cellId, cell in xml_connections.items():
+            escaped_json_str = cell.getAttribute("value")
+            json_str = escaped_json_str.replace('&quot;', '"')
+            attributes = json.loads(json_str)
+            tagged = attributes['tagged']
+            interface = None
+            network = None
+            src = cell.getAttribute("source")
+            tgt = cell.getAttribute("target")
+            if src in interfaces:
+                interface = interfaces[src]
+                network = networks[xml_ports[tgt]]
+            else:
+                interface = interfaces[tgt]
+                network = networks[xml_ports[src]]
+
+            if not tagged:
+                if interface['name'] in untagged_ifaces:
+                    raise InvalidVlanConfigurationException("More than one untagged vlan on an interface")
+                untagged_ifaces.add(interface['name'])
+
+            # add connection to interface
+            interface['connections'].append({"tagged": tagged, "network": network['id']})
+
+        return hosts, interfaces, networks
 
 
 class Resource_Meta_Info(WorkflowStep):

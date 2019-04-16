@@ -105,26 +105,6 @@ class RamProfile(models.Model):
         return str(self.amount) + "G for " + str(self.host)
 
 
-# Networking -- located here due to import order requirements
-class Network(models.Model):
-    id = models.AutoField(primary_key=True)
-    vlan_id = models.IntegerField()
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
-
-
-class Vlan(models.Model):
-    id = models.AutoField(primary_key=True)
-    vlan_id = models.IntegerField()
-    tagged = models.BooleanField()
-    public = models.BooleanField(default=False)
-
-    def __str__(self):
-        return str(self.vlan_id) + ("_T" if self.tagged else "")
-
-
 # Generic resource templates
 class GenericResourceBundle(models.Model):
     id = models.AutoField(primary_key=True)
@@ -143,6 +123,32 @@ class GenericResourceBundle(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Network(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+    bundle = models.ForeignKey(GenericResourceBundle, on_delete=models.CASCADE, related_name="networks")
+    is_public = models.BooleanField()
+
+    def __str__(self):
+        return self.name
+
+
+class NetworkConnection(models.Model):
+    network = models.ForeignKey(Network, on_delete=models.CASCADE)
+    vlan_is_tagged = models.BooleanField()
+
+
+class Vlan(models.Model):
+    id = models.AutoField(primary_key=True)
+    vlan_id = models.IntegerField()
+    tagged = models.BooleanField()
+    public = models.BooleanField(default=False)
+    network = models.ForeignKey(Network, on_delete=models.DO_NOTHING, null=True)
+
+    def __str__(self):
+        return str(self.vlan_id) + ("_T" if self.tagged else "")
 
 
 class GenericResource(models.Model):
@@ -188,14 +194,11 @@ class ResourceBundle(models.Model):
         return Host.objects.filter(bundle=self, config__opnfvRole__name=role).first()
 
 
-# Networking
-
-
 class GenericInterface(models.Model):
     id = models.AutoField(primary_key=True)
-    vlans = models.ManyToManyField(Vlan)
     profile = models.ForeignKey(InterfaceProfile, on_delete=models.CASCADE)
     host = models.ForeignKey(GenericHost, on_delete=models.CASCADE, related_name='generic_interfaces')
+    connections = models.ManyToManyField(NetworkConnection)
 
     def __str__(self):
         return "type " + str(self.profile) + " on host " + str(self.host)
@@ -227,6 +230,11 @@ class Opsys(models.Model):
         return self.name
 
 
+class NetworkRole(models.Model):
+    name = models.CharField(max_length=100)
+    network = models.ForeignKey(Network, on_delete=models.CASCADE)
+
+
 class ConfigBundle(models.Model):
     id = models.AutoField(primary_key=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -243,6 +251,7 @@ class OPNFVConfig(models.Model):
     installer = models.ForeignKey(Installer, on_delete=models.CASCADE)
     scenario = models.ForeignKey(Scenario, on_delete=models.CASCADE)
     bundle = models.ForeignKey(ConfigBundle, related_name="opnfv_config", on_delete=models.CASCADE)
+    networks = models.ManyToManyField(NetworkRole)
 
     def __str__(self):
         return "OPNFV job with " + str(self.installer) + " and " + str(self.scenario)

@@ -14,7 +14,14 @@ from dashboard.exceptions import (
     ResourceProvisioningException,
     ModelValidationException,
 )
-from resource_inventory.models import Host, HostConfiguration, ResourceBundle, HostProfile
+from resource_inventory.models import (
+    Host,
+    HostConfiguration,
+    ResourceBundle,
+    HostProfile,
+    Network,
+    Vlan
+)
 
 
 class ResourceManager:
@@ -66,39 +73,48 @@ class ResourceManager:
             self.releaseHost(host)
         resourceBundle.delete()
 
-    def convertResourceBundle(self, genericResourceBundle, lab=None, config=None):
+    def get_vlans(self, genericResourceBundle):
+        networks = {}
+        vlan_manager = genericResourceBundle.lab.vlan_manager
+        for network in genericResourceBundle.networks.all():
+            if network.is_public:
+                public_net = vlan_manager.get_public_vlan()
+                vlan_manager.reserve_public_vlan(public_net.vlan)
+                networks[network.name] = public_net.vlan
+            else:
+                vlan = vlan_manager.get_vlan()
+                vlan_manager.reserve_vlans(vlan)
+                networks[network.name] = vlan
+        return networks
+
+    def convertResourceBundle(self, genericResourceBundle, config=None):
         """
         Takes in a GenericResourceBundle and 'converts' it into a ResourceBundle
         """
-        resource_bundle = ResourceBundle()
-        resource_bundle.template = genericResourceBundle
-        resource_bundle.save()
-
-        hosts = genericResourceBundle.getHosts()
-
-        # current supported case: user creating new booking
-        # currently unsupported: editing existing booking
-
+        resource_bundle = ResourceBundle.objects.create(template=genericResourceBundle)
+        generic_hosts = genericResourceBundle.getHosts()
         physical_hosts = []
 
-        for host in hosts:
+        vlan_map = self.get_vlans(genericResourceBundle)
+
+        for generic_host in generic_hosts:
             host_config = None
             if config:
-                host_config = HostConfiguration.objects.get(bundle=config, host=host)
+                host_config = HostConfiguration.objects.get(bundle=config, host=generic_host)
             try:
-                physical_host = self.acquireHost(host, genericResourceBundle.lab.name)
+                physical_host = self.acquireHost(generic_host, genericResourceBundle.lab.name)
             except ResourceAvailabilityException:
-                self.fail_acquire(physical_hosts)
+                self.fail_acquire(physical_hosts, vlan_map)
                 raise ResourceAvailabilityException("Could not provision hosts, not enough available")
             try:
                 physical_host.bundle = resource_bundle
-                physical_host.template = host
+                physical_host.template = generic_host
                 physical_host.config = host_config
                 physical_hosts.append(physical_host)
 
-                self.configureNetworking(physical_host)
+                self.configureNetworking(physical_host, vlan_map)
             except Exception:
-                self.fail_acquire(physical_hosts)
+                self.fail_acquire(physical_hosts, vlan_map)
                 raise ResourceProvisioningException("Network configuration failed.")
             try:
                 physical_host.save()
@@ -108,13 +124,20 @@ class ResourceManager:
 
         return resource_bundle
 
-    def configureNetworking(self, host):
+    def configureNetworking(self, host, vlan_map):
         generic_interfaces = list(host.template.generic_interfaces.all())
         for int_num, physical_interface in enumerate(host.interfaces.all()):
             generic_interface = generic_interfaces[int_num]
             physical_interface.config.clear()
-            for vlan in generic_interface.vlans.all():
-                physical_interface.config.add(vlan)
+            for connection in generic_interface.connections.all():
+                physical_interface.config.add(
+                    Vlan.objects.create(
+                        vlan_id=vlan_map[connection.network.name],
+                        tagged=connection.vlan_is_tagged,
+                        public=connection.network.is_public,
+                        network=connection.network
+                    )
+                )
 
     # private interface
     def acquireHost(self, genericHost, labName):
@@ -136,6 +159,17 @@ class ResourceManager:
         host.booked = False
         host.save()
 
-    def fail_acquire(self, hosts):
+    def releaseNetworks(self, grb, vlan_manager, vlans):
+        for net_name, vlan_id in vlans.items():
+            net = Network.objects.get(name=net_name, bundle=grb)
+            if(net.is_public):
+                vlan_manager.release_public_vlan(vlan_id)
+            else:
+                vlan_manager.release_vlans(vlan_id)
+
+    def fail_acquire(self, hosts, vlans):
+        grb = hosts[0].template.resource.bundle
+        vlan_manager = hosts[0].lab.vlan_manager
+        self.releaseNetworks(grb, vlan_manager, vlans)
         for host in hosts:
             self.releaseHost(host)
