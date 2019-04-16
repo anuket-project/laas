@@ -41,9 +41,7 @@ class QuickBookingForm(forms.Form):
         super(QuickBookingForm, self).__init__(data=data, **kwargs)
 
         self.fields["image"] = forms.ModelChoiceField(
-            queryset=Image.objects.difference(
-                Image.objects.filter(public=False).difference(Image.objects.filter(owner=user))
-            )
+            Image.objects.filter(public=True) | Image.objects.filter(owner=user)
         )
 
         self.fields['users'] = forms.CharField(
