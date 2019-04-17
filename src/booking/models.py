@@ -32,6 +32,7 @@ class Booking(models.Model):
     project = models.CharField(max_length=100, default="", blank=True, null=True)
     lab = models.ForeignKey(Lab, null=True, on_delete=models.SET_NULL)
     pdf = models.TextField(blank=True, default="")
+    idf = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = 'booking'

@@ -32,7 +32,8 @@ from resource_inventory.models import (
     OPNFVConfig,
     OPNFVRole,
     Image,
-    HostConfiguration
+    HostConfiguration,
+    RemoteInfo
 )
 
 profiles = [HostProfile, InterfaceProfile, DiskProfile, CpuProfile, RamProfile]
@@ -47,6 +48,6 @@ physical = [Host, Interface, Network, Vlan, ResourceBundle]
 
 admin.site.register(physical)
 
-config = [Scenario, Installer, Opsys, ConfigBundle, OPNFVConfig, OPNFVRole, Image, HostConfiguration]
+config = [Scenario, Installer, Opsys, ConfigBundle, OPNFVConfig, OPNFVRole, Image, HostConfiguration, RemoteInfo]
 
 admin.site.register(config)

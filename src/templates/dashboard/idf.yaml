@@ -1,8 +1,9 @@
+---
 idf:
   version: {{version|default:"0.1"}}
   net_config:
     oob:
-      ip-range: {{net_config.oob.ip-range}}
+      ip-range: {{net_config.oob.ip_range}}
       vlan: {{net_config.oob.vlan}}
     admin:
       interface: {{net_config.admin.interface}}
@@ -24,13 +25,11 @@ idf:
       vlan: {{net_config.public.vlan}}
       network: {{net_config.public.network}}
       mask: {{net_config.public.mask}}
-      ip-range: {{net_config.public.ip-range}}
+      ip-range: {{net_config.public.ip_range}}
       mask: {{net_config.public.mask}}
       gateway: {{net_config.public.gateway}}
-      dns:
-      {% for serv in net_config.public.dns %}
-      - {{serv}}
-      {% endfor %}
+      dns: {% for serv in net_config.public.dns %}
+      - {{serv}}{% endfor %}
   fuel:
     jumphost:
       bridges:
@@ -38,15 +37,10 @@ idf:
         mgmt: {{fuel.jumphost.bridges.mgmt}}
         private: {{fuel.jumphost.bridges.private}}
         public: {{fuel.jumphost.bridges.public}}
-    network:
-      {% for node in fuel.network.nodes %}
+    network: {% for node in fuel.network.nodes %}
       node:
-      - interfaces:
-        {% for iface in node.interfaces %}
-        - {{ iface }}
-        {% endfor %}
-      - busaddr:
-        {% for addr in node.bus_addrs %}
-        - {{addr}}
-        {% endfor %}
+      - interfaces: {% for iface in node.interfaces %}
+        - {{ iface }}{% endfor %}
+      - busaddr: {% for addr in node.bus_addrs %}
+        - {{addr}}{% endfor %}
       {% endfor %}
