@@ -41,6 +41,8 @@ from api.views import (
     done_jobs,
     update_host_bmc,
     lab_host,
+    get_pdf,
+    get_idf,
     GenerateTokenView
 )
 
@@ -55,6 +57,8 @@ urlpatterns = [
     path('labs/<slug:lab_name>/inventory', lab_inventory),
     path('labs/<slug:lab_name>/hosts/<slug:host_id>', lab_host),
     path('labs/<slug:lab_name>/hosts/<slug:host_id>/bmc', update_host_bmc),
+    path('labs/<slug:lab_name>/booking/<slug:booking_id>/pdf', get_pdf, name="get-pdf"),
+    path('labs/<slug:lab_name>/booking/<slug:booking_id>/idf', get_idf, name="get-idf"),
     path('labs/<slug:lab_name>/jobs/<int:job_id>', specific_job),
     path('labs/<slug:lab_name>/jobs/<int:job_id>/<slug:task_id>', specific_task),
     path('labs/<slug:lab_name>/jobs/new', new_jobs),

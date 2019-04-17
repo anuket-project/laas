@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views import View
-from django.http.response import JsonResponse
+from django.http.response import JsonResponse, HttpResponse
 from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
 from django.views.decorators.csrf import csrf_exempt
@@ -62,6 +62,18 @@ def lab_host(request, lab_name="", host_id=""):
         return JsonResponse(lab_manager.get_host(host_id), safe=False)
     if request.method == "POST":
         return JsonResponse(lab_manager.update_host(host_id, request.POST), safe=False)
+
+
+def get_pdf(request, lab_name="", booking_id=""):
+    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_manager = LabManagerTracker.get(lab_name, lab_token)
+    return HttpResponse(lab_manager.get_pdf(booking_id), content_type="text/plain")
+
+
+def get_idf(request, lab_name="", booking_id=""):
+    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_manager = LabManagerTracker.get(lab_name, lab_token)
+    return HttpResponse(lab_manager.get_idf(booking_id), content_type="text/plain")
 
 
 def lab_status(request, lab_name=""):
