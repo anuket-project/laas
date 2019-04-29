@@ -774,14 +774,12 @@ class JobFactory(object):
         net_relation.status = JobStatus.NEW
 
         # re-apply ssh access after host is reset
-        ssh_relation = AccessRelation.objects.get(job=job, config__access_type="ssh")
-        ssh_relation.status = JobStatus.NEW
+        for relation in AccessRelation.objects.filter(job=job, config__access_type="ssh"):
+            relation.status = JobStatus.NEW
+            relation.save()
 
-        # save them all at once to reduce the chance
-        # of a lab polling and only seeing partial change
         hardware_relation.save()
         net_relation.save()
-        ssh_relation.save()
 
     @classmethod
     def makeSnapshotTask(cls, image, booking, host):
