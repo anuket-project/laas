@@ -14,7 +14,7 @@ import json
 from booking.models import Booking
 from resource_inventory.models import Host, Image
 from workflow.models import WorkflowStep
-from workflow.forms import SnapshotMetaForm, SnapshotHostSelectForm
+from workflow.forms import BasicMetaForm, SnapshotHostSelectForm
 
 
 class Select_Host_Step(WorkflowStep):
@@ -91,14 +91,14 @@ class Image_Meta_Step(WorkflowStep):
         desc = self.repo_get(self.repo.SNAPSHOT_DESC, False)
         form = None
         if name and desc:
-            form = SnapshotMetaForm(initial={"name": name, "description": desc})
+            form = BasicMetaForm(initial={"name": name, "description": desc})
         else:
-            form = SnapshotMetaForm()
+            form = BasicMetaForm()
         context['form'] = form
         return context
 
     def post_render(self, request):
-        form = SnapshotMetaForm(request.POST)
+        form = BasicMetaForm(request.POST)
         if form.is_valid():
             name = form.cleaned_data['name']
             self.repo_put(self.repo.SNAPSHOT_NAME, name)

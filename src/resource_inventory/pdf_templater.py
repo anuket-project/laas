@@ -19,15 +19,15 @@ class PDFTemplater:
     """
 
     @classmethod
-    def makePDF(cls, resource):
+    def makePDF(cls, booking):
         """
         fills the pod descriptor file template with info about the resource
         """
         template = "dashboard/pdf.yaml"
         info = {}
-        info['details'] = cls.get_pdf_details(resource)
-        info['jumphost'] = cls.get_pdf_jumphost(resource)
-        info['nodes'] = cls.get_pdf_nodes(resource)
+        info['details'] = cls.get_pdf_details(booking.resource)
+        info['jumphost'] = cls.get_pdf_jumphost(booking)
+        info['nodes'] = cls.get_pdf_nodes(booking)
 
         return render_to_string(template, context=info)
 
@@ -63,22 +63,40 @@ class PDFTemplater:
         return details
 
     @classmethod
-    def get_pdf_jumphost(cls, resource):
+    def get_jumphost(cls, booking):
+        jumphost = None
+        if booking.opnfv_config:
+            jumphost_opnfv_config = booking.opnfv_config.host_opnfv_config.get(
+                role__name__iexact="jumphost"
+            )
+            jumphost = booking.resource.hosts.get(config=jumphost_opnfv_config.host_config)
+        else:  # if there is no opnfv config, use headnode
+            jumphost = Host.objects.filter(
+                bundle=booking.resource,
+                config__is_head_node=True
+            ).first()
+
+        return jumphost
+
+    @classmethod
+    def get_pdf_jumphost(cls, booking):
         """
         returns a dict of all the info for the "jumphost" section
         """
-        jumphost = Host.objects.get(bundle=resource, config__opnfvRole__name__iexact="jumphost")
+        jumphost = cls.get_jumphost(booking)
         jumphost_info = cls.get_pdf_host(jumphost)
         jumphost_info['os'] = jumphost.config.image.os.name
         return jumphost_info
 
     @classmethod
-    def get_pdf_nodes(cls, resource):
+    def get_pdf_nodes(cls, booking):
         """
         returns a list of all the "nodes" (every host except jumphost)
         """
         pdf_nodes = []
-        nodes = Host.objects.filter(bundle=resource).exclude(config__opnfvRole__name__iexact="jumphost")
+        nodes = set(Host.objects.filter(bundle=booking.resource))
+        nodes.discard(cls.get_jumphost(booking))
+
         for node in nodes:
             pdf_nodes.append(cls.get_pdf_host(node))
 

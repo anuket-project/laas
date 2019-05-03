@@ -19,7 +19,7 @@ import requests
 from workflow.forms import ConfirmationForm
 from api.models import JobFactory
 from dashboard.exceptions import ResourceAvailabilityException, ModelValidationException
-from resource_inventory.models import Image, GenericInterface
+from resource_inventory.models import Image, GenericInterface, OPNFVConfig, HostOPNFVConfig, NetworkRole
 from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.pdf_templater import PDFTemplater
 from notifier.manager import NotificationHandler
@@ -259,6 +259,7 @@ class Repository():
     CONFIRMATION = "confirmation"
     SELECTED_GRESOURCE_BUNDLE = "selected generic bundle pk"
     SELECTED_CONFIG_BUNDLE = "selected config bundle pk"
+    SELECTED_OPNFV_CONFIG = "selected opnfv deployment config"
     GRESOURCE_BUNDLE_MODELS = "generic_resource_bundle_models"
     GRESOURCE_BUNDLE_INFO = "generic_resource_bundle_info"
     BOOKING = "booking"
@@ -268,6 +269,7 @@ class Repository():
     SWCONF_HOSTS = "swconf_hosts"
     BOOKING_MODELS = "booking models"
     CONFIG_MODELS = "configuration bundle models"
+    OPNFV_MODELS = "opnfv configuration models"
     SESSION_USER = "session owner user account"
     VALIDATED_MODEL_GRB = "valid grb config model instance in db"
     VALIDATED_MODEL_CONFIG = "valid config model instance in db"
@@ -338,6 +340,14 @@ class Repository():
                 self.el[self.HAS_RESULT] = True
                 self.el[self.RESULT_KEY] = self.SELECTED_CONFIG_BUNDLE
                 return
+
+        if self.OPNFV_MODELS in self.el:
+            errors = self.make_opnfv_config()
+            if errors:
+                return errors
+            else:
+                self.el[self.HAS_RESULT] = True
+                self.el[self.RESULT_KEY] = self.SELECTED_OPNFV_CONFIG
 
         if self.BOOKING_MODELS in self.el:
             errors = self.make_booking()
@@ -536,7 +546,7 @@ class Repository():
             booking.collaborators.add(collaborator)
 
         try:
-            booking.pdf = PDFTemplater.makePDF(booking.resource)
+            booking.pdf = PDFTemplater.makePDF(booking)
             booking.save()
         except Exception as e:
             return "BOOK, failed to create Pod Desriptor File: " + str(e)
@@ -550,6 +560,53 @@ class Repository():
             booking.save()
         except Exception as e:
             return "BOOK, saving booking generated exception: " + str(e) + " CODE:0x0016"
+
+    def make_opnfv_config(self):
+        opnfv_models = self.el[self.OPNFV_MODELS]
+        config_bundle = opnfv_models['configbundle']
+        if not config_bundle:
+            return "No Configuration bundle selected"
+        info = opnfv_models.get("meta", {})
+        name = info.get("name", False)
+        desc = info.get("description", False)
+        if not (name and desc):
+            return "No name or description given"
+        installer = opnfv_models['installer_chosen']
+        if not installer:
+            return "No OPNFV Installer chosen"
+        scenario = opnfv_models['scenario_chosen']
+        if not scenario:
+            return "No OPNFV Scenario chosen"
+
+        opnfv_config = OPNFVConfig.objects.create(
+            bundle=config_bundle,
+            name=name,
+            description=desc,
+            installer=installer,
+            scenario=scenario
+        )
+
+        network_roles = opnfv_models['network_roles']
+        for net_role in network_roles:
+            opnfv_config.networks.add(
+                NetworkRole.objects.create(
+                    name=net_role['role'],
+                    network=net_role['network']
+                )
+            )
+
+        host_roles = opnfv_models['host_roles']
+        for host_role in host_roles:
+            config = config_bundle.hostConfigurations.get(
+                host__resource__name=host_role['host_name']
+            )
+            HostOPNFVConfig.objects.create(
+                role=host_role['role'],
+                host_config=config,
+                opnfv_config=opnfv_config
+            )
+
+        self.el[self.RESULT] = opnfv_config
 
     def __init__(self):
         self.el = {}

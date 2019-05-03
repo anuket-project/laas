@@ -20,9 +20,8 @@ from resource_inventory.models import (
     GenericResourceBundle,
     ConfigBundle,
     OPNFVRole,
-    Image,
     Installer,
-    Scenario
+    Scenario,
 )
 
 
@@ -125,6 +124,7 @@ class SWConfigSelectorForm(forms.Form):
         bundle = None
         edit = False
         resource = None
+        user = None
         if "chosen_software" in kwargs:
             chosen_software = kwargs.pop("chosen_software")
 
@@ -134,17 +134,24 @@ class SWConfigSelectorForm(forms.Form):
             edit = kwargs.pop("edit")
         if "resource" in kwargs:
             resource = kwargs.pop("resource")
+        if "user" in kwargs:
+            user = kwargs.pop("user")
         super(SWConfigSelectorForm, self).__init__(*args, **kwargs)
-        attrs = self.build_search_widget_attrs(chosen_software, bundle, edit, resource)
+        attrs = self.build_search_widget_attrs(chosen_software, bundle, edit, resource, user)
         self.fields['software_bundle'] = forms.CharField(
             widget=SearchableSelectMultipleWidget(attrs=attrs)
         )
 
-    def build_search_widget_attrs(self, chosen, bundle, edit, resource):
+    def build_search_widget_attrs(self, chosen, bundle, edit, resource, user):
         configs = {}
         queryset = ConfigBundle.objects.select_related('owner').all()
         if resource:
+            if user is None:
+                user = resource.owner
             queryset = queryset.filter(bundle=resource)
+
+        if user:
+            queryset = queryset.filter(owner=user)
 
         for config in queryset:
             displayable = {}
@@ -424,20 +431,14 @@ class NetworkConfigurationForm(forms.Form):
 
 
 class HostSoftwareDefinitionForm(forms.Form):
-    fields = ["host_name", "role", "image"]
 
     host_name = forms.CharField(max_length=200, disabled=True, required=False)
-    role = forms.ModelChoiceField(queryset=OPNFVRole.objects.all())
-    image = forms.ModelChoiceField(queryset=Image.objects.all())
+    headnode = forms.BooleanField(required=False, widget=forms.HiddenInput)
 
-
-class SoftwareConfigurationForm(forms.Form):
-
-    name = forms.CharField(max_length=200)
-    description = forms.CharField(widget=forms.Textarea)
-    opnfv = forms.BooleanField(disabled=True, required=False)
-    installer = forms.ModelChoiceField(queryset=Installer.objects.all(), disabled=True, required=False)
-    scenario = forms.ModelChoiceField(queryset=Scenario.objects.all(), disabled=True, required=False)
+    def __init__(self, *args, **kwargs):
+        imageQS = kwargs.pop("imageQS")
+        super(HostSoftwareDefinitionForm, self).__init__(*args, **kwargs)
+        self.fields['image'] = forms.ModelChoiceField(queryset=imageQS)
 
 
 class WorkflowSelectionForm(forms.Form):
@@ -461,7 +462,7 @@ class SnapshotHostSelectForm(forms.Form):
     host = forms.CharField()
 
 
-class SnapshotMetaForm(forms.Form):
+class BasicMetaForm(forms.Form):
     name = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
 
@@ -475,3 +476,23 @@ class ConfirmationForm(forms.Form):
             (False, "Cancel")
         )
     )
+
+
+class OPNFVSelectionForm(forms.Form):
+    installer = forms.ModelChoiceField(queryset=Installer.objects.all(), required=True)
+    scenario = forms.ModelChoiceField(queryset=Scenario.objects.all(), required=True)
+
+
+class OPNFVNetworkRoleForm(forms.Form):
+    role = forms.CharField(max_length=200, disabled=True, required=False)
+
+    def __init__(self, *args, config_bundle, **kwargs):
+        super(OPNFVNetworkRoleForm, self).__init__(*args, **kwargs)
+        self.fields['network'] = forms.ModelChoiceField(
+            queryset=config_bundle.bundle.networks.all()
+        )
+
+
+class OPNFVHostRoleForm(forms.Form):
+    host_name = forms.CharField(max_length=200, disabled=True, required=False)
+    role = forms.ModelChoiceField(queryset=OPNFVRole.objects.all().order_by("name").distinct("name"))

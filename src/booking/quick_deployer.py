@@ -32,7 +32,8 @@ from resource_inventory.models import (
     OPNFVConfig,
     Network,
     NetworkConnection,
-    NetworkRole
+    NetworkRole,
+    HostOPNFVConfig,
 )
 from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.pdf_templater import PDFTemplater
@@ -185,16 +186,28 @@ def generate_hostconfig(generic_host, image, config_bundle):
     hconf = HostConfiguration()
     hconf.host = generic_host
     hconf.image = image
-
-    opnfvrole = OPNFVRole.objects.get(name="Jumphost")
-    if not opnfvrole:
-        raise OPNFVRoleDNE("No jumphost role was found.")
-
-    hconf.opnfvRole = opnfvrole
     hconf.bundle = config_bundle
+    hconf.is_head_node = True
     hconf.save()
 
     return hconf
+
+
+def generate_hostopnfv(hostconfig, opnfvconfig):
+    config = HostOPNFVConfig()
+    role = None
+    try:
+        role = OPNFVRole.objects.get(name="Jumphost")
+    except Exception:
+        role = OPNFVRole.objects.create(
+            name="Jumphost",
+            description="Single server jumphost role"
+        )
+    config.role = role
+    config.host_config = hostconfig
+    config.opnfv_config = opnfvconfig
+    config.save()
+    return config
 
 
 def generate_resource_bundle(generic_resource_bundle, config_bundle):  # warning: requires cleanup
@@ -273,18 +286,16 @@ def create_from_form(form, request):
     check_available_matching_host(lab, host_profile)  # requires cleanup if failure after this point
 
     grbundle = generate_grb(request.user, lab, quick_booking_id)
-
     gresource = generate_gresource(grbundle, hostname)
-
     ghost = generate_ghost(gresource, host_profile)
-
     cbundle = generate_config_bundle(request.user, quick_booking_id, grbundle)
+    hconf = generate_hostconfig(ghost, image, cbundle)
 
     # if no installer provided, just create blank host
+    opnfv_config = None
     if installer:
-        generate_opnfvconfig(scenario, installer, cbundle)
-
-    generate_hostconfig(ghost, image, cbundle)
+        opnfv_config = generate_opnfvconfig(scenario, installer, cbundle)
+        generate_hostopnfv(hconf, opnfv_config)
 
     # construct generic interfaces
     for interface_profile in host_profile.interfaceprofile.all():
@@ -297,24 +308,27 @@ def create_from_form(form, request):
     resource_bundle = generate_resource_bundle(grbundle, cbundle)
 
     # generate booking
-    booking = Booking()
-    booking.purpose = purpose_field
-    booking.project = project_field
-    booking.lab = lab
-    booking.owner = request.user
-    booking.start = timezone.now()
-    booking.end = timezone.now() + timedelta(days=int(length))
-    booking.resource = resource_bundle
-    booking.pdf = PDFTemplater.makePDF(booking.resource)
-    booking.config_bundle = cbundle
-    booking.save()
+    booking = Booking.objects.create(
+        purpose=purpose_field,
+        project=project_field,
+        lab=lab,
+        owner=request.user,
+        start=timezone.now(),
+        end=timezone.now() + timedelta(days=int(length)),
+        resource=resource_bundle,
+        config_bundle=cbundle,
+        opnfv_config=opnfv_config
+    )
+    booking.pdf = PDFTemplater.makePDF(booking)
+
     users_field = users_field[2:-2]
     if users_field:  # may be empty after split, if no collaborators entered
         users_field = json.loads(users_field)
         for collaborator in users_field:
             user = User.objects.get(id=collaborator['id'])
             booking.collaborators.add(user)
-        booking.save()
+
+    booking.save()
 
     # generate job
     JobFactory.makeCompleteJob(booking)

@@ -1,0 +1,22 @@
+{% extends "config_bundle/steps/table_formset.html" %}
+
+{% load bootstrap3 %}
+
+{% block table %}
+<thead>
+    <tr>
+        <th>Role</th>
+        <th>Network</th>
+    </tr>
+</thead>
+<tbody>
+    {% for form in formset %}
+    <tr>
+        <td>{% bootstrap_field form.role show_label=False %}</td>
+        <td>{% bootstrap_field form.network show_label=False %}</td>
+    </tr>
+    {% endfor %}
+</tbody>
+
+{{formset.management_form}}
+{% endblock table %}

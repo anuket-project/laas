@@ -11,9 +11,9 @@
 from django.forms import formset_factory
 
 from workflow.models import WorkflowStep
-from workflow.forms import SoftwareConfigurationForm, HostSoftwareDefinitionForm
+from workflow.forms import BasicMetaForm, HostSoftwareDefinitionForm
 from workflow.booking_workflow import Resource_Select
-from resource_inventory.models import Image, GenericHost, ConfigBundle, HostConfiguration, Installer, OPNFVConfig
+from resource_inventory.models import Image, GenericHost, ConfigBundle, HostConfiguration
 
 
 # resource selection step is reused from Booking workflow
@@ -39,48 +39,57 @@ class Define_Software(WorkflowStep):
     description = "Choose the opnfv and image of your machines"
     short_title = "host config"
 
-    def create_hostformset(self, hostlist):
+    def build_filter_data(self, hosts_data):
+        """
+        returns a 2D array of images to exclude
+        based on the ordering of the passed
+        hosts_data
+        """
+        filter_data = []
+        user = self.repo_get(self.repo.SESSION_USER)
+        lab = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE).lab
+        for i, host_data in enumerate(hosts_data):
+            host = GenericHost.objects.get(pk=host_data['host_id'])
+            wrong_owner = Image.objects.exclude(owner=user).exclude(public=True)
+            wrong_host = Image.objects.exclude(host_type=host.profile)
+            wrong_lab = Image.objects.exclude(from_lab=lab)
+            excluded_images = wrong_owner | wrong_host | wrong_lab
+            filter_data.append([])
+            for image in excluded_images:
+                filter_data[i].append(image.pk)
+        return filter_data
+
+    def create_hostformset(self, hostlist, data=None):
         hosts_initial = []
         host_configs = self.repo_get(self.repo.CONFIG_MODELS, {}).get("host_configs", False)
         if host_configs:
             for config in host_configs:
-                host_initial = {'host_id': config.host.id, 'host_name': config.host.resource.name}
-                host_initial['role'] = config.opnfvRole
-                host_initial['image'] = config.image
-                hosts_initial.append(host_initial)
-
+                hosts_initial.append({
+                    'host_id': config.host.id,
+                    'host_name': config.host.resource.name,
+                    'headnode': config.is_head_node,
+                    'image': config.image
+                })
         else:
             for host in hostlist:
-                host_initial = {'host_id': host.id, 'host_name': host.resource.name}
-
-                hosts_initial.append(host_initial)
+                hosts_initial.append({
+                    'host_id': host.id,
+                    'host_name': host.resource.name
+                })
 
         HostFormset = formset_factory(HostSoftwareDefinitionForm, extra=0)
-        host_formset = HostFormset(initial=hosts_initial)
+        filter_data = self.build_filter_data(hosts_initial)
 
-        filter_data = {}
-        user = self.repo_get(self.repo.SESSION_USER)
-        i = 0
-        for host_data in hosts_initial:
-            host_profile = None
-            try:
-                host = GenericHost.objects.get(pk=host_data['host_id'])
-                host_profile = host.profile
-            except Exception:
-                for host in hostlist:
-                    if host.resource.name == host_data['host_name']:
-                        host_profile = host.profile
-                        break
-            excluded_images = Image.objects.exclude(owner=user).exclude(public=True)
-            excluded_images = excluded_images | Image.objects.exclude(host_type=host_profile)
-            lab = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE).lab
-            excluded_images = excluded_images | Image.objects.exclude(from_lab=lab)
-            filter_data["id_form-" + str(i) + "-image"] = []
-            for image in excluded_images:
-                filter_data["id_form-" + str(i) + "-image"].append(image.name)
-            i += 1
+        class SpecialHostFormset(HostFormset):
+            def get_form_kwargs(self, index):
+                kwargs = super(SpecialHostFormset, self).get_form_kwargs(index)
+                if index is not None:
+                    kwargs['imageQS'] = Image.objects.exclude(pk__in=filter_data[index])
+                return kwargs
 
-        return host_formset, filter_data
+        if data:
+            return SpecialHostFormset(data, initial=hosts_initial)
+        return SpecialHostFormset(initial=hosts_initial)
 
     def get_host_list(self, grb=None):
         if grb is None:
@@ -99,9 +108,9 @@ class Define_Software(WorkflowStep):
 
         if grb:
             context["grb"] = grb
-            formset, filter_data = self.create_hostformset(self.get_host_list(grb))
+            formset = self.create_hostformset(self.get_host_list(grb))
             context["formset"] = formset
-            context["filter_data"] = filter_data
+            context['headnode'] = self.repo_get(self.repo.CONFIG_MODELS, {}).get("headnode_index", 1)
         else:
             context["error"] = "Please select a resource first"
             self.metastep.set_invalid("Step requires information that is not yet provided by previous step")
@@ -115,47 +124,35 @@ class Define_Software(WorkflowStep):
 
         confirm = self.repo_get(self.repo.CONFIRMATION, {})
 
-        HostFormset = formset_factory(HostSoftwareDefinitionForm, extra=0)
-        formset = HostFormset(request.POST)
         hosts = self.get_host_list()
-        has_jumphost = False
+        models['headnode_index'] = request.POST.get("headnode", 1)
+        formset = self.create_hostformset(hosts, data=request.POST)
+        has_headnode = False
         if formset.is_valid():
             models['host_configs'] = []
-            i = 0
             confirm_hosts = []
-            for form in formset:
+            for i, form in enumerate(formset):
                 host = hosts[i]
-                i += 1
                 image = form.cleaned_data['image']
-                # checks image compatability
-                grb = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE)
-                lab = None
-                if grb:
-                    lab = grb.lab
-                try:
-                    owner = self.repo_get(self.repo.SESSION_USER)
-                    q = Image.objects.filter(owner=owner) | Image.objects.filter(public=True)
-                    q.filter(host_type=host.profile)
-                    q.filter(from_lab=lab)
-                    q.get(id=image.id)  # will throw exception if image is not in q
-                except Exception:
-                    self.metastep.set_invalid("Image " + image.name + " is not compatible with host " + host.resource.name)
-                role = form.cleaned_data['role']
-                if "jumphost" in role.name.lower():
-                    has_jumphost = True
+                headnode = form.cleaned_data['headnode']
+                if headnode:
+                    has_headnode = True
                 bundle = models['bundle']
                 hostConfig = HostConfiguration(
                     host=host,
                     image=image,
                     bundle=bundle,
-                    opnfvRole=role
+                    is_head_node=headnode
                 )
                 models['host_configs'].append(hostConfig)
-                confirm_host = {"name": host.resource.name, "image": image.name, "role": role.name}
-                confirm_hosts.append(confirm_host)
+                confirm_hosts.append({
+                    "name": host.resource.name,
+                    "image": image.name,
+                    "headnode": headnode
+                })
 
-            if not has_jumphost:
-                self.metastep.set_invalid('Must have at least one "Jumphost" per POD')
+            if not has_headnode:
+                self.metastep.set_invalid('Must have one "Headnode" per POD')
                 return self.render(request)
 
             self.repo_put(self.repo.CONFIG_MODELS, models)
@@ -172,8 +169,6 @@ class Define_Software(WorkflowStep):
 
 class Config_Software(WorkflowStep):
     template = 'config_bundle/steps/config_software.html'
-    form = SoftwareConfigurationForm
-    context = {'workspace_form': form}
     title = "Other Info"
     description = "Give your software config a name, description, and other stuff"
     short_title = "config info"
@@ -187,58 +182,30 @@ class Config_Software(WorkflowStep):
         if bundle:
             initial['name'] = bundle.name
             initial['description'] = bundle.description
-        opnfv = models.get("opnfv", False)
-        if opnfv:
-            initial['installer'] = opnfv.installer
-            initial['scenario'] = opnfv.scenario
-        else:
-            initial['opnfv'] = False
-        supported = {}
-        for installer in Installer.objects.all():
-            supported[str(installer)] = []
-            for scenario in installer.sup_scenarios.all():
-                supported[str(installer)].append(str(scenario))
-
-        context["form"] = SoftwareConfigurationForm(initial=initial)
-        context['supported'] = supported
-
+        context["form"] = BasicMetaForm(initial=initial)
         return context
 
     def post_render(self, request):
-        try:
-            models = self.repo_get(self.repo.CONFIG_MODELS, {})
-            if "bundle" not in models:
-                models['bundle'] = ConfigBundle(owner=self.repo_get(self.repo.SESSION_USER))
+        models = self.repo_get(self.repo.CONFIG_MODELS, {})
+        if "bundle" not in models:
+            models['bundle'] = ConfigBundle(owner=self.repo_get(self.repo.SESSION_USER))
 
-            confirm = self.repo_get(self.repo.CONFIRMATION, {})
-            if "configuration" not in confirm:
-                confirm['configuration'] = {}
+        confirm = self.repo_get(self.repo.CONFIRMATION, {})
+        if "configuration" not in confirm:
+            confirm['configuration'] = {}
 
-            form = self.form(request.POST)
-            if form.is_valid():
-                models['bundle'].name = form.cleaned_data['name']
-                models['bundle'].description = form.cleaned_data['description']
-                if form.cleaned_data['opnfv']:
-                    installer = form.cleaned_data['installer']
-                    scenario = form.cleaned_data['scenario']
-                    opnfv = OPNFVConfig(
-                        bundle=models['bundle'],
-                        installer=installer,
-                        scenario=scenario
-                    )
-                    models['opnfv'] = opnfv
-                    confirm['configuration']['installer'] = form.cleaned_data['installer'].name
-                    confirm['configuration']['scenario'] = form.cleaned_data['scenario'].name
+        form = BasicMetaForm(request.POST)
+        if form.is_valid():
+            models['bundle'].name = form.cleaned_data['name']
+            models['bundle'].description = form.cleaned_data['description']
 
-                confirm['configuration']['name'] = form.cleaned_data['name']
-                confirm['configuration']['description'] = form.cleaned_data['description']
-                self.metastep.set_valid("Complete")
-            else:
-                self.metastep.set_invalid("Please correct the errors shown below")
+            confirm['configuration']['name'] = form.cleaned_data['name']
+            confirm['configuration']['description'] = form.cleaned_data['description']
+            self.metastep.set_valid("Complete")
+        else:
+            self.metastep.set_invalid("Please correct the errors shown below")
 
-            self.repo_put(self.repo.CONFIG_MODELS, models)
-            self.repo_put(self.repo.CONFIRMATION, confirm)
+        self.repo_put(self.repo.CONFIG_MODELS, models)
+        self.repo_put(self.repo.CONFIRMATION, confirm)
 
-        except Exception:
-            pass
         return self.render(request)
