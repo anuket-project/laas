@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 
 import json
 import uuid
@@ -23,6 +24,7 @@ from resource_inventory.models import (
     Host,
     Image,
     Interface,
+    HostOPNFVConfig,
     RemoteInfo,
     OPNFVConfig
 )
@@ -97,6 +99,14 @@ class LabManager(object):
         booking.pdf = PDFTemplater.makePDF(booking)
         booking.idf = IDFTemplater().makeIDF(booking)
         booking.save()
+
+    def get_pdf(self, booking_id):
+        booking = get_object_or_404(Booking, pk=booking_id, lab=self.lab)
+        return booking.pdf
+
+    def get_idf(self, booking_id):
+        booking = get_object_or_404(Booking, pk=booking_id, lab=self.lab)
+        return booking.idf
 
     def get_profile(self):
         prof = {}
@@ -351,11 +361,44 @@ class TaskConfig(models.Model):
         self.delta = '{}'
 
 
+class BridgeConfig(models.Model):
+    """
+    Displays mapping between jumphost interfaces and
+    bridges
+    """
+    interfaces = models.ManyToManyField(Interface)
+    opnfv_config = models.ForeignKey(OPNFVConfig, on_delete=models.CASCADE)
+
+    def to_dict(self):
+        d = {}
+        hid = self.interfaces.first().host.labid
+        d[hid] = {}
+        for interface in self.interfaces.all():
+            d[hid][interface.mac_address] = []
+            for vlan in interface.config.all():
+                network_role = self.opnfv_model.networks().filter(network=vlan.network)
+                bridge = IDFTemplater.bridge_names[network_role.name]
+                br_config = {
+                    "vlan_id": vlan.vlan_id,
+                    "tagged": vlan.tagged,
+                    "bridge": bridge
+                }
+                d[hid][interface.mac_address].append(br_config)
+        return d
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+
 class OpnfvApiConfig(models.Model):
 
     installer = models.CharField(max_length=200)
     scenario = models.CharField(max_length=300)
     roles = models.ManyToManyField(Host)
+    # pdf and idf are url endpoints, not the actual file
+    pdf = models.CharField(max_length=100)
+    idf = models.CharField(max_length=100)
+    bridge_config = models.OneToOneField(BridgeConfig, on_delete=models.CASCADE, null=True)
     delta = models.TextField()
     opnfv_config = models.ForeignKey(OPNFVConfig, null=True, on_delete=models.SET_NULL)
 
@@ -367,6 +410,12 @@ class OpnfvApiConfig(models.Model):
             d['installer'] = self.installer
         if self.scenario:
             d['scenario'] = self.scenario
+        if self.pdf:
+            d['pdf'] = self.pdf
+        if self.idf:
+            d['idf'] = self.idf
+        if self.bridge_config:
+            d['bridged_interfaces'] = self.bridge_config.to_dict()
 
         hosts = self.roles.all()
         if hosts.exists():
@@ -394,6 +443,16 @@ class OpnfvApiConfig(models.Model):
         d = json.loads(self.delta)
         d['scenario'] = scenario
         self.delta = json.dumps(d)
+
+    def set_xdf(self, booking, update_delta=True):
+        kwargs = {'lab_name': booking.lab.name, 'booking_id': booking.id}
+        self.pdf = reverse('get-pdf', kwargs=kwargs)
+        self.idf = reverse('get-idf', kwargs=kwargs)
+        if update_delta:
+            d = json.loads(self.delta)
+            d['pdf'] = self.pdf
+            d['idf'] = self.idf
+            self.delta = json.dumps(d)
 
     def add_role(self, host):
         self.roles.add(host)
@@ -632,6 +691,7 @@ class SnapshotConfig(TaskConfig):
         if not self.delta:
             self.delta = self.to_json()
             self.save()
+
         d = json.loads(self.delta)
         return d
 
@@ -823,7 +883,6 @@ class JobFactory(object):
             job=job
         )
         cls.makeSoftware(
-            hosts=hosts,
             booking=booking,
             job=job
         )
@@ -915,18 +974,41 @@ class JobFactory(object):
             network_config.save()
 
     @classmethod
-    def makeSoftware(cls, hosts=[], booking=None, job=Job()):
+    def make_bridge_config(cls, booking):
+        if booking.resource.hosts.count() < 2:
+            return None
+        try:
+            jumphost_config = HostOPNFVConfig.objects.filter(
+                role__name__iexact="jumphost"
+            )
+            jumphost = Host.objects.get(
+                bundle=booking.resource,
+                config=jumphost_config.host_config
+            )
+        except Exception:
+            return None
+        br_config = BridgeConfig.objects.create(opnfv_config=booking.opnfv_config)
+        for iface in jumphost.interfaces.all():
+            br_config.interfaces.add(iface)
+        return br_config
+
+    @classmethod
+    def makeSoftware(cls, booking=None, job=Job()):
 
         if not booking.opnfv_config:
             return None
 
         opnfv_api_config = OpnfvApiConfig.objects.create(
             opnfv_config=booking.opnfv_config,
-            installer=booking.opnfv_config.installer,
-            scenario=booking.opnfv_config.scenario,
+            installer=booking.opnfv_config.installer.name,
+            scenario=booking.opnfv_config.scenario.name,
+            bridge_config=cls.make_bridge_config(booking)
         )
 
-        for host in hosts:
+        opnfv_api_config.set_xdf(booking, False)
+        opnfv_api_config.save()
+
+        for host in booking.resource.hosts.all():
             opnfv_api_config.roles.add(host)
         software_config = SoftwareConfig.objects.create(opnfv=opnfv_api_config)
         software_relation = SoftwareRelation.objects.create(job=job, config=software_config)

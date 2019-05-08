@@ -19,8 +19,15 @@ class IDFTemplater:
     """
     Utility class to create a full IDF yaml file
     """
+    net_names = ["admin", "mgmt", "private", "public"]
+    bridge_names = {
+        "admin": "br-admin",
+        "mgmt": "br-mgmt",
+        "private": "br-private",
+        "public": "br-public"
+    }
+
     def __init__(self):
-        self.net_names = ["admin", "mgmt", "private", "public"]
         self.networks = {}
         for i, name in enumerate(self.net_names):
             self.networks[name] = {
@@ -117,11 +124,7 @@ class IDFTemplater:
         return fuel
 
     def get_fuel_bridges(self):
-        bridges = {}
-        for net in self.net_names:
-            bridges[net] = "br-" + net
-
-        return bridges
+        return self.bridge_names
 
     def get_fuel_nodes(self, booking):
         jumphost = booking.opnfv_config.host_opnfv_config.get(
