@@ -104,7 +104,7 @@ class ResourceManager:
             try:
                 physical_host = self.acquireHost(generic_host, genericResourceBundle.lab.name)
             except ResourceAvailabilityException:
-                self.fail_acquire(physical_hosts, vlan_map)
+                self.fail_acquire(physical_hosts, vlan_map, genericResourceBundle)
                 raise ResourceAvailabilityException("Could not provision hosts, not enough available")
             try:
                 physical_host.bundle = resource_bundle
@@ -114,12 +114,12 @@ class ResourceManager:
 
                 self.configureNetworking(physical_host, vlan_map)
             except Exception:
-                self.fail_acquire(physical_hosts, vlan_map)
+                self.fail_acquire(physical_hosts, vlan_map, genericResourceBundle)
                 raise ResourceProvisioningException("Network configuration failed.")
             try:
                 physical_host.save()
             except Exception:
-                self.fail_acquire(physical_hosts)
+                self.fail_acquire(physical_hosts, vlan_map, genericResourceBundle)
                 raise ModelValidationException("Saving hosts failed")
 
         return resource_bundle
@@ -167,9 +167,8 @@ class ResourceManager:
             else:
                 vlan_manager.release_vlans(vlan_id)
 
-    def fail_acquire(self, hosts, vlans):
-        grb = hosts[0].template.resource.bundle
-        vlan_manager = hosts[0].lab.vlan_manager
+    def fail_acquire(self, hosts, vlans, grb):
+        vlan_manager = grb.lab.vlan_manager
         self.releaseNetworks(grb, vlan_manager, vlans)
         for host in hosts:
             self.releaseHost(host)
