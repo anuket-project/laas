@@ -1,0 +1,523 @@
+---
+swagger: "2.0"
+info:
+  description: This is the Lab as a Service API
+  version: 2.0.1
+  title: LaaS API
+  contact:
+    email: nfvlab@iol.unh.edu
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+host: virtserver.swaggerhub.com
+basePath: /IOL-OPNFV-LaaS/Labs/1.0.0
+tags:
+- name: admin
+  description: Secured Admin-only calls
+- name: developers
+  description: Operations available to regular developers
+schemes:
+- https
+paths:
+  /api/labs/{lab-name}/jobs/new:
+    get:
+      summary: list of new, unstarted jobs for the lab
+      description: |
+        List of jobs for <lab-name> to start. These jobs all must have a status of `new`,
+        meaning they are unstarted.
+      produces:
+      - application/json
+      parameters:
+      - name: lab-name
+        in: path
+        required: true
+        type: string
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Job'
+  /api/labs/{lab-name}/jobs/current:
+    get:
+      summary: list of unfinished jobs
+      description: |
+        List of jobs for <lab-name> that are still in progress. A job is in progress if
+        it has been started but has not finished.
+      produces:
+      - application/json
+      parameters:
+      - name: lab-name
+        in: path
+        required: true
+        type: string
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Job'
+  /api/labs/{lab-name}/jobs/done:
+    get:
+      summary: list of done jobs
+      description: |
+        List of jobs for <lab-name> that were started and are no longer in progress.
+        A job can be marked 'done' with a succesful or error status.
+      produces:
+      - application/json
+      parameters:
+      - name: lab-name
+        in: path
+        required: true
+        type: string
+      responses:
+        200:
+          description: search results matching criteria
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Job'
+  /api/labs/{lab-name}/jobs/{job_id}/{task_id}>:
+    post:
+      summary: update job information
+      produces:
+      - application/json
+      parameters:
+      - name: lab-name
+        in: path
+        required: true
+        type: string
+      - name: job_id
+        in: path
+        required: true
+        type: integer
+      - name: task_id
+        in: path
+        required: true
+        type: string
+      - in: body
+        name: payload
+        description: payload, schema based on job type
+        required: true
+        schema:
+          $ref: '#/definitions/JobUpdate'
+      responses:
+        200:
+          description: success
+  /api/labs/{lab-name}/inventory:
+    get:
+      summary: lab inventory
+      produces:
+      - application/json
+      parameters:
+      - name: lab-name
+        in: path
+        required: true
+        type: string
+      responses:
+        200:
+          description: lab inventory
+          schema:
+            $ref: '#/definitions/Inventory'
+    post:
+      summary: updates lab inventory
+      parameters:
+      - name: lab-name
+        in: path
+        required: true
+        type: string
+      - in: body
+        name: inventory
+        required: true
+        schema:
+          $ref: '#/definitions/Inventory'
+      responses:
+        200:
+          description: success
+  /api/labs/{lab-name}/profile:
+    get:
+      summary: lab profile
+      produces:
+      - application/json
+      parameters:
+      - name: lab-name
+        in: path
+        required: true
+        type: string
+      responses:
+        200:
+          description: lab profile
+          schema:
+            $ref: '#/definitions/Profile'
+    post:
+      summary: updates lab profile
+      parameters:
+      - name: lab-name
+        in: path
+        required: true
+        type: string
+      - in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/Profile'
+      responses:
+        200:
+          description: success
+definitions:
+  Host_Interface:
+    properties:
+      mac:
+        type: string
+        example: 00:11:22:33:44:55
+        description: mac address
+      busaddr:
+        type: string
+        example: 0000:02:00.1
+        description: bus address reported by `ethtool -i <ifname>`
+      switchport:
+        $ref: '#/definitions/Switchport'
+  Generic_Interface:
+    properties:
+      speed:
+        type: string
+        example: 10G
+        description: speed in M or G
+      name:
+        type: string
+        example: eno3
+        description: interface name
+  Generic_Disk:
+    properties:
+      size:
+        type: string
+        example: 500G
+        description: size in M, G, or T
+      type:
+        type: string
+        example: SSD
+        description: must be SSD or HDD
+      name:
+        type: string
+        example: sda
+        description: name of root block device
+  CPU:
+    properties:
+      cores:
+        type: integer
+        format: int32
+        example: 64
+        description: how many CPU cores the host has (across all physical cpus)
+        minimum: 1
+      arch:
+        type: string
+        example: x86_64
+        description: must be x86_64 or aarch64
+      cpus:
+        type: integer
+        example: 2
+        description: Number of different physical CPU chips
+        minimum: 1
+  Image:
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      lab_id:
+        type: string
+        description: identifier provided by lab
+      dashboard_id:
+        type: string
+        description: identifier provided by dashboard
+  Inventory_Host:
+    properties:
+      interfaces:
+        type: array
+        items:
+          $ref: '#/definitions/Host_Interface'
+      hostname:
+        type: string
+        example: hpe3.opnfv.iol.unh.edu
+        description: globally unique fqdn
+      host_type:
+        type: string
+        description: name of host type this host belongs to
+  Inventory_Network:
+    properties:
+      cidr:
+        type: string
+        example: 174.0.5.0/24
+        description: subnet description
+      gateway:
+        type: string
+        example: 174.0.5.1
+        description: ip of gateway
+      vlan:
+        type: integer
+        example: 100
+        description: vlan tag of this network
+  Inventory:
+    properties:
+      hosts:
+        type: array
+        description: all hosts
+        items:
+          $ref: '#/definitions/Inventory_Host'
+      networks:
+        type: array
+        description: all networks
+        items:
+          $ref: '#/definitions/Inventory_Network'
+      images:
+        type: array
+        description: available images
+        items:
+          $ref: '#/definitions/Image'
+      host_types:
+        type: array
+        description: all host types hosted by a lab
+        items:
+          $ref: '#/definitions/Host_Type'
+  Host_Type:
+    properties:
+      cpu:
+        $ref: '#/definitions/CPU'
+      disks:
+        type: array
+        items:
+          $ref: '#/definitions/Generic_Disk'
+      description:
+        type: string
+        description: human readable description of host type
+      interface:
+        type: array
+        items:
+          $ref: '#/definitions/Generic_Interface'
+      ram:
+        $ref: '#/definitions/Ram'
+      name:
+        type: string
+        description: lab-unique name
+  Ram:
+    properties:
+      amount:
+        type: integer
+        example: 16
+        description: amount of ram in Gibibytes (GiB)
+  Switchport:
+    properties:
+      switch_name:
+        type: string
+        example: Cisco-9
+        description: name of switch owning this switchport
+      port_name:
+        type: string
+        example: Ethernet1/34
+        description: name of port on switch
+      invariant_config:
+        type: array
+        description: list of vlans that may not be modified on this port
+        items:
+          $ref: '#/definitions/Vlan'
+      current_config:
+        type: array
+        description: list of current vlan configuration
+        items:
+          $ref: '#/definitions/Vlan'
+  Vlan:
+    properties:
+      vlan_id:
+        type: integer
+        example: 100
+        description: vlan id
+        minimum: 1
+        maximum: 4098
+      tagged:
+        type: boolean
+        example: true
+        description: whether this vlan is tagged or untagged
+  Job:
+    properties:
+      id:
+        type: integer
+        description: globally unique job identifier
+      payload:
+        $ref: '#/definitions/JobPayload'
+  JobPayload:
+    properties:
+      hardware:
+        $ref: '#/definitions/HardwareTask'
+      software:
+        $ref: '#/definitions/SoftwareTask'
+      network:
+        $ref: '#/definitions/NetworkTask'
+      access:
+        $ref: '#/definitions/AccessTask'
+      snapshot:
+        $ref: '#/definitions/SnapshotTask'
+  HardwareTask:
+    properties:
+      taskId:
+        $ref: '#/definitions/HardwareConfig'
+  SoftwareTask:
+    properties:
+      taskId:
+        $ref: '#/definitions/SoftwarePayload'
+  NetworkTask:
+    properties:
+      taskId:
+        $ref: '#/definitions/NetworkPayload'
+  AccessTask:
+    properties:
+      taskId:
+        $ref: '#/definitions/AccessPayload'
+  SnapshotTask:
+    properties:
+      taskId:
+        $ref: '#/definitions/SnapshotPayload'
+  SnapshotPayload:
+    properties:
+      host:
+        type: string
+        example: hpe3
+        description: how the lab identifies the host
+      image:
+        type: string
+        example: "4"
+        description: lab id of existing image, if updating an existing image. if this key does not exist, the lab must create a new image
+      dashboard_id:
+        type: string
+        description: how the dashboard identifies this image / snapshot
+  AccessPayload:
+    properties:
+      revoke:
+        type: boolean
+        description: whether to revoke key during completion of job
+      user:
+        type: string
+        description: PK/ID of user access is being given to
+      access_type:
+        type: string
+        example: ssh
+        description: type of access key to be generated. Options include "vpn and ssh"
+      hosts:
+        type: array
+        description: hosts to grant access to if applicable
+        items:
+          type: string
+          description: id of host
+      lab_token:
+        type: string
+        description: identifier provided by lab to this task
+  HardwareConfig:
+    properties:
+      id:
+        type: string
+        description: ID of host
+      image:
+        type: integer
+        example: 42
+        description: lab provided ID of the request image
+      power:
+        type: string
+        example: on
+        description: desired power state, either on or off
+      hostname:
+        type: string
+        example: my_new_machine
+        description: user-defined hostname
+      ipmi_create:
+        type: boolean
+        description: whether or not to create an ipmi account
+      lab_token:
+        type: string
+        description: identifier provided by lab to this task
+  SoftwarePayload:
+    properties:
+      opnfv:
+        $ref: '#/definitions/OpnfvConfiguration'
+      lab_token:
+        type: string
+        description: identifier provided by lab to this task
+  OpnfvHost:
+    properties:
+      hostname:
+        type: string
+        example: Jumphost
+        description: maps hostname to OPNFV role
+  OpnfvConfiguration:
+    properties:
+      installer:
+        type: string
+        description: Installer user wants
+      scenario:
+        type: string
+        description: scenario of OPNFV to deploy
+      pdf:
+        type: string
+        example: LaaS.com/api/my_job/pdf
+        description: URL to find the Pod Descriptor File contents
+      idf:
+        type: string
+        example: LaaS.com/api/my_job/idf
+        description: URL to find the Installer Descriptor File contents
+      roles:
+        type: array
+        description: role the host will play in OPNFV
+        items:
+          $ref: '#/definitions/OpnfvHost'
+  NetworkPayload:
+    properties:
+      hostId:
+        $ref: '#/definitions/NetworkConfig'
+      lab_token:
+        type: string
+        description: identifier provided by lab to this task
+  NetworkConfig:
+    properties:
+      interface_name:
+        type: array
+        description: list of vlans on this interface
+        items:
+          $ref: '#/definitions/Vlan'
+  JobUpdate:
+    properties:
+      status:
+        type: integer
+        description: status type, see status enum
+      message:
+        type: string
+        description: message from lab for user
+      lab_token:
+        type: string
+        description: identifier provided by lab to this task
+  Profile:
+    properties:
+      name:
+        type: string
+        description: proper expanded lab name
+      contact:
+        $ref: '#/definitions/Contact'
+      description:
+        type: string
+      host_count:
+        type: array
+        items:
+          $ref: '#/definitions/Host_Number'
+  Host_Number:
+    properties:
+      type:
+        type: string
+      count:
+        type: integer
+  Contact:
+    properties:
+      phone:
+        type: string
+        description: phone number at which a lab can be reached
+      email:
+        type: string
+        description: email at which a lab can be reached
