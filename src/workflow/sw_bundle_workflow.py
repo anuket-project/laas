@@ -113,7 +113,7 @@ class Define_Software(WorkflowStep):
             context['headnode'] = self.repo_get(self.repo.CONFIG_MODELS, {}).get("headnode_index", 1)
         else:
             context["error"] = "Please select a resource first"
-            self.metastep.set_invalid("Step requires information that is not yet provided by previous step")
+            self.set_invalid("Step requires information that is not yet provided by previous step")
 
         return context
 
@@ -152,7 +152,7 @@ class Define_Software(WorkflowStep):
                 })
 
             if not has_headnode:
-                self.metastep.set_invalid('Must have one "Headnode" per POD')
+                self.set_invalid('Must have one "Headnode" per POD')
                 return self.render(request)
 
             self.repo_put(self.repo.CONFIG_MODELS, models)
@@ -160,9 +160,9 @@ class Define_Software(WorkflowStep):
                 confirm['configuration'] = {}
             confirm['configuration']['hosts'] = confirm_hosts
             self.repo_put(self.repo.CONFIRMATION, confirm)
-            self.metastep.set_valid("Completed")
+            self.set_valid("Completed")
         else:
-            self.metastep.set_invalid("Please complete all fields")
+            self.set_invalid("Please complete all fields")
 
         return self.render(request)
 
@@ -201,9 +201,9 @@ class Config_Software(WorkflowStep):
 
             confirm['configuration']['name'] = form.cleaned_data['name']
             confirm['configuration']['description'] = form.cleaned_data['description']
-            self.metastep.set_valid("Complete")
+            self.set_valid("Complete")
         else:
-            self.metastep.set_invalid("Please correct the errors shown below")
+            self.set_invalid("Please correct the errors shown below")
 
         self.repo_put(self.repo.CONFIG_MODELS, models)
         self.repo_put(self.repo.CONFIRMATION, confirm)

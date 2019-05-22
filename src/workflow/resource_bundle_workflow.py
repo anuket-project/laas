@@ -134,16 +134,16 @@ class Define_Hardware(WorkflowStep):
             self.form = HardwareDefinitionForm(request.POST)
             if self.form.is_valid():
                 if len(json.loads(self.form.cleaned_data['filter_field'])['labs']) != 1:
-                    self.metastep.set_invalid("Please select one lab")
+                    self.set_invalid("Please select one lab")
                 else:
                     self.update_models(self.form.cleaned_data)
                     self.update_confirmation()
-                    self.metastep.set_valid("Step Completed")
+                    self.set_valid("Step Completed")
             else:
-                self.metastep.set_invalid("Please complete the fields highlighted in red to continue")
+                self.set_invalid("Please complete the fields highlighted in red to continue")
                 pass
         except Exception as e:
-            self.metastep.set_invalid(str(e))
+            self.set_invalid(str(e))
         self.context = self.get_context()
         return render(request, self.template, self.context)
 
@@ -239,11 +239,11 @@ class Define_Nets(WorkflowStep):
             xmlData = request.POST.get("xml")
             self.updateModels(xmlData)
             # update model with xml
-            self.metastep.set_valid("Networks applied successfully")
+            self.set_valid("Networks applied successfully")
         except ResourceAvailabilityException:
-            self.metastep.set_invalid("Public network not availble")
+            self.set_invalid("Public network not availble")
         except Exception as e:
-            self.metastep.set_invalid("An error occurred when applying networks: " + str(e))
+            self.set_invalid("An error occurred when applying networks: " + str(e))
         return self.render(request)
 
     def updateModels(self, xmlData):
@@ -425,10 +425,10 @@ class Resource_Meta_Info(WorkflowStep):
                 tmp = tmp[:60] + "..."
             confirm_info["description"] = tmp
             self.repo_put(self.repo.CONFIRMATION, confirm)
-            self.metastep.set_valid("Step Completed")
+            self.set_valid("Step Completed")
 
         else:
-            self.metastep.set_invalid("Please correct the fields highlighted in red to continue")
+            self.set_invalid("Please correct the fields highlighted in red to continue")
             pass
         return self.render(request)
 

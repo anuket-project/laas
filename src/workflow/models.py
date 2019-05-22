@@ -158,12 +158,52 @@ class BookingAuthManager():
         return False
 
 
+class WorkflowStepStatus(object):
+    UNTOUCHED = 0
+    INVALID = 100
+    VALID = 200
+
+
 class WorkflowStep(object):
     template = 'bad_request.html'
     title = "Generic Step"
     description = "You were led here by mistake"
     short_title = "error"
     metastep = None
+    # phasing out metastep:
+
+    valid = WorkflowStepStatus.UNTOUCHED
+    message = ""
+
+    enabled = True
+
+    def cleanup(self):
+        raise Exception("WorkflowStep subclass of type " + str(type(self)) + " has no concrete implemented cleanup() method")
+
+    def enable(self):
+        if not self.enabled:
+            self.enabled = True
+
+    def disable(self):
+        if self.enabled:
+            self.cleanup()
+            self.enabled = False
+
+    def set_invalid(self, message, code=WorkflowStepStatus.INVALID):
+        self.valid = code
+        self.message = message
+
+    def set_valid(self, message, code=WorkflowStepStatus.VALID):
+        self.valid = code
+        self.message = message
+
+    def to_json(self):
+        return {
+            'title': self.short_title,
+            'enabled': self.enabled,
+            'valid': self.valid,
+            'message': self.message,
+        }
 
     def __init__(self, id, repo=None):
         self.repo = repo
@@ -205,6 +245,8 @@ class Confirmation_Step(WorkflowStep):
     title = "Confirm Changes"
     description = "Does this all look right?"
 
+    short_title = "confirm"
+
     def get_context(self):
         context = super(Confirmation_Step, self).get_context()
         context['form'] = ConfirmationForm()
@@ -245,12 +287,6 @@ class Confirmation_Step(WorkflowStep):
             pass
 
 
-class Workflow():
-
-    steps = []
-    active_index = 0
-
-
 class Repository():
 
     EDIT = "editing"
@@ -271,6 +307,7 @@ class Repository():
     CONFIG_MODELS = "configuration bundle models"
     OPNFV_MODELS = "opnfv configuration models"
     SESSION_USER = "session owner user account"
+    SESSION_MANAGER = "session manager for current session"
     VALIDATED_MODEL_GRB = "valid grb config model instance in db"
     VALIDATED_MODEL_CONFIG = "valid config model instance in db"
     VALIDATED_MODEL_BOOKING = "valid booking model instance in db"

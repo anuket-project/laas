@@ -54,7 +54,12 @@ def step_view(request):
         # no manager found, redirect to "lost" page
         return no_workflow(request)
     if request.GET.get('step') is not None:
-        manager.goto(int(request.GET.get('step')))
+        if request.GET.get('step') == 'next':
+            manager.go_next()
+        elif request.GET.get('step') == 'prev':
+            manager.go_prev()
+        else:
+            raise Exception("requested action for new step had malformed contents: " + request.GET.get('step'))
     return manager.render(request)
 
 
