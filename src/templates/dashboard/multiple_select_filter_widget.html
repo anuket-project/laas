@@ -22,28 +22,25 @@
 }
 .grid-item {
     cursor: pointer;
-    border:2px;
-    border-style:none;
-    border-color:black;
+    border:1px solid #cccccc;
     border-radius: 5px;
     margin:20px;
     height: 200px;
     padding: 7px;
-    box-shadow: 0px 0px 7px 0px rgba(0,0,0,0.75);
     transition-property: box-shadow, background-color;
     transition-duration: .2s;
 }
 
 .grid-item:hover {
-    box-shadow: 0px 0px 14px 0px rgba(0,0,0,0.75);
+    box-shadow: 0px 0px 7px 0px rgba(0,0,0,0.45);
     transition-property: box-shadow;
     transition-duration: .2s;
 
 }
 
 .selected_node {
-    box-shadow: 0px 0px 14px 0px rgba(0,0,0,0.75);
-    background-color: #CCECD7;
+    box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.45);
+    background-color: #fff;
     transition-property: background-color;
     transition-duration: .2s;
 }
@@ -51,13 +48,12 @@
 .disabled_node {
     cursor: not-allowed;
     background-color: #EFEFEF;
-    box-shadow: 0px 0px 1px 0px rgba(0,0,0,0.75);
     transition-property: box-shadow;
     transition-duration: .2s;
+    border: 1px solid #ccc;
 }
 
 .disabled_node:hover {
-    box-shadow: 0px 0px 1px 0px rgba(0,0,0,0.75);
 }
 
 .cleared_node {
