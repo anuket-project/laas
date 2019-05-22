@@ -21,27 +21,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class BookingMetaWorkflow(object):
-    workflow_type = 0
-    color = "#0099ff"
-    is_child = False
-
-
-class ResourceMetaWorkflow(object):
-    workflow_type = 1
-    color = "#ff6600"
-
-
-class ConfigMetaWorkflow(object):
-    workflow_type = 2
-    color = "#00ffcc"
-
-
-class OPNFVMetaWorkflow(object):
-    workflow_type = 3
-    color = "000000"
-
-
 class MetaStep(object):
 
     UNTOUCHED = 0
@@ -60,6 +39,7 @@ class MetaStep(object):
         self.short_title = "error"
         self.skip_step = 0
         self.valid = 0
+        self.hidden = False
         self.message = ""
         self.id = uuid.uuid4()
 
@@ -85,10 +65,9 @@ class MetaStep(object):
 
 
 class Workflow(object):
-    def __init__(self, steps, metasteps, repository):
+    def __init__(self, steps, repository):
         self.repository = repository
         self.steps = steps
-        self.metasteps = metasteps
         self.active_index = 0
 
 
@@ -134,18 +113,13 @@ class WorkflowFactory():
         ]
 
         steps = self.make_steps(workflow_types[workflow_type], repository=repo)
-        meta_steps = self.metaize(steps=steps, wf_type=workflow_type)
-        return steps, meta_steps
+        return steps
 
     def create_workflow(self, workflow_type=None, repo=None):
-        steps, meta_steps = self.conjure(workflow_type, repo)
+        steps = self.conjure(workflow_type, repo)
         c_step = self.make_step(Confirmation_Step, repo)
-        metaconfirm = MetaStep()
-        metaconfirm.short_title = "confirm"
-        metaconfirm.index = len(steps)
         steps.append(c_step)
-        meta_steps.append(metaconfirm)
-        return Workflow(steps, meta_steps, repo)
+        return Workflow(steps, repo)
 
     def make_steps(self, step_types, repository):
         steps = []
@@ -157,13 +131,3 @@ class WorkflowFactory():
     def make_step(self, step_type, repository):
         iden = step_type.description + step_type.title + step_type.template
         return step_type(iden, repository)
-
-    def metaize(self, steps, wf_type):
-        meta_dict = []
-        for step in steps:
-            meta_step = MetaStep()
-            meta_step.short_title = step.short_title
-            meta_dict.append(meta_step)
-            step.metastep = meta_step
-
-        return meta_dict

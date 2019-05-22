@@ -41,11 +41,11 @@ class OPNFV_Resource_Select(WorkflowStep):
             bundle_json = form.cleaned_data['software_bundle']
             bundle_json = bundle_json[2:-2]  # Stupid django string bug
             if not bundle_json:
-                self.metastep.set_invalid("Please select a valid config")
+                self.set_invalid("Please select a valid config")
                 return self.render(request)
             bundle_json = json.loads(bundle_json)
             if len(bundle_json) < 1:
-                self.metastep.set_invalid("Please select a valid config")
+                self.set_invalid("Please select a valid config")
                 return self.render(request)
             bundle = None
             id = int(bundle_json[0]['id'])
@@ -53,11 +53,11 @@ class OPNFV_Resource_Select(WorkflowStep):
 
             models['configbundle'] = bundle
             self.repo_put(self.repo.OPNFV_MODELS, models)
-            self.metastep.set_valid("Step Completed")
+            self.set_valid("Step Completed")
             messages.add_message(request, messages.SUCCESS, 'Form Validated Successfully', fail_silently=True)
             self.update_confirmation()
         else:
-            self.metastep.set_invalid("Please select or create a valid config")
+            self.set_invalid("Please select or create a valid config")
             messages.add_message(request, messages.ERROR, "Form Didn't Validate", fail_silently=True)
 
         return self.render(request)
@@ -111,9 +111,9 @@ class Pick_Installer(WorkflowStep):
             models['scenario_chosen'] = scenario
             self.repo_put(self.repo.OPNFV_MODELS, models)
             self.update_confirmation()
-            self.metastep.set_valid("Step Completed")
+            self.set_valid("Step Completed")
         else:
-            self.metastep.set_invalid("Please select an Installer and Scenario")
+            self.set_invalid("Please select an Installer and Scenario")
 
         return self.render(request)
 
@@ -190,11 +190,11 @@ class Assign_Network_Roles(WorkflowStep):
                     "network": form.cleaned_data['network']
                 })
             models['network_roles'] = results
-            self.metastep.set_valid("Completed")
+            self.set_valid("Completed")
             self.repo_put(self.repo.OPNFV_MODELS, models)
             self.update_confirmation()
         else:
-            self.metastep.set_invalid("Please complete all fields")
+            self.set_invalid("Please complete all fields")
         return self.render(request)
 
 
@@ -276,11 +276,11 @@ class Assign_Host_Roles(WorkflowStep):  # taken verbatim from Define_Software in
             self.update_confirmation()
 
             if not has_jumphost:
-                self.metastep.set_invalid('Must have at least one "Jumphost" per POD')
+                self.set_invalid('Must have at least one "Jumphost" per POD')
             else:
-                self.metastep.set_valid("Completed")
+                self.set_valid("Completed")
         else:
-            self.metastep.set_invalid("Please complete all fields")
+            self.set_invalid("Please complete all fields")
 
         return self.render(request)
 
@@ -319,9 +319,9 @@ class MetaInfo(WorkflowStep):
             models['meta'] = info
             self.repo_put(self.repo.OPNFV_MODELS, models)
             self.update_confirmation()
-            self.metastep.set_valid("Complete")
+            self.set_valid("Complete")
         else:
-            self.metastep.set_invalid("Please correct the errors shown below")
+            self.set_invalid("Please correct the errors shown below")
 
         self.repo_put(self.repo.OPNFV_MODELS, models)
         return self.render(request)

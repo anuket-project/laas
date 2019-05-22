@@ -35,6 +35,16 @@ class SessionManager():
 
         self.factory = WorkflowFactory()
 
+    def set_step_statuses(self, superclass_type, desired_enabled=True):
+        workflow = self.active_workflow()
+        steps = workflow.steps
+        for step in steps:
+            if isinstance(step, superclass_type):
+                if desired_enabled:
+                    step.enable()
+                else:
+                    step.disable()
+
     def add_workflow(self, workflow_type=None, target_id=None, **kwargs):
         if target_id is not None:
             self.prefill_repo(target_id, workflow_type)
@@ -45,6 +55,7 @@ class SessionManager():
             repo.set_defaults(defaults)
             repo.el[repo.HAS_RESULT] = False
         repo.el[repo.SESSION_USER] = self.owner
+        repo.el[repo.SESSION_MANAGER] = self
         self.workflows.append(
             self.factory.create_workflow(
                 workflow_type=workflow_type,
@@ -65,11 +76,11 @@ class SessionManager():
 
     def status(self, request):
         try:
-            meta_steps = []
-            for step in self.active_workflow().metasteps:
-                meta_steps.append(step.to_json())
+            meta_json = []
+            for step in self.active_workflow().steps:
+                meta_json.append(step.to_json())
             responsejson = {}
-            responsejson["steps"] = meta_steps
+            responsejson["steps"] = meta_json
             responsejson["active"] = self.active_workflow().repository.el['active_step']
             responsejson["workflow_count"] = len(self.workflows)
             return JsonResponse(responsejson, safe=False)
@@ -86,10 +97,23 @@ class SessionManager():
     def post_render(self, request):
         return self.active_workflow().steps[self.active_workflow().active_index].post_render(request)
 
-    def goto(self, num, **kwargs):
-        self.active_workflow().repository.el['active_step'] = int(num)
-        self.active_workflow().active_index = int(num)
-        # TODO: change to include some checking
+    def go_next(self, **kwargs):
+        next_step = self.active_workflow().active_index + 1
+        if next_step >= len(self.active_workflow().steps):
+            raise Exception("Out of bounds request for step")
+        while not self.active_workflow().steps[next_step].enabled:
+            next_step += 1
+        self.active_workflow().repository.el['active_step'] = next_step
+        self.active_workflow().active_index = next_step
+
+    def go_prev(self, **kwargs):
+        prev_step = self.active_workflow().active_index - 1
+        if prev_step < 0:
+            raise Exception("Out of bounds request for step")
+        while not self.active_workflow().steps[prev_step].enabled:
+            prev_step -= 1
+        self.active_workflow().repository.el['active_step'] = prev_step
+        self.active_workflow().active_index = prev_step
 
     def prefill_repo(self, target_id, workflow_type):
         self.repository.el[self.repository.EDIT] = True
