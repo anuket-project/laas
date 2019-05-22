@@ -25,7 +25,7 @@
                     <h4 style="display: inline;">Overview</h4>
                     <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;">Expand</a>
                 </div>
-                <div class="panel-body" id="panel_overview">
+                <div class="panel-body collapse in" id="panel_overview">
                     <table class="table">
                         <tr>
                             <td>Purpose</td>
@@ -65,7 +65,7 @@
                             <h4 style="display: inline;">Pod</h4>
                             <a data-toggle="collapse" data-target="#pod_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
                         </div>
-                        <div class="panel-body pod_panel" id="pod_panel">
+                        <div class="panel-body pod_panel collapse in" id="pod_panel">
                             <table class="table">
                             {% for host in booking.resource.hosts.all %}
                             <tr>
@@ -184,7 +184,7 @@
                     <p style="display: inline; margin-left: 10px;">  These are the different tasks that have to be completed before your deployment is ready</p>
                    <a data-toggle="collapse" data-target="#panel_tasks" class="btn pull-right" style="line-height: 1;" >Expand</a>
                 </div>
-                <div class="panel-body" id="panel_tasks">
+                <div class="panel-body collapse in" id="panel_tasks">
                     <table class="table">
                         <style>
                             .progress {
@@ -275,7 +275,7 @@
                             <h4 style="display: inline;">PDF</h4>
                             <a data-toggle="collapse" data-target="#pdf_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
                         </div>
-                        <div class="panel-body" id="pdf_panel" style="padding: 0px;">
+                        <div class="panel-body collapse in" id="pdf_panel" style="padding: 0px;">
                             <pre class="prettyprint lang-yaml" style="margin: 0px; padding: 15px; border: none;">
 {{pdf}}
                             </pre>
