@@ -47,7 +47,7 @@ def quick_create(request):
 
         context['lab_profile_map'] = profiles
 
-        context['form'] = QuickBookingForm(initial={}, chosen_users=[], default_user=request.user.username, user=request.user)
+        context['form'] = QuickBookingForm(default_user=request.user.username, user=request.user)
 
         context.update(drop_filter(request.user))
 

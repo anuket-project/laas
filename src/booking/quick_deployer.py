@@ -12,7 +12,6 @@ import json
 import uuid
 import re
 from django.db.models import Q
-from django.contrib.auth.models import User
 from datetime import timedelta
 from django.utils import timezone
 from account.models import Lab
@@ -321,12 +320,8 @@ def create_from_form(form, request):
     )
     booking.pdf = PDFTemplater.makePDF(booking)
 
-    users_field = users_field[2:-2]
-    if users_field:  # may be empty after split, if no collaborators entered
-        users_field = json.loads(users_field)
-        for collaborator in users_field:
-            user = User.objects.get(id=collaborator['id'])
-            booking.collaborators.add(user)
+    for collaborator in users_field:  # list of UserProfiles
+        booking.collaborators.add(collaborator.user)
 
     booking.save()
 
