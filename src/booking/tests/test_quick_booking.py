@@ -13,60 +13,55 @@ from django.test import TestCase, Client
 
 from booking.models import Booking
 from dashboard.testing_utils import (
-    instantiate_host,
-    instantiate_user,
-    instantiate_userprofile,
-    instantiate_lab,
-    instantiate_installer,
-    instantiate_image,
-    instantiate_scenario,
-    instantiate_os,
-    make_hostprofile_set,
-    instantiate_opnfvrole,
-    instantiate_publicnet,
+    make_host,
+    make_user,
+    make_user_profile,
+    make_lab,
+    make_installer,
+    make_image,
+    make_scenario,
+    make_os,
+    make_complete_host_profile,
+    make_opnfv_role,
+    make_public_net,
 )
-# from dashboard import test_utils
 
 
 class QuickBookingValidFormTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.loginuser = instantiate_user(False, username="newtestuser", password="testpassword")
-        instantiate_userprofile(cls.loginuser, True)
+        cls.user = make_user(False, username="newtestuser", password="testpassword")
+        make_user_profile(cls.user, True)
 
-        lab_user = instantiate_user(True)
-        cls.lab = instantiate_lab(lab_user)
+        lab_user = make_user(True)
+        cls.lab = make_lab(lab_user)
 
-        cls.host_profile = make_hostprofile_set(cls.lab)
-        cls.scenario = instantiate_scenario()
-        cls.installer = instantiate_installer([cls.scenario])
-        os = instantiate_os([cls.installer])
-        cls.image = instantiate_image(cls.lab, 1, cls.loginuser, os, cls.host_profile)
-        cls.host = instantiate_host(cls.host_profile, cls.lab)
-        cls.role = instantiate_opnfvrole()
-        cls.pubnet = instantiate_publicnet(10, cls.lab)
-
-        cls.lab_selected = 'lab_' + str(cls.lab.lab_user.id) + '_selected'
-        cls.host_selected = 'host_' + str(cls.host_profile.id) + '_selected'
+        cls.host_profile = make_complete_host_profile(cls.lab)
+        cls.scenario = make_scenario()
+        cls.installer = make_installer([cls.scenario])
+        os = make_os([cls.installer])
+        cls.image = make_image(cls.lab, 1, cls.user, os, cls.host_profile)
+        cls.host = make_host(cls.host_profile, cls.lab)
+        cls.role = make_opnfv_role()
+        cls.pubnet = make_public_net(10, cls.lab)
 
         cls.post_data = cls.build_post_data()
-
         cls.client = Client()
 
     @classmethod
     def build_post_data(cls):
-        post_data = {}
-        post_data['filter_field'] = '{"hosts":[{"host_' + str(cls.host_profile.id) + '":"true"}], "labs": [{"lab_' + str(cls.lab.lab_user.id) + '":"true"}]}'
-        post_data['purpose'] = 'purposefieldcontentstring'
-        post_data['project'] = 'projectfieldcontentstring'
-        post_data['length'] = '3'
-        post_data['ignore_this'] = 1
-        post_data['users'] = ''
-        post_data['hostname'] = 'hostnamefieldcontentstring'
-        post_data['image'] = str(cls.image.id)
-        post_data['installer'] = str(cls.installer.id)
-        post_data['scenario'] = str(cls.scenario.id)
-        return post_data
+        return {
+            'filter_field': '{"hosts":[{"host_' + str(cls.host_profile.id) + '":"true"}], "labs": [{"lab_' + str(cls.lab.lab_user.id) + '":"true"}]}',
+            'purpose': 'my_purpose',
+            'project': 'my_project',
+            'length': '3',
+            'ignore_this': 1,
+            'users': '',
+            'hostname': 'my_host',
+            'image': str(cls.image.id),
+            'installer': str(cls.installer.id),
+            'scenario': str(cls.scenario.id)
+        }
 
     def post(self, changed_fields={}):
         payload = self.post_data.copy()
@@ -75,26 +70,26 @@ class QuickBookingValidFormTestCase(TestCase):
         return response
 
     def setUp(self):
-        self.client.login(
-            username=self.loginuser.username, password="testpassword")
+        self.client.login(username=self.user.username, password="testpassword")
 
-    def is_valid_booking(self, booking):
-        self.assertEqual(booking.owner, self.loginuser)
-        self.assertEqual(booking.purpose, 'purposefieldcontentstring')
-        self.assertEqual(booking.project, 'projectfieldcontentstring')
+    def assertValidBooking(self, booking):
+        self.assertEqual(booking.owner, self.user)
+        self.assertEqual(booking.purpose, 'my_purpose')
+        self.assertEqual(booking.project, 'my_project')
         delta = booking.end - booking.start
         delta -= datetime.timedelta(days=3)
         self.assertLess(delta, datetime.timedelta(minutes=1))
 
-        resourcebundle = booking.resource
-        configbundle = booking.config_bundle
+        resource_bundle = booking.resource
+        config_bundle = booking.config_bundle
 
-        self.assertEqual(self.installer, configbundle.opnfv_config.first().installer)
-        self.assertEqual(self.scenario, configbundle.opnfv_config.first().scenario)
-        self.assertEqual(resourcebundle.template.getHosts()[0].profile, self.host_profile)
-        self.assertEqual(resourcebundle.template.getHosts()[0].resource.name, 'hostnamefieldcontentstring')
+        opnfv_config = config_bundle.opnfv_config.first()
+        self.assertEqual(self.installer, opnfv_config.installer)
+        self.assertEqual(self.scenario, opnfv_config.scenario)
 
-        return True
+        host = resource_bundle.hosts.first()
+        self.assertEqual(host.profile, self.host_profile)
+        self.assertEqual(host.template.resource.name, 'my_host')
 
     def test_with_too_long_length(self):
         response = self.post({'length': '22'})
@@ -144,7 +139,7 @@ class QuickBookingValidFormTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         booking = Booking.objects.first()
         self.assertIsNotNone(booking)
-        self.assertTrue(self.is_valid_booking(booking))
+        self.assertValidBooking(booking)
 
     def test_with_valid_form(self):
         response = self.post()
@@ -152,4 +147,4 @@ class QuickBookingValidFormTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         booking = Booking.objects.first()
         self.assertIsNotNone(booking)
-        self.assertTrue(self.is_valid_booking(booking))
+        self.assertValidBooking(booking)

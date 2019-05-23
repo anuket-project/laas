@@ -7,19 +7,14 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-
-from datetime import timedelta
-from django.utils import timezone
-
-from booking.models import Booking
 from api.models import (
     Job,
     JobStatus,
     JobFactory,
-    AccessRelation,
     HostNetworkRelation,
     HostHardwareRelation,
     SoftwareRelation,
+    AccessConfig,
 )
 
 from resource_inventory.models import (
@@ -30,105 +25,122 @@ from resource_inventory.models import (
 from django.test import TestCase, Client
 
 from dashboard.testing_utils import (
-    instantiate_host,
-    instantiate_user,
-    instantiate_userprofile,
-    instantiate_lab,
-    instantiate_installer,
-    instantiate_image,
-    instantiate_scenario,
-    instantiate_os,
-    make_hostprofile_set,
-    instantiate_opnfvrole,
-    instantiate_publicnet,
-    instantiate_booking,
+    make_host,
+    make_user,
+    make_user_profile,
+    make_lab,
+    make_installer,
+    make_image,
+    make_scenario,
+    make_os,
+    make_complete_host_profile,
+    make_booking,
 )
 
 
 class ValidBookingCreatesValidJob(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.loginuser = instantiate_user(False, username="newtestuser", password="testpassword")
-        cls.userprofile = instantiate_userprofile(cls.loginuser)
+        cls.user = make_user(False, username="newtestuser", password="testpassword")
+        cls.userprofile = make_user_profile(cls.user)
+        cls.lab = make_lab()
 
-        lab_user = instantiate_user(True)
-        cls.lab = instantiate_lab(lab_user)
-
-        cls.host_profile = make_hostprofile_set(cls.lab)
-        cls.scenario = instantiate_scenario()
-        cls.installer = instantiate_installer([cls.scenario])
-        os = instantiate_os([cls.installer])
-        cls.image = instantiate_image(cls.lab, 1, cls.loginuser, os, cls.host_profile)
+        cls.host_profile = make_complete_host_profile(cls.lab)
+        cls.scenario = make_scenario()
+        cls.installer = make_installer([cls.scenario])
+        os = make_os([cls.installer])
+        cls.image = make_image(cls.lab, 1, cls.user, os, cls.host_profile)
         for i in range(30):
-            instantiate_host(cls.host_profile, cls.lab, name="host" + str(i), labid="host" + str(i))
-        cls.role = instantiate_opnfvrole("Jumphost")
-        cls.computerole = instantiate_opnfvrole("Compute")
-        instantiate_publicnet(10, cls.lab)
-        instantiate_publicnet(12, cls.lab)
-        instantiate_publicnet(14, cls.lab)
-
-        cls.lab_selected = 'lab_' + str(cls.lab.lab_user.id) + '_selected'
-        cls.host_selected = 'host_' + str(cls.host_profile.id) + '_selected'
-
-        cls.post_data = cls.build_post_data()
-
+            make_host(cls.host_profile, cls.lab, name="host" + str(i), labid="host" + str(i))
         cls.client = Client()
 
     def setUp(self):
-        self.client.login(
-            username=self.loginuser.username, password="testpassword")
         self.booking, self.compute_hostnames, self.jump_hostname = self.create_multinode_generic_booking()
 
-    @classmethod
-    def build_post_data(cls):
-        post_data = {}
-        post_data['filter_field'] = '{"hosts":[{"host_' + str(cls.host_profile.id) + '":"true"}], "labs": [{"lab_' + str(cls.lab.lab_user.id) + '":"true"}]}'
-        post_data['purpose'] = 'purposefieldcontentstring'
-        post_data['project'] = 'projectfieldcontentstring'
-        post_data['length'] = '3'
-        post_data['ignore_this'] = 1
-        post_data['users'] = ''
-        post_data['hostname'] = 'hostnamefieldcontentstring'
-        post_data['image'] = str(cls.image.id)
-        post_data['installer'] = str(cls.installer.id)
-        post_data['scenario'] = str(cls.scenario.id)
-        return post_data
+    def create_multinode_generic_booking(self):
+        topology = {}
 
-    def post(self, changed_fields={}):
-        payload = self.post_data.copy()
-        payload.update(changed_fields)
-        response = self.client.post('/booking/quick/', payload)
-        return response
+        compute_hostnames = ["cmp01", "cmp02", "cmp03"]
 
-    def generate_booking(self):
-        self.post()
-        return Booking.objects.first()
+        host_type = HostProfile.objects.first()
+
+        universal_networks = [
+            {"name": "public", "tagged": False, "public": True},
+            {"name": "admin", "tagged": True, "public": False}]
+        compute_networks = [{"name": "private", "tagged": True, "public": False}]
+        jumphost_networks = [{"name": "external", "tagged": True, "public": True}]
+
+        # generate a bunch of extra networks
+        for i in range(10):
+            net = {"tagged": False, "public": False}
+            net["name"] = "net" + str(i)
+            universal_networks.append(net)
+
+        jumphost_info = {
+            "type": host_type,
+            "role": OPNFVRole.objects.get_or_create(name="Jumphost")[0],
+            "nets": self.make_networks(host_type, jumphost_networks + universal_networks),
+            "image": self.image
+        }
+        topology["jump"] = jumphost_info
+
+        for hostname in compute_hostnames:
+            host_info = {
+                "type": host_type,
+                "role": OPNFVRole.objects.get_or_create(name="Compute")[0],
+                "nets": self.make_networks(host_type, compute_networks + universal_networks),
+                "image": self.image
+            }
+            topology[hostname] = host_info
+
+        booking = make_booking(
+            owner=self.user,
+            lab=self.lab,
+            topology=topology,
+            installer=self.installer,
+            scenario=self.scenario
+        )
+
+        if not booking.resource:
+            raise Exception("Booking does not have a resource when trying to pass to makeCompleteJob")
+        JobFactory.makeCompleteJob(booking)
+
+        return booking, compute_hostnames, "jump"
+
+    def make_networks(self, hostprofile, nets):
+        """
+        distributes nets accross hostprofile's interfaces
+        returns a 2D array
+        """
+        network_struct = []
+        count = hostprofile.interfaceprofile.all().count()
+        for i in range(count):
+            network_struct.append([])
+        while(nets):
+            index = len(nets) % count
+            network_struct[index].append(nets.pop())
+
+        return network_struct
+
+    # begin tests
 
     def test_valid_access_configs(self):
         job = Job.objects.get(booking=self.booking)
         self.assertIsNotNone(job)
 
-        access_configs = [r.config for r in AccessRelation.objects.filter(job=job).all()]
+        access_configs = AccessConfig.objects.filter(accessrelation__job=job)
 
-        vpnconfigs = []
-        sshconfigs = []
+        vpn_configs = access_configs.filter(access_type="vpn")
+        ssh_configs = access_configs.filter(access_type="ssh")
 
-        for config in access_configs:
-            if config.access_type == "vpn":
-                vpnconfigs.append(config)
-            elif config.access_type == "ssh":
-                sshconfigs.append(config)
-            else:
-                self.fail(msg="Undefined accessconfig: " + config.access_type + " found")
+        self.assertFalse(AccessConfig.objects.exclude(access_type__in=["vpn", "ssh"]).exists())
 
-        user_set = []
-        user_set.append(self.booking.owner)
-        user_set += self.booking.collaborators.all()
+        all_users = list(self.booking.collaborators.all())
+        all_users.append(self.booking.owner)
 
-        for configs in [vpnconfigs, sshconfigs]:
-            for user in user_set:
-                configusers = [c.user for c in configs]
-                self.assertTrue(user in configusers)
+        for user in all_users:
+            self.assertTrue(vpn_configs.filter(user=user).exists())
+            self.assertTrue(ssh_configs.filter(user=user).exists())
 
     def test_valid_network_configs(self):
         job = Job.objects.get(booking=self.booking)
@@ -136,12 +148,12 @@ class ValidBookingCreatesValidJob(TestCase):
 
         booking_hosts = self.booking.resource.hosts.all()
 
-        netrelation_set = HostNetworkRelation.objects.filter(job=job)
-        netconfig_set = [r.config for r in netrelation_set]
+        netrelations = HostNetworkRelation.objects.filter(job=job)
+        netconfigs = [r.config for r in netrelations]
 
-        netrelation_hosts = [r.host for r in netrelation_set]
+        netrelation_hosts = [r.host for r in netrelations]
 
-        for config in netconfig_set:
+        for config in netconfigs:
             for interface in config.interfaces.all():
                 self.assertTrue(interface.host in booking_hosts)
 
@@ -172,15 +184,15 @@ class ValidBookingCreatesValidJob(TestCase):
         job = Job.objects.get(booking=self.booking)
         self.assertIsNotNone(job)
 
-        hrelations = HostHardwareRelation.objects.filter(job=job).all()
+        hardware_relations = HostHardwareRelation.objects.filter(job=job)
 
-        job_hosts = [r.host for r in hrelations]
+        job_hosts = [r.host for r in hardware_relations]
 
         booking_hosts = self.booking.resource.hosts.all()
 
         self.assertEqual(len(booking_hosts), len(job_hosts))
 
-        for relation in hrelations:
+        for relation in hardware_relations:
             self.assertTrue(relation.host in booking_hosts)
             self.assertEqual(relation.status, JobStatus.NEW)
             config = relation.config
@@ -213,66 +225,3 @@ class ValidBookingCreatesValidJob(TestCase):
                 self.assertTrue(host.template.resource.name in self.compute_hostnames)
             else:
                 self.fail(msg="Host with non-configured role name related to job: " + str(role_name))
-
-    def create_multinode_generic_booking(self):
-        topology = {}
-
-        compute_hostnames = ["cmp01", "cmp02", "cmp03"]
-
-        host_type = HostProfile.objects.first()
-
-        universal_networks = [
-            {"name": "public", "tagged": False, "public": True},
-            {"name": "admin", "tagged": True, "public": False}]
-        just_compute_networks = [{"name": "private", "tagged": True, "public": False}]
-        just_jumphost_networks = [{"name": "external", "tagged": True, "public": True}]
-
-        # generate a bunch of extra networks
-        for i in range(10):
-            net = {"tagged": False, "public": False}
-            net["name"] = "u_net" + str(i)
-            universal_networks.append(net)
-
-        jhost_info = {}
-        jhost_info["type"] = host_type
-        jhost_info["role"] = OPNFVRole.objects.get(name="Jumphost")
-        jhost_info["nets"] = self.make_networks(host_type, list(just_jumphost_networks + universal_networks))
-        jhost_info["image"] = self.image
-        topology["jump"] = jhost_info
-
-        for hostname in compute_hostnames:
-            host_info = {}
-            host_info["type"] = host_type
-            host_info["role"] = OPNFVRole.objects.get(name="Compute")
-            host_info["nets"] = self.make_networks(host_type, list(just_compute_networks + universal_networks))
-            host_info["image"] = self.image
-            topology[hostname] = host_info
-
-        booking = instantiate_booking(self.loginuser,
-                                      timezone.now(),
-                                      timezone.now() + timedelta(days=1),
-                                      "demobooking",
-                                      self.lab,
-                                      topology=topology,
-                                      installer=self.installer,
-                                      scenario=self.scenario)
-
-        if not booking.resource:
-            raise Exception("Booking does not have a resource when trying to pass to makeCompleteJob")
-        JobFactory.makeCompleteJob(booking)
-
-        return booking, compute_hostnames, "jump"
-
-    """
-    evenly distributes networks given across a given profile's interfaces
-    """
-    def make_networks(self, hostprofile, nets):
-        network_struct = []
-        count = hostprofile.interfaceprofile.all().count()
-        for i in range(count):
-            network_struct.append([])
-        while(nets):
-            index = len(nets) % count
-            network_struct[index].append(nets.pop())
-
-        return network_struct
