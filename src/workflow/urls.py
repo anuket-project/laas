@@ -14,7 +14,7 @@ from django.conf import settings
 from workflow.views import step_view, delete_session, manager_view, viewport_view
 from workflow.models import Repository
 from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
-from workflow.booking_workflow import SWConfig_Select, Resource_Select, Booking_Meta
+from workflow.booking_workflow import SWConfig_Select, Booking_Resource_Select, Booking_Meta
 
 app_name = 'workflow'
 urlpatterns = [
@@ -31,4 +31,4 @@ if settings.TESTING:
     urlpatterns.append(url(r'^workflow/step/resource_meta$', Resource_Meta_Info("", Repository()).test_render))
     urlpatterns.append(url(r'^workflow/step/booking_meta$', Booking_Meta("", Repository()).test_render))
     urlpatterns.append(url(r'^workflow/step/software_select$', SWConfig_Select("", Repository()).test_render))
-    urlpatterns.append(url(r'^workflow/step/resource_select$', Resource_Select("", Repository()).test_render))
+    urlpatterns.append(url(r'^workflow/step/resource_select$', Booking_Resource_Select("", Repository()).test_render))

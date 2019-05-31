@@ -10,12 +10,13 @@ import django.forms as forms
 from django.forms.widgets import NumberInput
 
 from workflow.forms import (
-    SearchableSelectMultipleWidget,
     MultipleSelectFilterField,
     MultipleSelectFilterWidget,
     FormUtils)
 from account.models import UserProfile
 from resource_inventory.models import Image, Installer, Scenario
+from workflow.forms import SearchableSelectMultipleField
+from booking.lib import get_user_items, get_user_field_opts
 
 
 class QuickBookingForm(forms.Form):
@@ -27,16 +28,11 @@ class QuickBookingForm(forms.Form):
     scenario = forms.ModelChoiceField(queryset=Scenario.objects.all(), required=False)
 
     def __init__(self, data=None, user=None, *args, **kwargs):
-        chosen_users = []
         if "default_user" in kwargs:
             default_user = kwargs.pop("default_user")
         else:
             default_user = "you"
         self.default_user = default_user
-        if "chosen_users" in kwargs:
-            chosen_users = kwargs.pop("chosen_users")
-        elif data and "users" in data:
-            chosen_users = data.getlist("users")
 
         super(QuickBookingForm, self).__init__(data=data, **kwargs)
 
@@ -44,12 +40,13 @@ class QuickBookingForm(forms.Form):
             Image.objects.filter(public=True) | Image.objects.filter(owner=user)
         )
 
-        self.fields['users'] = forms.CharField(
-            widget=SearchableSelectMultipleWidget(
-                attrs=self.build_search_widget_attrs(chosen_users, default_user=default_user)
-            ),
-            required=False
+        self.fields['users'] = SearchableSelectMultipleField(
+            queryset=UserProfile.objects.select_related('user').exclude(user=user),
+            items=get_user_items(exclude=user),
+            required=False,
+            **get_user_field_opts()
         )
+
         attrs = FormUtils.getLabData(0)
         attrs['selection_data'] = 'false'
         self.fields['filter_field'] = MultipleSelectFilterField(widget=MultipleSelectFilterWidget(attrs=attrs))

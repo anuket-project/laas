@@ -9,40 +9,37 @@
 
 
 import django.forms as forms
-from django.forms import widgets
+from django.forms import widgets, ValidationError
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from django.forms.widgets import NumberInput
 
+import json
+
 from account.models import Lab
 from account.models import UserProfile
 from resource_inventory.models import (
-    GenericResourceBundle,
-    ConfigBundle,
     OPNFVRole,
     Installer,
     Scenario,
 )
+from booking.lib import get_user_items, get_user_field_opts
 
 
 class SearchableSelectMultipleWidget(widgets.SelectMultiple):
     template_name = 'dashboard/searchable_select_multiple.html'
 
     def __init__(self, attrs=None):
-        self.items = attrs['set']
+        self.items = attrs['items']
         self.show_from_noentry = attrs['show_from_noentry']
         self.show_x_results = attrs['show_x_results']
-        self.results_scrollable = attrs['scrollable']
+        self.results_scrollable = attrs['results_scrollable']
         self.selectable_limit = attrs['selectable_limit']
         self.placeholder = attrs['placeholder']
         self.name = attrs['name']
-        self.initial = attrs.get("initial", "")
-        self.default_entry = attrs.get("default_entry", "")
-        self.edit = attrs.get("edit", False)
-        self.wf_type = attrs.get("wf_type")
-        self.incompatible = attrs.get("incompatible", "false")
+        self.initial = attrs.get("initial", [])
 
-        super(SearchableSelectMultipleWidget, self).__init__(attrs)
+        super(SearchableSelectMultipleWidget, self).__init__()
 
     def render(self, name, value, attrs=None, renderer=None):
 
@@ -59,132 +56,145 @@ class SearchableSelectMultipleWidget(widgets.SelectMultiple):
             'selectable_limit': self.selectable_limit,
             'placeholder': self.placeholder,
             'initial': self.initial,
-            'default_entry': self.default_entry,
-            'edit': self.edit,
-            'wf_type': self.wf_type,
-            'incompatible': self.incompatible
         }
 
 
-class ResourceSelectorForm(forms.Form):
+class SearchableSelectMultipleField(forms.Field):
+    def __init__(self, *args, required=True, widget=None, label=None, disabled=False,
+                 items=None, queryset=None, show_from_noentry=True, show_x_results=-1,
+                 results_scrollable=False, selectable_limit=-1, placeholder="search here",
+                 name="searchable_select", initial=[], **kwargs):
+        """from the documentation:
+        # required -- Boolean that specifies whether the field is required.
+        #             True by default.
+        # widget -- A Widget class, or instance of a Widget class, that should
+        #           be used for this Field when displaying it. Each Field has a
+        #           default Widget that it'll use if you don't specify this. In
+        #           most cases, the default widget is TextInput.
+        # label -- A verbose name for this field, for use in displaying this
+        #          field in a form. By default, Django will use a "pretty"
+        #          version of the form field name, if the Field is part of a
+        #          Form.
+        # initial -- A value to use in this Field's initial display. This value
+        #            is *not* used as a fallback if data isn't given.
+        # help_text -- An optional string to use as "help text" for this Field.
+        # error_messages -- An optional dictionary to override the default
+        #                   messages that the field will raise.
+        # show_hidden_initial -- Boolean that specifies if it is needed to render a
+        #                        hidden widget with initial value after widget.
+        # validators -- List of additional validators to use
+        # localize -- Boolean that specifies if the field should be localized.
+        # disabled -- Boolean that specifies whether the field is disabled, that
+        #             is its widget is shown in the form but not editable.
+        # label_suffix -- Suffix to be added to the label. Overrides
+        #                 form's label_suffix.
+        """
 
-    def __init__(self, data=None, **kwargs):
-        chosen_resource = ""
-        bundle = None
-        edit = False
-        if "chosen_resource" in kwargs:
-            chosen_resource = kwargs.pop("chosen_resource")
-        if "bundle" in kwargs:
-            bundle = kwargs.pop("bundle")
-        if "edit" in kwargs:
-            edit = kwargs.pop("edit")
-        super(ResourceSelectorForm, self).__init__(data=data, **kwargs)
-        queryset = GenericResourceBundle.objects.select_related("owner").all()
-        if data and 'user' in data:
-            queryset = queryset.filter(owner=data['user'])
+        self.widget = widget
+        if self.widget is None:
+            self.widget = SearchableSelectMultipleWidget(
+                attrs={
+                    'items': items,
+                    'initial': [obj.id for obj in initial],
+                    'show_from_noentry': show_from_noentry,
+                    'show_x_results': show_x_results,
+                    'results_scrollable': results_scrollable,
+                    'selectable_limit': selectable_limit,
+                    'placeholder': placeholder,
+                    'name': name,
+                    'disabled': disabled
+                }
+            )
+        self.disabled = disabled
+        self.queryset = queryset
+        self.selectable_limit = selectable_limit
 
-        attrs = self.build_search_widget_attrs(chosen_resource, bundle, edit, queryset)
+        super().__init__(disabled=disabled, **kwargs)
 
-        self.fields['generic_resource_bundle'] = forms.CharField(
-            widget=SearchableSelectMultipleWidget(attrs=attrs)
-        )
+        self.required = required
 
-    def build_search_widget_attrs(self, chosen_resource, bundle, edit, queryset):
-        resources = {}
-        for res in queryset:
-            displayable = {}
-            displayable['small_name'] = res.name
-            if res.owner:
-                displayable['expanded_name'] = res.owner.username
+    def clean(self, data):
+        data = data[0]
+        if not data:
+            if self.required:
+                raise ValidationError("Nothing was selected")
             else:
-                displayable['expanded_name'] = ""
-            displayable['string'] = res.description
-            displayable['id'] = res.id
-            resources[res.id] = displayable
+                return []
+        data_as_list = json.loads(data)
+        if self.selectable_limit != -1:
+            if len(data_as_list) > self.selectable_limit:
+                raise ValidationError("Too many items were selected")
 
-        attrs = {
-            'set': resources,
-            'show_from_noentry': "true",
-            'show_x_results': -1,
-            'scrollable': "true",
-            'selectable_limit': 1,
-            'name': "generic_resource_bundle",
-            'placeholder': "resource",
-            'initial': chosen_resource,
-            'edit': edit,
-            'wf_type': 1
-        }
-        return attrs
+        items = []
+        for elem in data_as_list:
+            items.append(self.queryset.get(id=elem))
+
+        return items
 
 
-class SWConfigSelectorForm(forms.Form):
+class SearchableSelectAbstractForm(forms.Form):
+    def __init__(self, *args, queryset=None, initial=[], **kwargs):
+        self.queryset = queryset
+        items = self.generate_items(self.queryset)
+        options = self.generate_options()
 
-    def __init__(self, *args, **kwargs):
-        chosen_software = ""
-        bundle = None
-        edit = False
-        resource = None
-        user = None
-        if "chosen_software" in kwargs:
-            chosen_software = kwargs.pop("chosen_software")
-
-        if "bundle" in kwargs:
-            bundle = kwargs.pop("bundle")
-        if "edit" in kwargs:
-            edit = kwargs.pop("edit")
-        if "resource" in kwargs:
-            resource = kwargs.pop("resource")
-        if "user" in kwargs:
-            user = kwargs.pop("user")
-        super(SWConfigSelectorForm, self).__init__(*args, **kwargs)
-        attrs = self.build_search_widget_attrs(chosen_software, bundle, edit, resource, user)
-        self.fields['software_bundle'] = forms.CharField(
-            widget=SearchableSelectMultipleWidget(attrs=attrs)
+        super(SearchableSelectAbstractForm, self).__init__(*args, **kwargs)
+        self.fields['searchable_select'] = SearchableSelectMultipleField(
+            initial=initial,
+            items=items,
+            queryset=self.queryset,
+            **options
         )
 
-    def build_search_widget_attrs(self, chosen, bundle, edit, resource, user):
-        configs = {}
-        queryset = ConfigBundle.objects.select_related('owner').all()
-        if resource:
-            if user is None:
-                user = resource.owner
-            queryset = queryset.filter(bundle=resource)
+    def get_validated_bundle(self):
+        bundles = self.cleaned_data['searchable_select']
+        if len(bundles) < 1:  # don't need to check for >1, as field does that for us
+            raise ValidationError("No bundle was selected")
+        return bundles[0]
 
-        if user:
-            queryset = queryset.filter(owner=user)
+    def generate_items(self, queryset):
+        raise Exception("SearchableSelectAbstractForm does not implement concrete generate_items()")
 
-        for config in queryset:
-            displayable = {}
-            displayable['small_name'] = config.name
-            displayable['expanded_name'] = config.owner.username
-            displayable['string'] = config.description
-            displayable['id'] = config.id
-            configs[config.id] = displayable
-
-        incompatible_choice = "false"
-        if bundle and bundle.id not in configs:
-            displayable = {}
-            displayable['small_name'] = bundle.name
-            displayable['expanded_name'] = bundle.owner.username
-            displayable['string'] = bundle.description
-            displayable['id'] = bundle.id
-            configs[bundle.id] = displayable
-            incompatible_choice = "true"
-
-        attrs = {
-            'set': configs,
-            'show_from_noentry': "true",
+    def generate_options(self, disabled=False):
+        return {
+            'show_from_noentry': True,
             'show_x_results': -1,
-            'scrollable': "true",
+            'results_scrollable': True,
             'selectable_limit': 1,
-            'name': "software_bundle",
-            'placeholder': "config",
-            'initial': chosen,
-            'edit': edit,
-            'wf_type': 2,
-            'incompatible': incompatible_choice
+            'placeholder': 'Search for a Bundle',
+            'name': 'searchable_select',
+            'disabled': False
         }
-        return attrs
+
+
+class SWConfigSelectorForm(SearchableSelectAbstractForm):
+    def generate_items(self, queryset):
+        items = {}
+
+        for bundle in queryset:
+            item = {}
+            item['small_name'] = bundle.name
+            item['expanded_name'] = bundle.owner.username
+            item['string'] = bundle.description
+            item['id'] = bundle.id
+            items[bundle.id] = item
+
+        return items
+
+
+class ResourceSelectorForm(SearchableSelectAbstractForm):
+    def generate_items(self, queryset):
+        items = {}
+
+        for bundle in queryset:
+            item = {}
+            item['small_name'] = bundle.name
+            item['expanded_name'] = bundle.owner.username
+            item['string'] = bundle.description
+            item['id'] = bundle.id
+            items[bundle.id] = item
+
+        return items
 
 
 class BookingMetaForm(forms.Form):
@@ -203,65 +213,16 @@ class BookingMetaForm(forms.Form):
     project = forms.CharField(max_length=400)
     info_file = forms.CharField(max_length=1000, required=False)
 
-    def __init__(self, data=None, *args, **kwargs):
-        chosen_users = []
-        if "default_user" in kwargs:
-            default_user = kwargs.pop("default_user")
-        else:
-            default_user = "you"
-        self.default_user = default_user
-        if "chosen_users" in kwargs:
-            chosen_users = kwargs.pop("chosen_users")
-        elif data and "users" in data:
-            chosen_users = data.getlist("users")
-        else:
-            pass
+    def __init__(self, *args, user_initial=[], owner=None, **kwargs):
+        super(BookingMetaForm, self).__init__(**kwargs)
 
-        super(BookingMetaForm, self).__init__(data=data, **kwargs)
-
-        self.fields['users'] = forms.CharField(
-            widget=SearchableSelectMultipleWidget(
-                attrs=self.build_search_widget_attrs(chosen_users, default_user=default_user)
-            ),
-            required=False
+        self.fields['users'] = SearchableSelectMultipleField(
+            queryset=UserProfile.objects.select_related('user').exclude(user=owner),
+            initial=user_initial,
+            items=get_user_items(exclude=owner),
+            required=False,
+            **get_user_field_opts()
         )
-
-    def build_user_list(self):
-        """
-        returns a mapping of UserProfile ids to displayable objects expected by
-        searchable multiple select widget
-        """
-        try:
-            users = {}
-            d_qset = UserProfile.objects.select_related('user').all().exclude(user__username=self.default_user)
-            for userprofile in d_qset:
-                user = {
-                    'id': userprofile.user.id,
-                    'expanded_name': userprofile.full_name,
-                    'small_name': userprofile.user.username,
-                    'string': userprofile.email_addr
-                }
-
-                users[userprofile.user.id] = user
-
-            return users
-        except Exception:
-            pass
-
-    def build_search_widget_attrs(self, chosen_users, default_user="you"):
-
-        attrs = {
-            'set': self.build_user_list(),
-            'show_from_noentry': "false",
-            'show_x_results': 10,
-            'scrollable': "false",
-            'selectable_limit': -1,
-            'name': "users",
-            'placeholder': "username",
-            'initial': chosen_users,
-            'edit': False
-        }
-        return attrs
 
 
 class MultipleSelectFilterWidget(forms.Widget):
@@ -298,7 +259,7 @@ class MultipleSelectFilterField(forms.Field):
         #          Form.
         # initial -- A value to use in this Field's initial display. This value
         #            is *not* used as a fallback if data isn't given.
-        # help_text -- An optional string to use as "help text" for this Field.
+        # help_text -- An optional string to use as "help; text" for this Field.
         # error_messages -- An optional dictionary to override the default
         #                   messages that the field will raise.
         # show_hidden_initial -- Boolean that specifies if it is needed to render a

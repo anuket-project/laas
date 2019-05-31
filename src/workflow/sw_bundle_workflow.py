@@ -12,25 +12,12 @@ from django.forms import formset_factory
 
 from workflow.models import WorkflowStep
 from workflow.forms import BasicMetaForm, HostSoftwareDefinitionForm
-from workflow.booking_workflow import Resource_Select
+from workflow.booking_workflow import Abstract_Resource_Select
 from resource_inventory.models import Image, GenericHost, ConfigBundle, HostConfiguration
 
 
-# resource selection step is reused from Booking workflow
-class SWConf_Resource_Select(Resource_Select):
-    def __init__(self, *args, **kwargs):
-        super(SWConf_Resource_Select, self).__init__(*args, **kwargs)
-        self.repo_key = self.repo.SELECTED_GRESOURCE_BUNDLE
-        self.confirm_key = "configuration"
-
-    def post_render(self, request):
-        response = super(SWConf_Resource_Select, self).post_render(request)
-        models = self.repo_get(self.repo.CONFIG_MODELS, {})
-        bundle = models.get("bundle", ConfigBundle(owner=self.repo_get(self.repo.SESSION_USER)))
-        bundle.bundle = self.repo_get(self.repo_key)  # super put grb here
-        models['bundle'] = bundle
-        self.repo_put(self.repo.CONFIG_MODELS, models)
-        return response
+class SWConf_Resource_Select(Abstract_Resource_Select):
+    workflow_type = "configuration"
 
 
 class Define_Software(WorkflowStep):

@@ -240,6 +240,67 @@ class WorkflowStep(object):
         return self.repo.put(key, value, self.id)
 
 
+"""
+subclassing notes:
+    subclasses have to define the following class attributes:
+        self.select_repo_key: where the selected "object" or "bundle" is to be placed in the repo
+        self.form: the form to be used
+        alert_bundle_missing(): what message to display if a user does not select/selects an invalid object
+        get_form_queryset(): generate a queryset to be used to filter available items for the field
+        get_page_context(): return simple context such as page header and other info
+"""
+
+
+class AbstractSelectOrCreate(WorkflowStep):
+    template = 'dashboard/genericselect.html'
+    title = "Select a Bundle"
+    short_title = "select"
+    description = "Generic bundle selector step"
+
+    select_repo_key = None
+    form = None  # subclasses are expected to use a form that is a subclass of SearchableSelectGenericForm
+
+    def alert_bundle_missing(self):  # override in subclasses to change message if field isn't filled out
+        self.set_invalid("Please select a valid bundle")
+
+    def post_render(self, request):
+        context = self.get_context()
+        form = self.form(request.POST, queryset=self.get_form_queryset())
+        if form.is_valid():
+            bundle = form.get_validated_bundle()
+            if not bundle:
+                self.alert_bundle_missing()
+                return render(request, self.template, context)
+            self.repo_put(self.select_repo_key, bundle)
+            self.put_confirm_info(bundle)
+            self.set_valid("Step Completed")
+        else:
+            self.alert_bundle_missing()
+            messages.add_message(request, messages.ERROR, "Form Didn't Validate", fail_silently=True)
+
+        return self.render(request)
+
+    def get_context(self):
+        default = []
+
+        bundle = self.repo_get(self.select_repo_key, False)
+        if bundle:
+            default.append(bundle)
+
+        form = self.form(queryset=self.get_form_queryset(), initial=default)
+
+        context = {'form': form, **self.get_page_context()}
+        context.update(super().get_context())
+
+        return context
+
+    def get_page_context():
+        return {
+            'select_type': 'generic',
+            'select_type_title': 'Generic Bundle'
+        }
+
+
 class Confirmation_Step(WorkflowStep):
     template = 'workflow/confirm.html'
     title = "Confirm Changes"
@@ -335,6 +396,7 @@ class Repository():
             self.el[key] = value
 
     def get(self, key, default, id):
+
         self.add_get_history(key, id)
         return self.el.get(key, default)
 
@@ -359,6 +421,7 @@ class Repository():
             errors = self.make_snapshot()
             if errors:
                 return errors
+
         # if GRB WF, create it
         if self.GRESOURCE_BUNDLE_MODELS in self.el:
             errors = self.make_generic_resource_bundle()
@@ -499,7 +562,7 @@ class Repository():
         models = self.el[self.CONFIG_MODELS]
         if 'bundle' in models:
             bundle = models['bundle']
-            bundle.bundle = bundle.bundle
+            bundle.bundle = self.el[self.SELECTED_GRESOURCE_BUNDLE]
             try:
                 bundle.save()
             except Exception as e:
@@ -537,15 +600,22 @@ class Repository():
         models = self.el[self.BOOKING_MODELS]
         owner = self.el[self.SESSION_USER]
 
+        if 'booking' in models:
+            booking = models['booking']
+        else:
+            return "BOOK, no booking model exists. CODE:0x000f"
+
+        selected_grb = None
+
         if self.SELECTED_GRESOURCE_BUNDLE in self.el:
             selected_grb = self.el[self.SELECTED_GRESOURCE_BUNDLE]
         else:
             return "BOOK, no selected resource. CODE:0x000e"
 
-        if 'booking' in models:
-            booking = models['booking']
-        else:
-            return "BOOK, no booking model exists. CODE:0x000f"
+        if self.SELECTED_CONFIG_BUNDLE not in self.el:
+            return "BOOK, no selected config bundle. CODE:0x001f"
+
+        booking.config_bundle = self.el[self.SELECTED_CONFIG_BUNDLE]
 
         if not booking.start:
             return "BOOK, booking has no start. CODE:0x0010"
@@ -567,7 +637,6 @@ class Repository():
 
         booking.resource = resource_bundle
         booking.owner = owner
-        booking.config_bundle = booking.config_bundle
         booking.lab = selected_grb.lab
 
         is_allowed = BookingAuthManager().booking_allowed(booking, self)
