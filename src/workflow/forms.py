@@ -172,12 +172,27 @@ class SWConfigSelectorForm(SearchableSelectAbstractForm):
         items = {}
 
         for bundle in queryset:
-            item = {}
-            item['small_name'] = bundle.name
-            item['expanded_name'] = bundle.owner.username
-            item['string'] = bundle.description
-            item['id'] = bundle.id
-            items[bundle.id] = item
+            items[bundle.id] = {
+                'small_name': bundle.name,
+                'expanded_name': bundle.owner.username,
+                'string': bundle.description,
+                'id': bundle.id
+            }
+
+        return items
+
+
+class OPNFVSelectForm(SearchableSelectAbstractForm):
+    def generate_items(self, queryset):
+        items = {}
+
+        for config in queryset:
+            items[config.id] = {
+                'small_name': config.name,
+                'expanded_name': config.bundle.owner.username,
+                'string': config.description,
+                'id': config.id
+            }
 
         return items
 
@@ -187,12 +202,12 @@ class ResourceSelectorForm(SearchableSelectAbstractForm):
         items = {}
 
         for bundle in queryset:
-            item = {}
-            item['small_name'] = bundle.name
-            item['expanded_name'] = bundle.owner.username
-            item['string'] = bundle.description
-            item['id'] = bundle.id
-            items[bundle.id] = item
+            items[bundle.id] = {
+                'small_name': bundle.name,
+                'expanded_name': bundle.owner.username,
+                'string': bundle.description,
+                'id': bundle.id
+            }
 
         return items
 
@@ -212,6 +227,7 @@ class BookingMetaForm(forms.Form):
     purpose = forms.CharField(max_length=1000)
     project = forms.CharField(max_length=400)
     info_file = forms.CharField(max_length=1000, required=False)
+    deploy_opnfv = forms.BooleanField(required=False)
 
     def __init__(self, *args, user_initial=[], owner=None, **kwargs):
         super(BookingMetaForm, self).__init__(**kwargs)

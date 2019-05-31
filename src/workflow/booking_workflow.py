@@ -14,8 +14,8 @@ from datetime import timedelta
 
 from booking.models import Booking
 from workflow.models import WorkflowStep, AbstractSelectOrCreate
-from workflow.forms import ResourceSelectorForm, SWConfigSelectorForm, BookingMetaForm
-from resource_inventory.models import GenericResourceBundle, ConfigBundle
+from workflow.forms import ResourceSelectorForm, SWConfigSelectorForm, BookingMetaForm, OPNFVSelectForm
+from resource_inventory.models import GenericResourceBundle, ConfigBundle, OPNFVConfig
 
 
 """
@@ -101,6 +101,45 @@ class SWConfig_Select(AbstractSelectOrCreate):
         }
 
 
+class OPNFV_EnablePicker(object):
+    pass
+
+
+class OPNFV_Select(AbstractSelectOrCreate, OPNFV_EnablePicker):
+    title = "Choose an OPNFV Config"
+    description = "Choose or create a description of how you want to deploy OPNFV"
+    short_title = "opnfv config"
+    form = OPNFVSelectForm
+    enabled = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.select_repo_key = self.repo.SELECTED_OPNFV_CONFIG
+        self.confirm_key = "booking"
+
+    def alert_bundle_missing(self):
+        self.set_invalid("Please select a valid OPNFV config")
+
+    def get_form_queryset(self):
+        cb = self.repo_get(self.repo.SELECTED_CONFIG_BUNDLE)
+        qs = OPNFVConfig.objects.filter(bundle=cb)
+        return qs
+
+    def put_confirm_info(self, config):
+        confirm_dict = self.repo_get(self.repo.CONFIRMATION)
+        if self.confirm_key not in confirm_dict:
+            confirm_dict[self.confirm_key] = {}
+        confirm_dict[self.confirm_key]["OPNFV Configuration"] = config.name
+        self.repo_put(self.repo.CONFIRMATION, confirm_dict)
+
+    def get_page_context(self):
+        return {
+            'select_type': 'opnfv',
+            'select_type_title': 'OPNFV Config',
+            'addable_type_num': 4
+        }
+
+
 class Booking_Meta(WorkflowStep):
     template = 'booking/steps/booking_meta.html'
     title = "Extra Info"
@@ -155,6 +194,11 @@ class Booking_Meta(WorkflowStep):
             models['booking'].project = form.cleaned_data['project']
             for key in ['length', 'project', 'purpose']:
                 confirm['booking'][key] = form.cleaned_data[key]
+
+            if form.cleaned_data["deploy_opnfv"]:
+                self.repo_get(self.repo.SESSION_MANAGER).set_step_statuses(OPNFV_EnablePicker, desired_enabled=True)
+            else:
+                self.repo_get(self.repo.SESSION_MANAGER).set_step_statuses(OPNFV_EnablePicker, desired_enabled=False)
 
             userprofile_list = form.cleaned_data['users']
             confirm['booking']['collaborators'] = []

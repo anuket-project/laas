@@ -9,66 +9,39 @@
 
 
 from django.forms import formset_factory
-from django.contrib import messages
 
-import json
-
-from workflow.models import WorkflowStep
+from workflow.models import WorkflowStep, AbstractSelectOrCreate
 from resource_inventory.models import ConfigBundle, OPNFV_SETTINGS
 from workflow.forms import OPNFVSelectionForm, OPNFVNetworkRoleForm, OPNFVHostRoleForm, SWConfigSelectorForm, BasicMetaForm
 
 
-class OPNFV_Resource_Select(WorkflowStep):
-    template = 'booking/steps/swconfig_select.html'
+class OPNFV_Resource_Select(AbstractSelectOrCreate):
     title = "Select Software Configuration"
-    description = "Choose the software and related configurations you want to use to configure OPNFV"
-    short_title = "software configuration"
-    modified_key = "configbundle_step"
+    description = "Choose the software bundle you wish to use as a base for your OPNFV configuration"
+    short_title = "software config"
+    form = SWConfigSelectorForm
 
-    def update_confirmation(self):
-        confirm = self.repo_get(self.repo.CONFIRMATION, {})
-        config_bundle = self.repo_get(self.repo.OPNFV_MODELS, {}).get("configbundle")
-        if not config_bundle:
-            return
-        confirm['software bundle'] = config_bundle.name
-        confirm['hardware POD'] = config_bundle.bundle.name
-        self.repo_put(self.repo.CONFIRMATION, confirm)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.select_repo_key = self.repo.SELECTED_CONFIG_BUNDLE
 
-    def post_render(self, request):
-        models = self.repo_get(self.repo.OPNFV_MODELS, {})
-        form = SWConfigSelectorForm(request.POST)
-        if form.is_valid():
-            bundle_json = form.cleaned_data['software_bundle']
-            bundle_json = bundle_json[2:-2]  # Stupid django string bug
-            if not bundle_json:
-                self.set_invalid("Please select a valid config")
-                return self.render(request)
-            bundle_json = json.loads(bundle_json)
-            if len(bundle_json) < 1:
-                self.set_invalid("Please select a valid config")
-                return self.render(request)
-            bundle = None
-            id = int(bundle_json[0]['id'])
-            bundle = ConfigBundle.objects.get(id=id)
-
-            models['configbundle'] = bundle
-            self.repo_put(self.repo.OPNFV_MODELS, models)
-            self.set_valid("Step Completed")
-            messages.add_message(request, messages.SUCCESS, 'Form Validated Successfully', fail_silently=True)
-            self.update_confirmation()
-        else:
-            self.set_invalid("Please select or create a valid config")
-            messages.add_message(request, messages.ERROR, "Form Didn't Validate", fail_silently=True)
-
-        return self.render(request)
-
-    def get_context(self):
-        context = super(OPNFV_Resource_Select, self).get_context()
-        default = []
+    def get_form_queryset(self):
         user = self.repo_get(self.repo.SESSION_USER)
+        qs = ConfigBundle.objects.filter(owner=user)
+        return qs
 
-        context['form'] = SWConfigSelectorForm(chosen_software=default, bundle=None, edit=True, resource=None, user=user)
-        return context
+    def put_confirm_info(self, bundle):
+        confirm_dict = self.repo_get(self.repo.CONFIRMATION)
+        confirm_dict['software bundle'] = bundle.name
+        confirm_dict['hardware POD'] = bundle.bundle.name
+        self.repo_put(self.repo.CONFIRMATION, confirm_dict)
+
+    def get_page_context(self):
+        return {
+            'select_type': 'swconfig',
+            'select_type_title': 'Software Config',
+            'addable_type_num': 2
+        }
 
 
 class Pick_Installer(WorkflowStep):
@@ -92,7 +65,7 @@ class Pick_Installer(WorkflowStep):
     def get_context(self):
         context = super(Pick_Installer, self).get_context()
 
-        models = self.repo_get(self.repo.OPNFV_MODELS, None)
+        models = self.repo_get(self.repo.OPNFV_MODELS, {})
         initial = {
             "installer": models.get("installer_chosen"),
             "scenario": models.get("scenario_chosen")
@@ -155,7 +128,7 @@ class Assign_Network_Roles(WorkflowStep):
 
     def get_context(self):
         context = super(Assign_Network_Roles, self).get_context()
-        config_bundle = self.repo_get(self.repo.OPNFV_MODELS, {}).get("configbundle")
+        config_bundle = self.repo_get(self.repo.SELECTED_CONFIG_BUNDLE)
         if config_bundle is None:
             context["unavailable"] = True
             return context
@@ -179,7 +152,7 @@ class Assign_Network_Roles(WorkflowStep):
 
     def post_render(self, request):
         models = self.repo_get(self.repo.OPNFV_MODELS, {})
-        config_bundle = models.get("configbundle")
+        config_bundle = self.repo_get(self.repo.SELECTED_CONFIG_BUNDLE)
         roles = OPNFV_SETTINGS.NETWORK_ROLES
         net_role_formset = self.create_netformset(roles, config_bundle, data=request.POST)
         if net_role_formset.is_valid():
@@ -228,8 +201,7 @@ class Assign_Host_Roles(WorkflowStep):  # taken verbatim from Define_Software in
 
     def get_context(self):
         context = super(Assign_Host_Roles, self).get_context()
-        models = self.repo_get(self.repo.OPNFV_MODELS, {})
-        config = models.get("configbundle")
+        config = self.repo_get(self.repo.SELECTED_CONFIG_BUNDLE)
         if config is None:
             context['error'] = "Please select a Configuration on the first step"
 

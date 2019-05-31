@@ -669,7 +669,7 @@ class Repository():
 
     def make_opnfv_config(self):
         opnfv_models = self.el[self.OPNFV_MODELS]
-        config_bundle = opnfv_models['configbundle']
+        config_bundle = self.el[self.SELECTED_CONFIG_BUNDLE]
         if not config_bundle:
             return "No Configuration bundle selected"
         info = opnfv_models.get("meta", {})
