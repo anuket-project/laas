@@ -15,6 +15,7 @@ from api.models import (
     HostHardwareRelation,
     SoftwareRelation,
     AccessConfig,
+    SnapshotRelation
 )
 
 from resource_inventory.models import (
@@ -103,8 +104,6 @@ class ValidBookingCreatesValidJob(TestCase):
 
         if not booking.resource:
             raise Exception("Booking does not have a resource when trying to pass to makeCompleteJob")
-        JobFactory.makeCompleteJob(booking)
-
         return booking, compute_hostnames, "jump"
 
     def make_networks(self, hostprofile, nets):
@@ -122,9 +121,12 @@ class ValidBookingCreatesValidJob(TestCase):
 
         return network_struct
 
-    # begin tests
+    #################################################################
+    # Complete Job Tests
+    #################################################################
 
-    def test_valid_access_configs(self):
+    def test_complete_job_makes_access_configs(self):
+        JobFactory.makeCompleteJob(self.booking)
         job = Job.objects.get(booking=self.booking)
         self.assertIsNotNone(job)
 
@@ -142,7 +144,8 @@ class ValidBookingCreatesValidJob(TestCase):
             self.assertTrue(vpn_configs.filter(user=user).exists())
             self.assertTrue(ssh_configs.filter(user=user).exists())
 
-    def test_valid_network_configs(self):
+    def test_complete_job_makes_network_configs(self):
+        JobFactory.makeCompleteJob(self.booking)
         job = Job.objects.get(booking=self.booking)
         self.assertIsNotNone(job)
 
@@ -180,7 +183,8 @@ class ValidBookingCreatesValidJob(TestCase):
         for host in netrelation_hosts:
             self.assertTrue(host in booking_hosts)
 
-    def test_valid_hardware_configs(self):
+    def test_complete_job_makes_hardware_configs(self):
+        JobFactory.makeCompleteJob(self.booking)
         job = Job.objects.get(booking=self.booking)
         self.assertIsNotNone(job)
 
@@ -199,7 +203,8 @@ class ValidBookingCreatesValidJob(TestCase):
             host = relation.host
             self.assertEqual(config.hostname, host.template.resource.name)
 
-    def test_valid_software_configs(self):
+    def test_complete_job_makes_software_configs(self):
+        JobFactory.makeCompleteJob(self.booking)
         job = Job.objects.get(booking=self.booking)
         self.assertIsNotNone(job)
 
@@ -218,10 +223,47 @@ class ValidBookingCreatesValidJob(TestCase):
         self.assertEqual(oconfig.scenario, self.booking.config_bundle.opnfv_config.first().scenario.name)
 
         for host in oconfig.roles.all():
-            role_name = host.config.opnfvRole.name
-            if str(role_name) == "Jumphost":
+            role_name = host.config.host_opnfv_config.first().role.name
+            if str(role_name).lower() == "jumphost":
                 self.assertEqual(host.template.resource.name, self.jump_hostname)
-            elif str(role_name) == "Compute":
+            elif str(role_name).lower() == "compute":
                 self.assertTrue(host.template.resource.name in self.compute_hostnames)
             else:
                 self.fail(msg="Host with non-configured role name related to job: " + str(role_name))
+
+    def test_make_snapshot_task(self):
+        host = self.booking.resource.hosts.first()
+        image = make_image(self.lab, -1, None, None, host.profile)
+
+        Job.objects.create(booking=self.booking)
+
+        JobFactory.makeSnapshotTask(image, self.booking, host)
+
+        snap_relation = SnapshotRelation.objects.get(job=self.booking.job)
+        config = snap_relation.config
+        self.assertEqual(host.id, config.host.id)
+        self.assertEqual(config.dashboard_id, image.id)
+        self.assertEqual(snap_relation.snapshot.id, image.id)
+
+    def test_make_hardware_configs(self):
+        hosts = self.booking.resource.hosts.all()
+        job = Job.objects.create(booking=self.booking)
+        JobFactory.makeHardwareConfigs(hosts=hosts, job=job)
+
+        hardware_relations = HostHardwareRelation.objects.filter(job=job)
+
+        self.assertEqual(hardware_relations.count(), hosts.count())
+
+        host_set = set([h.id for h in hosts])
+
+        for relation in hardware_relations:
+            try:
+                host_set.remove(relation.host.id)
+            except KeyError:
+                self.fail("Hardware Relation/Config not created for host " + str(relation.host))
+
+            self.assertEqual(relation.config.power, "on")
+            self.assertTrue(relation.config.ipmi_create)
+            # TODO: the rest of hwconf attrs
+
+        self.assertEqual(len(host_set), 0)
