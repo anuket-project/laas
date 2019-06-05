@@ -110,22 +110,24 @@
 <input name="filter_field" id="filter_field" type="hidden"/>
 <div id="grid_wrapper" class="grid_wrapper">
 {% for object_class, object_list in filter_objects %}
-<div class="class_grid_wrapper">
-    <div style="display:inline-block;margin:auto">
-        <h4>{{object_class}}</h4>
-    </div>
-    <div id="{{object_class}}" class="object_class_wrapper">
-    {% for obj in object_list %}
-    <div id="object_parent">
-        <div id="{{ obj.id|default:'not_provided' }}" class="grid-item">
-            <p class="grid-item-header">{{obj.name}}</p>
-            <p class="grid-item-description">{{obj.description}}</p>
-            <button type="button" class="btn btn-success grid-item-select-btn" onclick="processClick('{{obj.id}}', {% if obj.multiple %}true{% else %}false{% endif %});">{% if obj.multiple %}Add{% else %}Select{% endif %}</button>
+    <div class="class_grid_wrapper">
+        <div style="display:inline-block;margin:auto">
+            <h4>{{object_class}}</h4>
         </div>
-        <input type="hidden" name="{{obj.id}}_selected" value="false"/>
-    </div>
-    {% endfor %}
-    </div>
+        <div id="{{object_class}}" class="object_class_wrapper">
+        {% for obj in object_list %}
+            <div id="{{ obj.id|default:'not_provided' }}" class="grid-item">
+                <p class="grid-item-header">{{obj.name}}</p>
+                <p class="grid-item-description">{{obj.description}}</p>
+                <button type="button" class="btn btn-success grid-item-select-btn" onclick="processClick(
+                    '{{obj.id}}',
+                    {% if obj.multiple %}true
+                    {% else %}false
+                    {% endif %});">{% if obj.multiple %}Add{% else %}Select{% endif %}</button>
+            </div>
+            <input type="hidden" name="{{obj.id}}_selected" value="false"/>
+        {% endfor %}
+        </div>
     </div>
 {% endfor %}
 </div>
@@ -189,8 +191,7 @@ function markAndSweep(root){
         //clears grey background of everything
     }
 
-    toCheck = [];
-    toCheck.push(root);
+    toCheck = [root];
 
     while(toCheck.length > 0){
         node = toCheck.pop();
@@ -289,8 +290,7 @@ function processClick(id, multiple){
 
     if(node['selected']) {
         select(node);
-    }
-    else {
+    } else {
         clear(node);
     }
     process(node);
@@ -309,16 +309,12 @@ function add_node(node){
 
 inputs = []
 
-function restrictchars(input)
-{
-    if( input.validity.patternMismatch )
-    {
+function restrictchars(input){
+    if( input.validity.patternMismatch ){
         input.setCustomValidity("Only alphanumeric characters (a-z, A-Z, 0-9), underscore(_), and hyphen (-) are allowed");
         input.reportValidity();
     }
-
     input.value = input.value.replace(/([^A-Za-z0-9-_.])+/g, "");
-
     checkunique(input);
 }
 
@@ -419,8 +415,8 @@ function updateResult(nodeId){
         var node = document.getElementById(nodeId);
         var value = {}
         value[nodeId] = node.parentNode.getElementsByTagName("input")[0].value;
-        result[node.parentNode.parentNode.id] = {};
-        result[node.parentNode.parentNode.id][nodeId] = value;
+        result[node.parentNode.id] = {};
+        result[node.parentNode.id][nodeId] = value;
     }
 }
 
@@ -439,7 +435,7 @@ function filter_field_init() {
     for(nodeId in filter_items) {
         element = document.getElementById(nodeId);
         node = filter_items[nodeId];
-        result[element.parentNode.parentNode.id] = {}
+        result[element.parentNode.id] = {}
         }
     initialized = true;
 }
