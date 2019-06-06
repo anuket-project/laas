@@ -490,6 +490,9 @@ class Repository():
             pass
         JobFactory.makeSnapshotTask(image, booking, host)
 
+        self.el[self.RESULT] = image
+        self.el[self.HAS_RESULT] = True
+
     def make_generic_resource_bundle(self):
         owner = self.el[self.SESSION_USER]
         if self.GRESOURCE_BUNDLE_MODELS in self.el:
@@ -556,6 +559,7 @@ class Repository():
             return "GRB no models given. CODE:0x0001"
 
         self.el[self.RESULT] = bundle
+        self.el[self.HAS_RESULT] = True
         return False
 
     def make_software_config_bundle(self):
@@ -667,6 +671,9 @@ class Repository():
         except Exception as e:
             return "BOOK, saving booking generated exception: " + str(e) + " CODE:0x0016"
 
+        self.el[self.RESULT] = booking
+        self.el[self.HAS_RESULT] = True
+
     def make_opnfv_config(self):
         opnfv_models = self.el[self.OPNFV_MODELS]
         config_bundle = self.el[self.SELECTED_CONFIG_BUNDLE]
@@ -713,10 +720,13 @@ class Repository():
             )
 
         self.el[self.RESULT] = opnfv_config
+        self.el[self.HAS_RESULT] = True
 
     def __init__(self):
         self.el = {}
         self.el[self.CONFIRMATION] = {}
         self.el["active_step"] = 0
+        self.el[self.HAS_RESULT] = False
+        self.el[self.RESULT] = None
         self.get_history = {}
         self.put_history = {}

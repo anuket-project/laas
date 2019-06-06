@@ -64,15 +64,15 @@ class SessionManager():
         )
 
     def pop_workflow(self):
-        if(len(self.workflows) <= 1):
-            return False
-
-        if self.workflows[-1].repository.el[self.workflows[-1].repository.HAS_RESULT]:
-            key = self.workflows[-1].repository.el[self.workflows[-1].repository.RESULT_KEY]
-            result = self.workflows[-1].repository.el[self.workflows[-1].repository.RESULT]
-            self.workflows[-2].repository.el[key] = result
-        self.workflows.pop()
-        return True
+        multiple_wfs = len(self.workflows) > 1
+        if multiple_wfs:
+            if self.workflows[-1].repository.el[Repository.RESULT]:  # move result
+                key = self.workflows[-1].repository.el[Repository.RESULT_KEY]
+                result = self.workflows[-1].repository.el[Repository.RESULT]
+                self.workflows[-2].repository.el[key] = result
+            self.workflows.pop()
+        current_repo = self.workflows[-1].repository
+        return (multiple_wfs, current_repo.el[current_repo.RESULT])
 
     def status(self, request):
         try:

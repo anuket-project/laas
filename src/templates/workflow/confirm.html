@@ -58,6 +58,17 @@
 <script>
     var select = document.getElementById("id_confirm");
 
+    function processResponseText(json)
+    {
+        var dict = JSON.parse(json);
+
+        if( !dict["redir_url"] ) {
+            window.top.refresh_iframe();
+        } else {
+            top.window.location.href = dict["redir_url"];
+        }
+    }
+
     function delete_manager()
     {
         var form = $("#manager_delete_form");
@@ -67,7 +78,7 @@
         req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         req.onerror = function() { alert("problem with cleaning up session"); }
         req.onreadystatechange = function() { if(req.readyState === 4 ) {
-                window.top.refresh_iframe();
+                processResponseText(req.responseText);
                 }}
         req.send(formData);
     }
