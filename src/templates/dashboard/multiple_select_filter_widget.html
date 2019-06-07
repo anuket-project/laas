@@ -421,7 +421,7 @@ function updateResult(nodeId){
 }
 
 function updateObjectResult(parentElem){
-    node_type = document.getElementById(parentElem.class).parentNode.parentNode.id;
+    node_type = document.getElementById(parentElem.class).parentNode.id;
     input = {};
     inputs = parentElem.getElementsByTagName("input");
     for(var i in inputs){
