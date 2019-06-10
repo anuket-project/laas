@@ -31,8 +31,13 @@
         border: none;
         box-shadow: none;
     }
+
     input[type=range]::-moz-range-track {
         background: #cccccc;
+    }
+
+    .grid_element {
+        overflow: hidden;
     }
 </style>
 {% bootstrap_form_errors form type='non_fields' %}

@@ -1,6 +1,6 @@
 <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
 
-<div class="autocomplete" style="width:400px;">
+<div class="autocomplete">
     <div id="warning_pane" style="background: #FFFFFF; color: #CC0000;">
         {% if incompatible == "true" %}
         <h3>Warning: Incompatible Configuration</h3>
@@ -22,12 +22,13 @@
     <div id="added_list">
 
     </div>
-    <div id="added_counter" style="text-align: center; margin: 10px;"><p id="added_number" style="display: inline;">0</p><p style="display: inline;">/
-        {% if selectable_limit > -1 %} {{ selectable_limit }} {% else %} &infin; {% endif %}added</p></div>
+    <div id="added_counter">
+        <p id="added_number">0</p>
+        <p id="addable_limit">/ {% if selectable_limit > -1 %} {{ selectable_limit }} {% else %} &infin; {% endif %}added</p>
+    </div>
     <style>
         #user_field {
             font-size: 14pt;
-            width: 400px;
             padding: 5px;
 
         }
@@ -41,47 +42,98 @@
             overflow-y: scroll;
             overflow-x: hidden;
             border: solid 1px #ddd;
+            border-top: none;
+            border-bottom: none;
             display: none;
 
         }
 
         #drop_results li a{
             font-size: 14pt;
-            border: 1px solid #ddd;
             background-color: #f6f6f6;
-            padding: 12px;
+            padding: 7px;
             text-decoration: none;
             display: block;
-            width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .btn-remove {
-            float: right;
-            height: 30px;
-            margin: 4px;
+        #drop_results li a {
+            border-bottom: 1px solid #ddd;
         }
 
         .list_entry {
-            width: 400px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
             margin-top: 5px;
             vertical-align: middle;
             line-height: 40px;
             height: 40px;
             padding-left: 12px;
+            width: 100%;
+            display: flex;
         }
 
         #drop_results li a:hover{
             background-color: #ffffff;
         }
 
-        .small_name {
-            display: inline-block;
+        .added_entry_text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline;
+            width: 100%;
         }
 
-        .full_name {
+        .btn-remove {
+            float: right;
+            height: 30px;
+            margin: 4px;
+            padding: 1px;
+            max-width: 20%;
+            width: 15%;
+            min-width: 70px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .entry_tooltip {
+            display: none;
+        }
+
+        #drop_results li a:hover .entry_tooltip {
+            display: block;
+            position: absolute;
+            background: #444;
+            color: #ddd;
+            text-align: center;
+            font-size: 12pt;
+            border-radius: 3px;
+
+        }
+
+        #drop_results {
+            max-width: 100%;
             display: inline-block;
+            list-style-type: none;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        #drop_results li {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #added_counter {
+            text-align: center;
+        }
+
+        #added_number, #addable_limit {
+            display: inline;
         }
 
     </style>
@@ -295,6 +347,14 @@
         return results;
     }
 
+    function generate_element_text(obj)
+    {
+        var content_strings = [obj['expanded_name'], obj['small_name'], obj['string']].filter(x => Boolean(x));
+        var result = content_strings.shift();
+        if( result == null || content_strings.length < 1) return result;
+        return result + " (" + content_strings.join(", ") + ")";
+    }
+
     function dropdown(ids)
     {
         /*
@@ -312,9 +372,14 @@
             var result_entry = document.createElement("li");
             var result_button = document.createElement("a");
             var obj = items[id];
-            var result_text = document.createTextNode(obj['small_name'] + " : " + obj['expanded_name']);
-            result_button.appendChild(result_text);
+            var result_text = generate_element_text(obj);
+            result_button.appendChild(document.createTextNode(result_text));
             result_button.setAttribute('onclick', 'select_item("' + obj['id'] + '")');
+            var tooltip = document.createElement("span");
+            var tooltiptext = document.createTextNode(result_text);
+            tooltip.appendChild(tooltiptext);
+            tooltip.setAttribute('class', 'entry_tooltip');
+            result_button.appendChild(tooltip);
             result_entry.appendChild(result_button);
             drop.appendChild(result_entry);
         }
@@ -325,7 +390,7 @@
         }
         else
         {
-            drop.style.display = 'inherit';
+            drop.style.display = 'block';
         }
     }
 
@@ -377,11 +442,13 @@
             item_id = added_items[key];
             item = items[item_id];
 
-            list_html += '<div class="list_entry"><p class="full_name">'
-                + item["expanded_name"]
-                + '</p><p class="small_name">, '
-                + item["small_name"]
-                + '</p><button onclick="remove_item('
+            var element_entry_text = generate_element_text(item);
+
+            list_html += '<div class="list_entry">'
+                + '<p class="added_entry_text">'
+                + element_entry_text
+                + '</p>'
+                + '<button onclick="remove_item('
                 + Object.values(items).indexOf(item)
                 + ')" class="btn-remove btn">remove</button>';
                 list_html += '</div>';
@@ -391,11 +458,3 @@
     }
 
 </script>
-<style>
-    .full_name {
-        display: inline-block;
-    }
-    .small_name {
-        display: inline-block;
-    }
-</style>

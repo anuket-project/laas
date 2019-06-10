@@ -173,8 +173,8 @@ class SWConfigSelectorForm(SearchableSelectAbstractForm):
 
         for bundle in queryset:
             items[bundle.id] = {
-                'small_name': bundle.name,
-                'expanded_name': bundle.owner.username,
+                'expanded_name': bundle.name,
+                'small_name': bundle.owner.username,
                 'string': bundle.description,
                 'id': bundle.id
             }
@@ -188,8 +188,8 @@ class OPNFVSelectForm(SearchableSelectAbstractForm):
 
         for config in queryset:
             items[config.id] = {
-                'small_name': config.name,
-                'expanded_name': config.bundle.owner.username,
+                'expanded_name': config.name,
+                'small_name': config.bundle.owner.username,
                 'string': config.description,
                 'id': config.id
             }
@@ -203,8 +203,8 @@ class ResourceSelectorForm(SearchableSelectAbstractForm):
 
         for bundle in queryset:
             items[bundle.id] = {
-                'small_name': bundle.name,
-                'expanded_name': bundle.owner.username,
+                'expanded_name': bundle.name,
+                'small_name': bundle.owner.username,
                 'string': bundle.description,
                 'id': bundle.id
             }
