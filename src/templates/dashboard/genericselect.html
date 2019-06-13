@@ -6,52 +6,92 @@
 {% block content %}
 
 <style>
-#{{select_type}}_form_div {
-        width: 100%;
-        padding: 5%;
+    #page-wrapper {
+        display: flex;
+        flex-direction: column;
     }
 
-    .panel {
-        border: none;
+    #{{select_type}}_form_div div {
     }
-    .select_panels {
-        width: 100%;
+
+    #{{select_type}}_form_div > *:not(.divider) {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+
+    #{{select_type}}_form_div div * {
+    }
+
+    #{{select_type}}_form_div {
+        flex: 1;
+        margin: 30px;
         display: grid;
-        grid-template-columns: 45% 10% 45%;
-
+        grid-template-rows: auto 1px auto 1fr;
+        grid-template-columns: repeat(24, 1fr);
+        grid-row-gap: 15px;
     }
 
-    .panel_center {
-        text-align: center;
-        border: none;
+    #select_section {
+        display: flex;
+        flex-direction: column;
+        grid-column-start: 3;
+        grid-column-end: 21;
+    }
 
+    #{{select_type}}_select_form {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
     }
-    .panel_center p{
-        font-size: 20pt;
+
+    .autocomplete {
+        flex: 1;
     }
+
+    #create_section {
+        grid-column-start: 1;
+        grid-column-end: 24;
+    }
+
+    #select_header_section {
+        grid-column: 1 / 24;
+    }
+
+    h3 {
+        margin-top: 0;
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+
+    .divider {
+        border-top: 1px solid #ccc;
+        grid-column-start: 1;
+        grid-column-end: 24;
+    }
+
+
 </style>
 
 <div id="{{select_type}}_form_div">
-    <div class="select_panels">
-        <div class="panel_chooser panel">
-            <form id="{{select_type}}_select_form" method="post" action="" class="form" id="{{select_type}}selectorform">
-            {% csrf_token %}
-            {{ form|default:"<p>no form loaded</p>" }}
-            {% buttons %}
+    <h3 id="create_section">Create a Resource
+        <button class="btn btn-primary {% if disabled %} disabled {% endif %}"
+            {% if not disabled %}onclick="parent.add_wf({{addable_type_num}})"
+            {% endif %}>Here
+        </button>
+    </h3>
+    <div class="divider"></div>
+    <h3 id="select_header_section">Or select from the list below:</h3>
+    <div id="select_section">
+        <form id="{{select_type}}_select_form" method="post" action="" class="form" id="{{select_type}}selectorform">
+        {% csrf_token %}
+        {{ form|default:"<p>no form loaded</p>" }}
+        {% buttons %}
 
-            {% endbuttons %}
-            </form>
-        </div>
-        <div class="panel_center panel"><p>OR</p></div>
-        <div class="panel_add panel">
-            <button class="btn {% if disabled %} disabled {% endif %}"
-                style="width: 100%; height: 100%;"
-                {% if not disabled %}onclick="parent.add_wf({{addable_type_num}})"
-                {% endif %}>Create {{select_type_title}}
-            </button>
-        </div>
+        {% endbuttons %}
+        </form>
     </div>
 </div>
+
 <script>
     {% if disabled %}
     disable();

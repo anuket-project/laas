@@ -7,6 +7,15 @@
         <p>Please make a different selection, as the current config conflicts with the selected pod</p>
         {% endif %}
     </div>
+
+    <div id="added_list">
+
+    </div>
+    <div id="added_counter">
+        <p id="added_number">0</p>
+        <p id="addable_limit">/ {% if selectable_limit > -1 %} {{ selectable_limit }} {% else %} &infin; {% endif %}added</p>
+    </div>
+
     <input id="user_field" name="ignore_this" class="form-control" autocomplete="off" type="text" placeholder="{{placeholder}}" value="" oninput="search(this.value)"
     {% if disabled %} disabled {% endif %}
     >
@@ -17,16 +26,20 @@
     >
     </input>
 
-    <ul id="drop_results"></ul>
-
-    <div id="added_list">
-
-    </div>
-    <div id="added_counter">
-        <p id="added_number">0</p>
-        <p id="addable_limit">/ {% if selectable_limit > -1 %} {{ selectable_limit }} {% else %} &infin; {% endif %}added</p>
+    <div id="scroll_restrictor">
+        <ul id="drop_results"></ul>
     </div>
     <style>
+        #scroll_restrictor {
+            flex: 1;
+            position: relative;
+            overflow-y: auto;
+        }
+        .autocomplete {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
         #user_field {
             font-size: 14pt;
             padding: 5px;
@@ -37,14 +50,16 @@
             list-style-type: none;
             padding: 0;
             margin: 0;
-            max-height: 300px;
             min-height: 0;
-            overflow-y: scroll;
-            overflow-x: hidden;
             border: solid 1px #ddd;
             border-top: none;
             border-bottom: none;
-            display: none;
+            visibility: hidden;
+            flex: 1;
+
+            position: absolute;
+            width: 100%;
+            box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
 
         }
 
@@ -104,7 +119,6 @@
         }
 
         #drop_results li a:hover .entry_tooltip {
-            display: block;
             position: absolute;
             background: #444;
             color: #ddd;
@@ -135,7 +149,6 @@
         #added_number, #addable_limit {
             display: inline;
         }
-
     </style>
 </div>
 
@@ -386,11 +399,11 @@
 
         if( !drop.firstChild )
         {
-            drop.style.display = 'none';
+            drop.style.visibility = 'hidden';
         }
         else
         {
-            drop.style.display = 'block';
+            drop.style.visibility = 'inherit';
         }
     }
 
