@@ -262,7 +262,11 @@
             if( str.length == 1 )
             {
                 new_trie.isComplete = true;
-                new_trie.itemID = id;
+                if( !new_trie.ids )
+                {
+                    new_trie.ids = [];
+                }
+                new_trie.ids.push(id);
             }
             inner_trie = new_trie;
             str = str.substring(1);
@@ -336,7 +340,7 @@
         }
         if ( trie.isComplete )
         {
-            itemIDs.push( trie.itemID );
+            itemIDs.push(...trie.ids);
         }
 
         return itemIDs;
