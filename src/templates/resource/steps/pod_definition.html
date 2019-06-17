@@ -206,7 +206,7 @@ function deleteCell(cellId) {
 }
 
 function newNetworkWindow() {
-    var innerHtml = 'Name: <input type="text" name="net_name" id="net_name_input" style="margin:5px;"><br>';
+    var innerHtml = 'Name: <input type="text" name="net_name" maxlength="100" id="net_name_input" style="margin:5px;"><br>';
     innerHtml += '<button style="width: 46%;" onclick="parseNetworkWindow()">Okay</button>';
     innerHtml += '<button style="width: 46%;" onclick="currentWindow.destroy();">Cancel</button><br>';
     innerHtml += '<div id="current_window_errors"/>';
