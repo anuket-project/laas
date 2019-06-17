@@ -14,9 +14,10 @@
     #{{select_type}}_form_div div {
     }
 
-    #{{select_type}}_form_div > *:not(.divider) {
+    #{{select_type}}_form_div > * {
         margin-left: 10px;
         margin-right: 10px;
+        margin-bottom: 20px;
     }
 
     #{{select_type}}_form_div div * {
@@ -25,17 +26,14 @@
     #{{select_type}}_form_div {
         flex: 1;
         margin: 30px;
-        display: grid;
-        grid-template-rows: auto 1px auto 1fr;
-        grid-template-columns: repeat(24, 1fr);
-        grid-row-gap: 15px;
+        display: flex;
+        flex-direction: column;
     }
 
     #select_section {
+        flex: 1;
         display: flex;
         flex-direction: column;
-        grid-column-start: 3;
-        grid-column-end: 21;
     }
 
     #{{select_type}}_select_form {
@@ -49,12 +47,9 @@
     }
 
     #create_section {
-        grid-column-start: 1;
-        grid-column-end: 24;
     }
 
     #select_header_section {
-        grid-column: 1 / 24;
     }
 
     h3 {
@@ -65,8 +60,6 @@
 
     .divider {
         border-top: 1px solid #ccc;
-        grid-column-start: 1;
-        grid-column-end: 24;
     }
 
 
