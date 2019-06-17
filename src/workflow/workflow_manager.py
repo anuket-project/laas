@@ -97,7 +97,13 @@ class SessionManager():
     def post_render(self, request):
         return self.active_workflow().steps[self.active_workflow().active_index].post_render(request)
 
+    def get_active_step(self):
+        return self.active_workflow().steps[self.active_workflow().active_index]
+
     def go_next(self, **kwargs):
+        # need to verify current step is valid to allow this
+        if self.get_active_step().valid < 200:
+            return
         next_step = self.active_workflow().active_index + 1
         if next_step >= len(self.active_workflow().steps):
             raise Exception("Out of bounds request for step")

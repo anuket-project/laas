@@ -187,8 +187,7 @@
     {
         if( errors_exist(data) )
         {
-            var continueanyway = confirm("The current step has errors that will prevent it from saving. Continue anyway?");
-            if( !continueanyway )
+            if( to != "prev" )
             {
                 return;
             }
