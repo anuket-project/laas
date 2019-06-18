@@ -1,19 +1,19 @@
 <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
 
-<div class="autocomplete">
+<div id="search_select_outer" class="autocomplete">
     <div id="warning_pane" style="background: #FFFFFF; color: #CC0000;">
         {% if incompatible == "true" %}
         <h3>Warning: Incompatible Configuration</h3>
         <p>Please make a different selection, as the current config conflicts with the selected pod</p>
         {% endif %}
     </div>
-
-    <div id="added_list">
-
-    </div>
     <div id="added_counter">
         <p id="added_number">0</p>
         <p id="addable_limit">/ {% if selectable_limit > -1 %} {{ selectable_limit }} {% else %} &infin; {% endif %}added</p>
+    </div>
+
+    <div id="added_list">
+
     </div>
 
     <input id="user_field" name="ignore_this" class="form-control" autocomplete="off" type="text" placeholder="{{placeholder}}" value="" oninput="search(this.value)"
@@ -36,6 +36,11 @@
             overflow-y: auto;
             padding-bottom: 10px;
         }
+
+        #added_list {
+            margin-bottom: 5px;
+        }
+
         .autocomplete {
             display: flex;
             flex: 1;
@@ -44,6 +49,9 @@
         #user_field {
             font-size: 14pt;
             padding: 5px;
+            height: 40px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
 
         }
 
@@ -55,7 +63,7 @@
             border: solid 1px #ddd;
             border-top: none;
             border-bottom: none;
-            visibility: hidden;
+            visibility: inherit;
             flex: 1;
 
             position: absolute;
@@ -401,13 +409,15 @@
             drop.appendChild(result_entry);
         }
 
+        var scroll_restrictor = document.getElementById("scroll_restrictor");
+
         if( !drop.firstChild )
         {
-            drop.style.visibility = 'hidden';
+            scroll_restrictor.style.visibility = 'hidden';
         }
         else
         {
-            drop.style.visibility = 'inherit';
+            scroll_restrictor.style.visibility = 'inherit';
         }
     }
 
@@ -423,7 +433,10 @@
             }
         }
         update_selected_list();
+        // clear search bar contents
+        document.getElementById("user_field").value = "";
         document.getElementById("user_field").focus();
+        search("");
     }
 
     function remove_item(item_ref)
@@ -473,5 +486,4 @@
 
         added_list.innerHTML = list_html;
     }
-
 </script>

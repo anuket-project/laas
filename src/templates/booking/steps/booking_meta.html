@@ -10,6 +10,17 @@
         padding: 5%;
     }
 
+    .bkcontrib_panel {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .bkcontrib_panel > .form-group {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
     .panel{
         padding: 5%;
         /*border: solid 1px black;*/
@@ -52,7 +63,7 @@
     </div>
     <div class="panel panel_center">
     </div>
-    <div class="panel">
+    <div class="panel bkcontrib_panel">
         <p>You may add collaborators on your booking to share resources with coworkers.</p>
         {% bootstrap_field form.users label="Collaborators" %}
     </div>
