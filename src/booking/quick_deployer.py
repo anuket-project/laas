@@ -96,25 +96,22 @@ class BookingPermissionException(Exception):
     pass
 
 
-def parse_host_field(host_field_contents):
-    host_json = json.loads(host_field_contents)
-    lab_dict = host_json['labs'][0]
-    lab_id = list(lab_dict.keys())[0]
-    lab_user_id = int(lab_id.split("_")[-1])
-    lab = Lab.objects.get(lab_user__id=lab_user_id)
+def parse_host_field(host_json):
+    lab, profile = (None, None)
+    lab_dict = host_json['lab']
+    for lab_info in lab_dict.values():
+        if lab_info['selected']:
+            lab = Lab.objects.get(lab_user__id=lab_info['id'])
 
-    host_dict = host_json['hosts'][0]
-    profile_id = list(host_dict.keys())[0]
-    profile_id = int(profile_id.split("_")[-1])
-    profile = HostProfile.objects.get(id=profile_id)
+    host_dict = host_json['host']
+    for host_info in host_dict.values():
+        if host_info['selected']:
+            profile = HostProfile.objects.get(pk=host_info['id'])
 
-    # check validity of field data before trying to apply to models
-    if len(host_json['labs']) != 1:
+    if lab is None:
         raise NoLabSelectedError("No lab was selected")
-    if not lab:
-        raise LabDNE("Lab with provided ID does not exist")
-    if not profile:
-        raise HostProfileDNE("Host type with provided ID does not exist")
+    if profile is None:
+        raise HostProfileDNE("No Host was selected")
 
     return lab, profile
 

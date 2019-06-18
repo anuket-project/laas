@@ -242,124 +242,101 @@ class BookingMetaForm(forms.Form):
 
 
 class MultipleSelectFilterWidget(forms.Widget):
-    def __init__(self, attrs=None):
-        super(MultipleSelectFilterWidget, self).__init__(attrs)
-        self.attrs = attrs
+    def __init__(self, *args, display_objects=None, filter_items=None, neighbors=None, **kwargs):
+        super(MultipleSelectFilterWidget, self).__init__(*args, **kwargs)
+        self.display_objects = display_objects
+        self.filter_items = filter_items
+        self.neighbors = neighbors
         self.template_name = "dashboard/multiple_select_filter_widget.html"
 
     def render(self, name, value, attrs=None, renderer=None):
-        attrs = self.attrs
-        self.context = self.get_context(name, value, attrs)
-        html = render_to_string(self.template_name, context=self.context)
+        context = self.get_context(name, value, attrs)
+        html = render_to_string(self.template_name, context=context)
         return mark_safe(html)
 
     def get_context(self, name, value, attrs):
-        return attrs
+        return {
+            'display_objects': self.display_objects,
+            'neighbors': self.neighbors,
+            'filter_items': self.filter_items,
+            'initial_value': value
+        }
 
 
 class MultipleSelectFilterField(forms.Field):
 
-    def __init__(self, required=True, widget=None, label=None, initial=None,
-                 help_text='', error_messages=None, show_hidden_initial=False,
-                 validators=(), localize=False, disabled=False, label_suffix=None):
-        """from the documentation:
-        # required -- Boolean that specifies whether the field is required.
-        #             True by default.
-        # widget -- A Widget class, or instance of a Widget class, that should
-        #           be used for this Field when displaying it. Each Field has a
-        #           default Widget that it'll use if you don't specify this. In
-        #           most cases, the default widget is TextInput.
-        # label -- A verbose name for this field, for use in displaying this
-        #          field in a form. By default, Django will use a "pretty"
-        #          version of the form field name, if the Field is part of a
-        #          Form.
-        # initial -- A value to use in this Field's initial display. This value
-        #            is *not* used as a fallback if data isn't given.
-        # help_text -- An optional string to use as "help; text" for this Field.
-        # error_messages -- An optional dictionary to override the default
-        #                   messages that the field will raise.
-        # show_hidden_initial -- Boolean that specifies if it is needed to render a
-        #                        hidden widget with initial value after widget.
-        # validators -- List of additional validators to use
-        # localize -- Boolean that specifies if the field should be localized.
-        # disabled -- Boolean that specifies whether the field is disabled, that
-        #             is its widget is shown in the form but not editable.
-        # label_suffix -- Suffix to be added to the label. Overrides
-        #                 form's label_suffix.
-        """
-        # this is bad, but django forms are annoying
-        self.widget = widget
-        if self.widget is None:
-            self.widget = MultipleSelectFilterWidget()
-        super(MultipleSelectFilterField, self).__init__(
-            required=required,
-            widget=self.widget,
-            label=label,
-            initial=None,
-            help_text=help_text,
-            error_messages=error_messages,
-            show_hidden_initial=show_hidden_initial,
-            validators=validators,
-            localize=localize,
-            disabled=disabled,
-            label_suffix=label_suffix
-        )
+    def __init__(self, **kwargs):
+        self.initial = kwargs.get("initial")
+        super().__init__(**kwargs)
 
-        def clean(data):
-            """
-            This method will raise a django.forms.ValidationError or return clean data
-            """
-            return data
+    def to_python(self, value):
+        return json.loads(value)
 
 
 class FormUtils:
     @staticmethod
-    def getLabData(multiple_selectable_hosts):
+    def getLabData(multiple_hosts=False):
         """
         Gets all labs and thier host profiles and returns a serialized version the form can understand.
         Should be rewritten with a related query to make it faster
-        Should be moved outside of global scope
         """
+        # javascript truthy variables
+        true = 1
+        false = 0
+        if multiple_hosts:
+            multiple_hosts = true
+        else:
+            multiple_hosts = false
         labs = {}
         hosts = {}
         items = {}
-        mapping = {}
+        neighbors = {}
         for lab in Lab.objects.all():
-            slab = {}
-            slab['id'] = "lab_" + str(lab.lab_user.id)
-            slab['name'] = lab.name
-            slab['description'] = lab.description
-            slab['selected'] = 0
-            slab['selectable'] = 1
-            slab['follow'] = 1
-            if not multiple_selectable_hosts:
-                slab['follow'] = 0
-            slab['multiple'] = 0
-            items[slab['id']] = slab
-            mapping[slab['id']] = []
-            labs[slab['id']] = slab
-            for host in lab.hostprofiles.all():
-                shost = {}
-                shost['forms'] = [{"name": "host_name", "type": "text", "placeholder": "hostname"}]
-                shost['id'] = "host_" + str(host.id)
-                shost['name'] = host.name
-                shost['description'] = host.description
-                shost['selected'] = 0
-                shost['selectable'] = 1
-                shost['follow'] = 0
-                shost['multiple'] = multiple_selectable_hosts
-                items[shost['id']] = shost
-                mapping[slab['id']].append(shost['id'])
-                if shost['id'] not in mapping:
-                    mapping[shost['id']] = []
-                mapping[shost['id']].append(slab['id'])
-                hosts[shost['id']] = shost
+            lab_node = {
+                'id': "lab_" + str(lab.lab_user.id),
+                'model_id': lab.lab_user.id,
+                'name': lab.name,
+                'description': lab.description,
+                'selected': false,
+                'selectable': true,
+                'follow': false,
+                'multiple': false,
+                'class': 'lab'
+            }
+            if multiple_hosts:
+                # "follow" this lab node to discover more hosts if allowed
+                lab_node['follow'] = true
+            items[lab_node['id']] = lab_node
+            neighbors[lab_node['id']] = []
+            labs[lab_node['id']] = lab_node
 
-        filter_objects = [("labs", labs.values()), ("hosts", hosts.values())]
+            for host in lab.hostprofiles.all():
+                host_node = {
+                    'form': {"name": "host_name", "type": "text", "placeholder": "hostname"},
+                    'id': "host_" + str(host.id),
+                    'model_id': host.id,
+                    'name': host.name,
+                    'description': host.description,
+                    'selected': false,
+                    'selectable': true,
+                    'follow': false,
+                    'multiple': multiple_hosts,
+                    'class': 'host'
+                }
+                if multiple_hosts:
+                    host_node['values'] = []  # place to store multiple values
+                items[host_node['id']] = host_node
+                neighbors[lab_node['id']].append(host_node['id'])
+                if host_node['id'] not in neighbors:
+                    neighbors[host_node['id']] = []
+                neighbors[host_node['id']].append(lab_node['id'])
+                hosts[host_node['id']] = host_node
+
+        display_objects = [("lab", labs.values()), ("host", hosts.values())]
 
         context = {
-            'filter_objects': filter_objects,
-            'mapping': mapping,
+            'display_objects': display_objects,
+            'neighbors': neighbors,
             'filter_items': items
         }
         return context
@@ -368,14 +345,10 @@ class FormUtils:
 class HardwareDefinitionForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
-        selection_data = kwargs.pop("selection_data", False)
         super(HardwareDefinitionForm, self).__init__(*args, **kwargs)
-        attrs = FormUtils.getLabData(1)
-        attrs['selection_data'] = selection_data
+        attrs = FormUtils.getLabData(multiple_hosts=True)
         self.fields['filter_field'] = MultipleSelectFilterField(
-            widget=MultipleSelectFilterWidget(
-                attrs=attrs
-            )
+            widget=MultipleSelectFilterWidget(**attrs)
         )
 
 

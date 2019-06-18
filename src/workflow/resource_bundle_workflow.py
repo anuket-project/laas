@@ -52,65 +52,47 @@ class Define_Hardware(WorkflowStep):
     description = "Choose the type and amount of machines you want"
     short_title = "hosts"
 
+    def __init__(self, *args, **kwargs):
+        self.form = None
+        super().__init__(*args, **kwargs)
+
     def get_context(self):
         context = super(Define_Hardware, self).get_context()
-        selection_data = {"hosts": {}, "labs": {}}
-        models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
-        hosts = models.get("hosts", [])
-        for host in hosts:
-            profile_id = "host_" + str(host.profile.id)
-            if profile_id not in selection_data['hosts']:
-                selection_data['hosts'][profile_id] = []
-            selection_data['hosts'][profile_id].append({"host_name": host.resource.name, "class": profile_id})
-
-        if models.get("bundle", GenericResourceBundle()).lab:
-            selection_data['labs'] = {"lab_" + str(models.get("bundle").lab.lab_user.id): "true"}
-
-        form = HardwareDefinitionForm(
-            selection_data=selection_data
-        )
-        context['form'] = form
+        context['form'] = self.form or HardwareDefinitionForm()
         return context
 
-    def render(self, request):
-        self.context = self.get_context()
-        return render(request, self.template, self.context)
-
     def update_models(self, data):
-        data = json.loads(data['filter_field'])
+        data = data['filter_field']
         models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
         models['hosts'] = []  # This will always clear existing data when this step changes
         models['interfaces'] = {}
         if "bundle" not in models:
             models['bundle'] = GenericResourceBundle(owner=self.repo_get(self.repo.SESSION_USER))
-        host_data = data['hosts']
+        host_data = data['host']
         names = {}
-        for host_dict in host_data:
-            id = host_dict['class']
-            # bit of formatting
-            id = int(id.split("_")[-1])
+        for host_profile_dict in host_data.values():
+            id = host_profile_dict['id']
             profile = HostProfile.objects.get(id=id)
             # instantiate genericHost and store in repo
-            name = host_dict['host_name']
-            if not re.match(r"(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})", name):
-                raise InvalidHostnameException("Hostname must comply to RFC 952 and all extensions to it until this point")
-            if name in names:
-                raise NonUniqueHostnameException("All hosts must have unique names")
-            names[name] = True
-            genericResource = GenericResource(bundle=models['bundle'], name=name)
-            genericHost = GenericHost(profile=profile, resource=genericResource)
-            models['hosts'].append(genericHost)
-            for interface_profile in profile.interfaceprofile.all():
-                genericInterface = GenericInterface(profile=interface_profile, host=genericHost)
-                if genericHost.resource.name not in models['interfaces']:
-                    models['interfaces'][genericHost.resource.name] = []
-                models['interfaces'][genericHost.resource.name].append(genericInterface)
+            for name in host_profile_dict['values'].values():
+                if not re.match(r"(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})", name):
+                    raise InvalidHostnameException("Invalid hostname: '" + name + "'")
+                if name in names:
+                    raise NonUniqueHostnameException("All hosts must have unique names")
+                names[name] = True
+                genericResource = GenericResource(bundle=models['bundle'], name=name)
+                genericHost = GenericHost(profile=profile, resource=genericResource)
+                models['hosts'].append(genericHost)
+                for interface_profile in profile.interfaceprofile.all():
+                    genericInterface = GenericInterface(profile=interface_profile, host=genericHost)
+                    if genericHost.resource.name not in models['interfaces']:
+                        models['interfaces'][genericHost.resource.name] = []
+                    models['interfaces'][genericHost.resource.name].append(genericInterface)
 
         # add selected lab to models
-        for lab_dict in data['labs']:
-            if list(lab_dict.values())[0]:  # True for lab the user selected
-                lab_user_id = int(list(lab_dict.keys())[0].split("_")[-1])
-                models['bundle'].lab = Lab.objects.get(lab_user__id=lab_user_id)
+        for lab_dict in data['lab'].values():
+            if lab_dict['selected']:
+                models['bundle'].lab = Lab.objects.get(lab_user__id=lab_dict['id'])
                 break  # if somehow we get two 'true' labs, we only use one
 
         # return to repo
@@ -133,15 +115,11 @@ class Define_Hardware(WorkflowStep):
         try:
             self.form = HardwareDefinitionForm(request.POST)
             if self.form.is_valid():
-                if len(json.loads(self.form.cleaned_data['filter_field'])['labs']) != 1:
-                    self.set_invalid("Please select one lab")
-                else:
-                    self.update_models(self.form.cleaned_data)
-                    self.update_confirmation()
-                    self.set_valid("Step Completed")
+                self.update_models(self.form.cleaned_data)
+                self.update_confirmation()
+                self.set_valid("Step Completed")
             else:
                 self.set_invalid("Please complete the fields highlighted in red to continue")
-                pass
         except Exception as e:
             self.set_invalid(str(e))
         self.context = self.get_context()
