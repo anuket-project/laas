@@ -25,7 +25,7 @@ class StatisticsManager(object):
         some point in the given date span is the number of days to plot.
         The last x value will always be the current time
         """
-        x_set = set()
+        data = []
         x = []
         y = []
         users = []
@@ -33,26 +33,26 @@ class StatisticsManager(object):
         delta = datetime.timedelta(days=span)
         end = now - delta
         bookings = Booking.objects.filter(start__lte=now, end__gte=end)
-        for booking in bookings:
-            x_set.add(booking.start)
-            if booking.end < now:
-                x_set.add(booking.end)
+        for booking in bookings:  # collect data from each booking
+            user_list = [u.pk for u in booking.collaborators.all()]
+            user_list.append(booking.owner.pk)
+            data.append((booking.start, 1, user_list))
+            data.append((booking.end, -1, user_list))
 
-        x_set.add(now)
-        x_set.add(end)
+        # sort based on time
+        data.sort(key=lambda i: i[0])
 
-        x_list = list(x_set)
-        x_list.sort(reverse=True)
-        for time in x_list:
-            x.append(str(time))
-            active = Booking.objects.filter(start__lte=time, end__gt=time)
-            booking_count = len(active)
-            users_set = set()
-            for booking in active:
-                users_set.add(booking.owner)
-                for user in booking.collaborators.all():
-                    users_set.add(user)
-            y.append(booking_count)
-            users.append(len(users_set))
+        # collect data
+        count = 0
+        active_users = {}
+        for datum in data:
+            x.append(str(datum[0]))  # time
+            count += datum[1]  # booking count
+            y.append(count)
+            for pk in datum[2]:  # maintain count of each user's active bookings
+                active_users[pk] = active_users.setdefault(pk, 0) + datum[1]
+                if active_users[pk] == 0:
+                    del active_users[pk]
+            users.append(len([x for x in active_users.values() if x > 0]))
 
         return {"booking": [x, y], "user": [x, users]}
