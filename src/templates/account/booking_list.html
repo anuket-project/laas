@@ -3,9 +3,11 @@
 <h2>Bookings I Own</h2>
     <div class="card_container">
     {% for booking in bookings %}
-        <div class="detail_card">
-            <div>
+        <div class="card">
+            <div class="card-header">
                 <h3>Booking {{booking.id}}</h3>
+            </div>
+            <div class="card-body">
                 <ul class="list-group">
                     <li class="list-group-item">id: {{booking.id}}</li>
                     <li class="list-group-item">lab: {{booking.lab}}</li>
@@ -15,8 +17,8 @@
                     <li class="list-group-item">purpose: {{booking.purpose}}</li>
                 </ul>
             </div>
-            <div class="detail_button_container">
-                <a class="btn btn-primary" href="/booking/detail/{{booking.id}}/">Details</a>
+            <div class="card-footer d-flex">
+                <a class="btn btn-primary ml-auto mr-2" href="/booking/detail/{{booking.id}}/">Details</a>
                 <button
                     class="btn btn-danger"
                     onclick='cancel_booking({{booking.id}});'
@@ -29,32 +31,37 @@
     </div>
 <h2>Bookings I Collaborate On</h2>
     <div class="card_container">
-    {% for booking in collab_bookings %}
-        <div class="detail_card">
-            <div>
-                <h3>Booking {{booking.id}}</h3>
-                <ul class="list-group">
-                    <li class="list-group-item">id: {{booking.id}}</li>
-                    <li class="list-group-item">lab: {{booking.lab}}</li>
-                    <li class="list-group-item">resource: {{booking.resource.template.name}}</li>
-                    <li class="list-group-item">start: {{booking.start}}</li>
-                    <li class="list-group-item">end: {{booking.end}}</li>
-                    <li class="list-group-item">purpose: {{booking.purpose}}</li>
-                </ul>
+        {% for booking in collab_bookings %}
+            <div class="card">
+                <div class="card-header">
+                    <h3>Booking {{booking.id}}</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item">id: {{booking.id}}</li>
+                        <li class="list-group-item">lab: {{booking.lab}}</li>
+                        <li class="list-group-item">resource: {{booking.resource.template.name}}</li>
+                        <li class="list-group-item">start: {{booking.start}}</li>
+                        <li class="list-group-item">end: {{booking.end}}</li>
+                        <li class="list-group-item">purpose: {{booking.purpose}}</li>
+                    </ul>
+                </div>
+                <div class="card-footer d-flex">
+                    <a class="btn btn-primary ml-auto" href="/booking/detail/{{booking.id}}/">Details</a>
+                </div>
             </div>
-            <a class="btn btn-primary" href="/booking/detail/{{booking.id}}/">Details</a>
-        </div>
-    {% endfor %}
+        {% endfor %}
     </div>
-
     <h2>Expired Bookings
         <i class="fa fa-fw fa-caret-down" onclick='toggle_display("expired_bookings");'></i>
     </h2>
     <div id="expired_bookings" class="card_container" style="display:none;">
     {% for booking in expired_bookings %}
-        <div class="detail_card">
-            <div>
+        <div class="card">
+            <div class="card-header">
                 <h3>Booking {{booking.id}}</h3>
+            </div>
+            <div class="card-body">
                 <ul class="list-group">
                     <li class="list-group-item">id: {{booking.id}}</li>
                     <li class="list-group-item">lab: {{booking.lab}}</li>
@@ -65,7 +72,9 @@
                     <li class="list-group-item">owner: {{booking.owner.userprofile.email_addr}}</li>
                 </ul>
             </div>
-            <a class="btn btn-primary" href="/booking/detail/{{booking.id}}/">Details</a>
+            <div class="card-footer d-flex">
+                <a class="btn btn-primary ml-auto" href="/booking/detail/{{booking.id}}/">Details</a>
+            </div>
         </div>
     {% endfor %}
     </div>

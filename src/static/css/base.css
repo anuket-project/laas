@@ -1,0 +1,8 @@
+/* Rotating arrows when dropdown happens */
+i.fas.rotate {
+    transition: transform 0.3s ease-in-out;
+}
+
+a[aria-expanded="true"] > i.rotate {
+    transform: rotate(180deg);
+}

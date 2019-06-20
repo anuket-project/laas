@@ -9,12 +9,12 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-4">
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h4 style="display: inline;">Lab Profile</h4>
-               <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;" >Expand</a>
+        <div class="card my-2">
+            <div class="card-header d-flex">
+               <h4>Lab Profile</h4>
+               <button class="btn btn-outline-secondary ml-auto" data-toggle="collapse" data-target="#panel_overview">Expand</button>
             </div>
-            <div class="panel-body" id="panel_overview">
+            <div id="panel_overview" class="card-body collapse show">
                 <table class="table">
                     <tr>
                         <td>Lab Name: </td><td>{{lab.name}}</td>
@@ -50,19 +50,18 @@
                 </table>
             </div>
         </div>
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h4 style="display: inline;">Host Profiles</h4>
-
-               <a data-toggle="collapse" data-target="#profile_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+        <div class="card my-2">
+            <div class="card-header d-flex">
+                <h4 class="d-inline-block">Host Profiles</h4>
+               <button data-toggle="collapse" data-target="#profile_panel" class="btn btn-outline-secondary ml-auto" style="line-height: 1;" >Expand</button>
             </div>
-            <div class="panel-body pod_panel" id="profile_panel">
+            <div id="profile_panel" class="card-body collapse show">
                 <table class="table">
                     {% for profile in hostprofiles %}
                     <tr>
                         <td>{{profile.name}}</td>
                         <td>{{profile.description}}</td>
-                        <td><a href="/resource/profiles/{{ profile.id }}" class="btn btn-primary">Profile</a></td>
+                        <td><a href="/resource/profiles/{{ profile.id }}" class="btn btn-info">Profile</a></td>
                     </tr>
                     {% endfor %}
                 </table>
@@ -70,31 +69,30 @@
         </div>
 
 
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
+        <div class="card my-2">
+            <div class="card-header d-flex">
                 <h4 style="display: inline;">Networking Capabilities</h4>
-            <a data-toggle="collapse" data-target="#network_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+            <button data-toggle="collapse" data-target="#network_panel" class="btn btn-outline-secondary ml-auto" style="line-height: 1;" >Expand</button>
             </div>
 
-            <div class="panel-body" id="network_panel">
-
-                    <table class="table">
-                        <tr>
-                            <td>Block Size: (number of VLANs allowed per deployment)</td><td>{{lab.vlan_manager.block_size}}</td>
-                        </tr>
-                        <tr>
-                            <td>Overlapping Vlans Allowed (user can pick which VLANs they wish to use): </td>
-                            <td>{{lab.vlan_manager.allow_overlapping}}</td>
-                        </tr>
-                    </table>
+            <div class="card-body collapse show" id="network_panel">
+                <table class="table">
+                    <tr>
+                        <td>Block Size: (number of VLANs allowed per deployment)</td><td>{{lab.vlan_manager.block_size}}</td>
+                    </tr>
+                    <tr>
+                        <td>Overlapping Vlans Allowed (user can pick which VLANs they wish to use): </td>
+                        <td>{{lab.vlan_manager.allow_overlapping}}</td>
+                    </tr>
+                </table>
             </div>
         </div>
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h4 style="display: inline;">Images</h4>
-            <a data-toggle="collapse" data-target="#image_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+        <div class="card my-2">
+            <div class="card-header d-flex">
+                <h4>Images</h4>
+                <button data-toggle="collapse" data-target="#image_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
-            <div class="panel-body" id="image_panel">
+            <div class="card-body collapse show" id="image_panel">
                 <table class="table">
                     <tr>
                         <th>Name</th>
@@ -116,14 +114,13 @@
 
     </div>
     <div class="col-lg-8">
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h4 style="display: inline;">Lab Hosts</h4>
-                <p style="display: inline; margin-left: 10px;"></p>
-               <a data-toggle="collapse" data-target="#lab_hosts_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+        <div class="card my-2">
+            <div class="card-header d-flex">
+                <h4>Lab Hosts</h4>
+                <button data-toggle="collapse" data-target="#lab_hosts_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
 
-            <div class="panel-body" id="lab_hosts_panel">
+            <div class="card-body collapse show" id="lab_hosts_panel">
                 <table class="table">
                     <tr>
                         <th>Name</th>

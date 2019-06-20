@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load staticfiles %}
-{% load bootstrap3 %}
+{% load bootstrap4 %}
 
 {% block extrahead %}
     {{block.super}}
@@ -19,13 +19,13 @@
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-lg-4">
-            <div class="panel panel-default">
-                <div class="panel-heading clearfix">
+        <div class="col-12 col-lg-5">
+            <div class="card mb-4">
+                <div class="card-header d-flex">
                     <h4 style="display: inline;">Overview</h4>
-                    <a data-toggle="collapse" data-target="#panel_overview" class="btn pull-right" style="line-height: 1;">Expand</a>
+                    <button data-toggle="collapse" data-target="#panel_overview" class="btn btn-outline-secondary ml-auto">Expand</button>
                 </div>
-                <div class="panel-body collapse in" id="panel_overview">
+                <div class="card-body collapse show" id="panel_overview">
                     <table class="table">
                         <tr>
                             <td>Purpose</td>
@@ -60,12 +60,12 @@
             </div>
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="panel panel-default">
-                        <div class="panel-heading clearfix">
+                    <div class="card">
+                        <div class="card-header d-flex">
                             <h4 style="display: inline;">Pod</h4>
-                            <a data-toggle="collapse" data-target="#pod_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+                            <button data-toggle="collapse" data-target="#pod_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
                         </div>
-                        <div class="panel-body pod_panel collapse in" id="pod_panel">
+                        <div class="card-body collapse show" id="pod_panel">
                             <table class="table">
                             {% for host in booking.resource.hosts.all %}
                             <tr>
@@ -177,14 +177,14 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-8">
-            <div class="panel panel-default">
-                <div class="panel-heading clearfix">
+        <div class="col">
+            <div class="card mb-4">
+                <div class="card-header d-flex">
                     <h4 style="display: inline;">Deployment Progress</h4>
                     <p style="display: inline; margin-left: 10px;">  These are the different tasks that have to be completed before your deployment is ready</p>
-                   <a data-toggle="collapse" data-target="#panel_tasks" class="btn pull-right" style="line-height: 1;" >Expand</a>
+                    <button data-toggle="collapse" data-target="#panel_tasks" class="btn btn-outline-secondary ml-auto">Expand</button>
                 </div>
-                <div class="panel-body collapse in" id="panel_tasks">
+                <div class="card-body collapse show" id="panel_tasks">
                     <table class="table">
                         <style>
                             .progress {
@@ -269,15 +269,15 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-lg-8">
-                    <div class="panel panel-default">
-                        <div class="panel-heading clearfix">
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header d-flex">
                             <h4 style="display: inline;">PDF</h4>
-                            <a data-toggle="collapse" data-target="#pdf_panel" class="btn pull-right" style="line-height: 1;" >Expand</a>
+                            <button data-toggle="collapse" data-target="#pdf_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
                         </div>
-                        <div class="panel-body collapse in" id="pdf_panel" style="padding: 0px;">
+                        <div class="card-body collapse show" id="pdf_panel" style="padding: 0px;">
                             <pre class="prettyprint lang-yaml" style="margin: 0px; padding: 15px; border: none;">
-{{pdf}}
+                                {{pdf}}
                             </pre>
                         </div>
                     </div>

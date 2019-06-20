@@ -1,26 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2>Labs</h2>
-    <div class="card_container">
+<h2>Labs</h2>
+<div class="card_container">
     {% for lab in labs %}
-        <div class="detail_card">
-            <div>
-                <h3>{{lab.name}}</h3>
-                <ul class="list-group">
-                    <li class="list-group-item">name: {{lab.name}}</li>
-                    <li class="list-group-item">description: {{lab.description}}</li>
-                    <li class="list-group-item">location: {{lab.location}}</li>
-                    {% if lab.status == 0 %}
-                    <li class="list-group-item">status: Up</li>
-                    {% elif lab.status == 100 %}
-                    <li class="list-group-item">status: Down for Maintenance</li>
-                    {% elif lab.status == 200 %}
-                    <li class="list-group-item">status: Down</li>
-                    {% endif %}
-                </ul>
-            </div>
-            <a class="btn btn-primary" href="/lab/{{lab.name}}/">Details</a>
+    <div class="card">
+        <div class="card-header">
+            <h3 class="mt-2">{{lab.name}}</h3>
         </div>
-    {% endfor %}
+        <div class="p-4">
+            <ul class="list-group">
+                <li class="list-group-item">name: {{lab.name}}</li>
+                <li class="list-group-item">description: {{lab.description}}</li>
+                <li class="list-group-item">location: {{lab.location}}</li>
+                {% if lab.status == 0 %}
+                <li class="list-group-item">status: Up</li>
+                {% elif lab.status == 100 %}
+                <li class="list-group-item">status: Down for Maintenance</li>
+                {% elif lab.status == 200 %}
+                <li class="list-group-item">status: Down</li>
+                {% endif %}
+            </ul>
+            <a class="btn btn-primary mt-4 w-100" href="/lab/{{lab.name}}/">Details</a>
+        </div>
     </div>
+    {% endfor %}
+</div>
 {% endblock %}

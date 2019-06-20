@@ -3,9 +3,11 @@
 <h2>Images I Own</h2>
 <div class="card_container">
 {% for image in images %}
-    <div class="detail_card">
-        <div>
+    <div class="card">
+        <div class="card-header">
             <h3>Image {{image.id}}</h3>
+        </div>
+        <div class="card-body">
             <ul class="list-group">
                 <li class="list-group-item">id: {{image.id}}</li>
                 <li class="list-group-item">lab: {{image.from_lab.name}}</li>
@@ -14,10 +16,9 @@
                 <li class="list-group-item">host profile: {{image.host_type.name}}</li>
             </ul>
         </div>
-        <div class="detail_button_container">
+        <div class="card-footer">
             <button
-                class="btn btn-danger"
-                style="width:49%;float:right;"
+                class="btn btn-danger w-100"
                 onclick='delete_image({{image.id}});'
                 data-toggle="modal"
                 data-target="#imageModal"
@@ -29,9 +30,11 @@
 <h2>Public Images</h2>
 <div class="card_container">
     {% for image in public_images %}
-        <div class="detail_card">
-            <div>
+        <div class="card">
+            <div class="card-header">
                 <h3>Image {{image.id}}</h3>
+            </div>
+            <div class="card-body">
                 <ul class="list-group">
                     <li class="list-group-item">id: {{image.id}}</li>
                     <li class="list-group-item">lab: {{image.from_lab.name}}</li>

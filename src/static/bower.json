@@ -16,12 +16,14 @@
     "tests"
   ],
   "dependencies": {
-    "eonasdan-bootstrap-datetimepicker": "^4.17.37",
     "fullcalendar": "^2.9.0",
     "jquery-migrate": "^3.0.0",
-    "startbootstrap-sb-admin-2-blackrockdigital": "^3.3.7"
-  },
-  "resolutions": {
-    "font-awesome": "~4.6.3"
+    "bootstrap": "4.3.1",
+    "popper.js": "1.14.3",
+    "Font-Awesome": "5.9.0",
+    "datatables.net": "1.10.19",
+    "datatables.net-bs4": "1.10.19",
+    "datatables.net-responsive": "2.1.1",
+    "datatables.net-responsive-bs4": "2.2.3"
   }
 }

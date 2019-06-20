@@ -41,17 +41,28 @@ function getData(){
 {% endblock %}
 
 {% block content %}
-    <p>Number of days to plot: </p>
-    <div class="form-group">
-        <input id="number_days" type="number" class="form-control" min="1" step="1" style="display:inline;width:200px"/>
-        <button class="btn btn-primary" onclick="getData();" style="display:inline;">Submit</button>
-    </div>
-    <div id="all_graph_container">
-        <div id="booking_graph_wrapper">
-            <div id="booking_graph_container"/>
+    <div class="container-fluid">
+        <div class="row">
+                <div class="col">
+                        <p>Number of days to plot: </p>
+                        <div class="form-group">
+                            <input id="number_days" type="number" class="form-control" min="1" step="1" style="display:inline;width:200px"/>
+                            <button class="btn btn-primary" onclick="getData();" style="display:inline;">Submit</button>
+                        </div>
+                </div>
         </div>
-        <div id="user_graph_wrapper" >
-            <div id="user_graph_container"/>
+        <div class="row">
+            <div class="col-12 col-md-10">
+                <!-- These graphs do NOT get redrawn when the browser size is changed -->
+                <div id="all_graph_container border" class="mw-100">
+                    <div id="booking_graph_wrapper">
+                        <div id="booking_graph_container"/>
+                    </div>
+                    <div id="user_graph_wrapper">
+                        <div id="user_graph_container"/>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script>
