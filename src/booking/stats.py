@@ -32,7 +32,7 @@ class StatisticsManager(object):
         now = datetime.datetime.now(pytz.utc)
         delta = datetime.timedelta(days=span)
         end = now - delta
-        bookings = Booking.objects.filter(start__lte=now, end__gte=end)
+        bookings = Booking.objects.filter(start__lte=now, end__gte=end).prefetch_related("collaborators")
         for booking in bookings:  # collect data from each booking
             user_list = [u.pk for u in booking.collaborators.all()]
             user_list.append(booking.owner.pk)
