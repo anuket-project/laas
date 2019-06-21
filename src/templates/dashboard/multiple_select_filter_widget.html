@@ -34,11 +34,28 @@
     padding: 7px;
     transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
     box-shadow: 0 1px 1px rgba(0,0,0,.075);
+
+    display: flex;
+    flex-direction: column;
+}
+
+.grid-item > .btn:active, .grid-item > .btn:focus {
+    outline: none; !important;
+    box-shadow: none;
+}
+
+.grid-item-description {
+    flex: 1;
 }
 
 .selected_node {
     border-color: #40c640;
     box-shadow: 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(109, 243, 76, 0.6);
+    transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
+}
+
+.grid-item:hover:not(.selected_node):not(.disabled_node) {
+    box-shadow: 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(100, 100, 100, 0.3);
     transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
 }
 
@@ -102,7 +119,8 @@
         </div>
         <div id="{{object_class}}" class="object_class_wrapper">
         {% for obj in object_list %}
-            <div id="{{ obj.id|default:'not_provided' }}" class="grid-item">
+            <div id="{{ obj.id|default:'not_provided' }}" class="grid-item" onclick="multi_filter_widget.processClick(
+                    '{{obj.id}}');">
                 <p class="grid-item-header">{{obj.name}}</p>
                 <p class="grid-item-description">{{obj.description}}</p>
                 <button type="button" class="btn btn-success grid-item-select-btn" onclick="multi_filter_widget.processClick(
