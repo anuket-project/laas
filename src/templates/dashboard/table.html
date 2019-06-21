@@ -4,11 +4,12 @@
 {% block extrahead %}
     {{ block.super }}
     <!-- DataTables CSS -->
-    <link href="{% static "bower_components/datatables-plugins/integration/bootstrap/3/dataTables.bootstrap.css" %}"
+    <link href="{% static "bower_components/datatables.net-bs4/css/dataTables.bootstrap4.min.css" %}"
           rel="stylesheet">
 
     <!-- DataTables Responsive CSS -->
-    <link href="{% static "bower_components/datatables-responsive/css/dataTables.responsive.css" %}" rel="stylesheet">
+    <link href="{% static "bower_components/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css" %}"
+          rel="stylesheet">
 {% endblock extrahead %}
 
 {% block content %}
@@ -34,8 +35,8 @@
 {% block extrajs %}
     <!-- DataTables JavaScript -->
 
-    <script src={% static "bower_components/datatables/media/js/jquery.dataTables.min.js" %}></script>
-    <script src={% static "bower_components/datatables-plugins/integration/bootstrap/3/dataTables.bootstrap.min.js" %}></script>
+    <script src={% static "bower_components/datatables.net/js/jquery.dataTables.min.js" %}></script>
+    <script src={% static "bower_components/datatables.net-bs4/js/dataTables.bootstrap4.min.js" %}></script>
 
     <script src={% static "js/dataTables-sort.js" %}></script>
 

@@ -2,9 +2,11 @@
 {% block content %}
 <div class="card_container">
 {% for config in configurations %}
-    <div class="detail_card">
-        <div>
+    <div class="card">
+        <div class="card-header">
             <h3>Configuration {{config.id}}</h3>
+        </div>
+        <div class="card-body">
             <ul class="list-group">
                 <li class="list-group-item">id: {{config.id}}</li>
                 <li class="list-group-item">name: {{config.name}}</li>
@@ -12,10 +14,9 @@
                 <li class="list-group-item">resource: {{config.bundle}}</li>
             </ul>
         </div>
-        <div class="detail_button_container">
+        <div class="card-footer">
             <button
-                class="btn btn-danger"
-                style="width:49%;float:right;"
+                class="btn btn-danger w-100"
                 onclick='delete_config({{config.id}});'
                 data-toggle="modal"
                 data-target="#configModal"

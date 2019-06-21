@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% load staticfiles %}
 
-{% load bootstrap3 %}
+{% load bootstrap4 %}
 
 {% block content %}
 
 <style>
-    .go_btn{
+    .go_btn {
 
         position: absolute;
         width: 100px;
@@ -14,42 +14,35 @@
         height: calc(100% - 170px);
 
     }
-    .go_btn_disabled{
-            background-color: #ffffff;
+
+    .go_btn_disabled {
+        background-color: #ffffff;
     }
-    .go_forward{
+
+    .go_forward {
         right: 0px;
         border-left: none;
     }
 
-    .go_back{
+    .go_back {
         left: 251px;
         border-right: none;
     }
 
 
-    .btn_wrapper{
+    .btn_wrapper {
         text-align: center;
         margin-bottom: 5px;
 
     }
 
     {% if DEBUG %}
-
-    .add_btn_wrapper{
-        right: 130px;
-        top: 10px;
-        position: absolute;
-    }
+        .add_btn_wrapper {
+            right: 130px;
+            top: 10px;
+            position: absolute;
+        }
     {% endif %}
-
-
-
-    .options{
-        position: absolute;
-        top: 60px;
-        right: 20px;
-    }
 
     #breadcrumbs {
         margin-bottom: 0;
@@ -59,23 +52,25 @@
         margin: 0;
     }
 
-    .step{
+    .step {
         display: inline;
         padding: 7px;
         margin: 1px;
         font-size: 14pt;
         cursor: default;
     }
+
     .step:active {
         -webkit-box-shadow: inherit;
         box-shadow: inherit;
     }
+
     .step_active:active {
         -webkit-box-shadow: inherit;
         box-shadow: inherit;
     }
 
-    .step_active{
+    .step_active {
         display: inline;
         padding: 7px;
         margin: 1px;
@@ -85,26 +80,22 @@
         border-bottom: 4px solid #41ba78 !important;
     }
 
-    .step_hidden
-    {
+    .step_hidden {
         background: #EFEFEF;
         color: #999999;
     }
 
-    .step_invalid::after
-    {
+    .step_invalid::after {
         content: " \2612";
         color: #CC3300;
     }
 
-    .step_valid::after
-    {
+    .step_valid::after {
         content: " \2611";
         color: #41ba78;
     }
 
-    .step_untouched::after
-    {
+    .step_untouched::after {
         content: " \2610";
     }
 
@@ -126,55 +117,153 @@
         background-color: inherit;
     }
 
-    #breadcrumbs.breadcrumb > li {
+    #breadcrumbs.breadcrumb>li {
         border: 1px solid #cccccc;
         border-left: none;
     }
-    #breadcrumbs.breadcrumb > li:first-child {
+
+    #breadcrumbs.breadcrumb>li:first-child {
         border-left: 1px solid #cccccc;
     }
-    #breadcrumbs.breadcrumb > li + li:before {
+
+    #breadcrumbs.breadcrumb>li+li:before {
         content: "";
         width: 0;
         margin: 0;
         padding: 0;
     }
+
+    #topPagination .topcrumb {
+        flex: 1 1 0;
+        display: flex;
+        align-content: center;
+        justify-content: center;
+        border: 1px solid #dee2e6;
+        border-left: none;
+    }
+
+    .topcrumb > span {
+        color: #343a40;
+        cursor: default;
+    }
+
+    .topcrumb.active > span {
+        background: #007bff;
+        color: white;
+    }
+
+    .topcrumb.disabled > span {
+        color: #6c757d;
+        background: #f8f9fa;
+    }
 </style>
+<!-- Pagination -->
+<div class="row mt-3">
+    <div class="col">
+        <nav>
+            <ul class="pagination d-flex flex-row" id="topPagination">
+                <li class="page-item flex-shrink-1 page-control">
+                    <a class="page-link" href="#" id="gob" onclick="go('prev')">
+                        <i class="fas fa-backward"></i> Back
+                    </a>
+                </li>
+                <li class="page-item flex-grow-1 active">
+                    <a class="page-link disabled" href="#">
+                        Select <i class="far fa-check-square"></i>
+                    </a>
+                </li>
+                <li class="page-item flex-grow-1">
+                    <a class="page-link disabled" href="#">
+                        Configure <i class="far fa-square"></i>
+                    </a>
+                </li>
+                <li class="page-item flex-grow-1">
+                    <a class="page-link disabled" href="#">
+                        Information <i class="far fa-square"></i>
+                    </a>
+                </li>
+                <li class="page-item flex-grow-1">
+                    <a class="page-link disabled" href="#">
+                        OPNFV <i class="far fa-square"></i>
+                    </a>
+                </li>
+                <li class="page-item flex-grow-1">
+                    <a class="page-link disabled" href="#">
+                        Confirm <i class="far fa-square"></i>
+                    </a>
+                </li>
+                <li class="page-item flex-shrink-1 page-control">
+                    <a class="page-link text-right" href="#" id="gof" onclick="go('next')">
+                        Next <i class="fas fa-forward"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+<!-- Top header -->
+<div class="row px-4">
+    <div class="col">
+        <div id="iframe_header" class="row view-header">
+            <div class="col-lg-12 step_header">
+                <h1 class="step_title d-inline-block" id="view_title"></h1>
+                <span class="description text-muted" id="view_desc"></span>
+                <p class="step_message" id="view_message"></p>
+            </div>
+            <script>
+                function update_description(title, desc) {
+                    document.getElementById("view_title").innerText = title;
+                    document.getElementById("view_desc").innerText = desc;
+                }
 
-<button id="gof" onclick="go('next')" class="btn go_btn go_forward">Go Forward</button>
-<button id="gob" onclick="go('prev')" class="btn go_btn go_back">Go Back</button>
-
-<div class="options">
-    <button id="cancel_btn" class="btn btn-primary" onclick="cancel_wf()">Cancel</button>
+                function update_message(message, stepstatus) {
+                    document.getElementById("view_message").innerText = message;
+                    document.getElementById("view_message").className = "step_message";
+                    document.getElementById("view_message").classList.add("message_" + stepstatus);
+                }
+            </script>
+            <!-- /.col-lg-12 -->
+        </div>
+    </div>
+    <div class="col-auto align-self-center d-flex">
+        <button id="cancel_btn" class="btn btn-danger ml-auto" onclick="cancel_wf()">Cancel</button>
+    </div>
+</div>
+<!-- Content here -->
+<div class="row d-flex flex-column flex-grow-1">
+    <div class="container-fluid d-flex flex-column h-100">
+        <div class="row d-flex flex-grow-1 p-4">
+            <!-- iframe workflow -->
+            <div class="col-12 d-flex border flex-grow-1">
+                <!-- This was where the iframe went -->
+                <iframe src="/wf/workflow" class="w-100 h-100" scrolling="yes" id="viewport-iframe"
+                    frameBorder="0"></iframe>
+            </div>
+        </div>
+    </div>
 </div>
 <div class="btn_wrapper">
-<ol id="breadcrumbs" class="btn-group breadcrumb">
-</ol>
 </div>
 {% csrf_token %}
 
 <script type="text/javascript">
-
-
     update_context();
     var step = 0;
     var page_count = 0;
     var context_data = false;
 
-    function go(to)
-    {
+    function go(to) {
         step_on_leave();
         request_leave(to);
     }
 
-    function request_leave(to)
-    {
+    function request_leave(to) {
         $.ajax({
             type: "GET",
             url: "/wf/manager/",
-            beforeSend: function(request) {
+            beforeSend: function (request) {
                 request.setRequestHeader("X-CSRFToken",
-                $('input[name="csrfmiddlewaretoken"]').val());
+                    $('input[name="csrfmiddlewaretoken"]').val());
             },
             success: function (data) {
                 confirm_permission(to, data);
@@ -183,48 +272,44 @@
         });
     }
 
-    function confirm_permission(to, data)
-    {
-        if( errors_exist(data) )
-        {
-            if( to != "prev" )
-            {
+    function confirm_permission(to, data) {
+        if (errors_exist(data)) {
+            if (to != "prev") {
                 return;
             }
         }
 
-        var problem = function() {
+        var problem = function () {
             alert("There was a problem");
         }
         //makes an asynch request
         req = new XMLHttpRequest();
         url = "/wf/workflow/?step=" + to;
         req.open("GET", url, true);
-        req.onload = function(e) {
-            if(req.readyState === 4){
-                if(req.status < 300){
+        req.onload = function (e) {
+            if (req.readyState === 4) {
+                if (req.status < 300) {
                     document.getElementById("viewport-iframe").srcdoc = this.responseText;
-                } else { problem(); }
-            } else { problem(); }
+                } else {
+                    problem();
+                }
+            } else {
+                problem();
+            }
         }
         req.onerror = problem;
         req.send();
     }
 
-    function step_on_leave()
-    {
+    function step_on_leave() {
         document.getElementById("viewport-iframe").contentWindow.step_on_leave();
     }
 
-    function errors_exist(data)
-    {
+    function errors_exist(data) {
         var stat = data['steps'][data['active']]['valid'];
-        if( stat >= 100 && stat < 200 )
-        {
+        if (stat >= 100 && stat < 200) {
             return true;
-        }
-        else
-        {
+        } else {
             return false;
         }
     }
@@ -233,9 +318,9 @@
         $.ajax({
             type: "GET",
             url: "/wf/manager/",
-            beforeSend: function(request) {
+            beforeSend: function (request) {
                 request.setRequestHeader("X-CSRFToken",
-                $('input[name="csrfmiddlewaretoken"]').val());
+                    $('input[name="csrfmiddlewaretoken"]').val());
             },
             success: function (data) {
                 update_page(data);
@@ -243,120 +328,100 @@
         });
     }
 
-    function update_page(data)
-    {
+    function update_page(data) {
         context_data = data;
         update_breadcrumbs(data);
-        if(data["workflow_count"] == 1)
-        {
-                document.getElementById("cancel_btn").innerText = "Exit Workflow";
-        }
-        else
-        {
-                document.getElementById("cancel_btn").innerText = "Return to Parent";
+        if (data["workflow_count"] == 1) {
+            document.getElementById("cancel_btn").innerText = "Exit Workflow";
+        } else {
+            document.getElementById("cancel_btn").innerText = "Return to Parent";
         }
     }
 
     function update_breadcrumbs(meta_json) {
         step = meta_json['active'];
         page_count = meta_json['steps'].length;
-        if( step == 0 )
-        {
-                var btn = document.getElementById("gob");
-                btn.classList.add("go_btn_disabled");
-                btn.disabled = true;
+        if (step == 0) {
+            var btn = document.getElementById("gob");
+            btn.classList.add("invisible");
+            btn.disabled = true;
+        } else {
+            var btn = document.getElementById("gob");
+            btn.classList.remove("invisible");
+            btn.disabled = false;
         }
-        else
-        {
-                var btn = document.getElementById("gob");
-                btn.classList.remove("go_btn_disabled");
-                btn.disabled = false;
-        }
-        if( step == page_count - 1 )
-        {
-                var btn = document.getElementById("gof");
-                btn.classList.add("go_btn_disabled");
-                btn.disabled = true;
-        }
-        else
-        {
-                var btn = document.getElementById("gof");
-                btn.classList.remove("go_btn_disabled");
-                btn.disabled = false;
+        if (step == page_count - 1) {
+            var btn = document.getElementById("gof");
+            btn.classList.add("invisible");
+            btn.disabled = true;
+        } else {
+            var btn = document.getElementById("gof");
+            btn.classList.remove("invisible");
+            btn.disabled = false;
         }
         //remove all children of breadcrumbs so we can redraw
-        var container = document.getElementById("breadcrumbs");
-        while(container.firstChild){
-            container.removeChild(container.firstChild);
-        }
-
+        $("#topPagination").children().not(".page-control").remove();
         draw_steps(meta_json);
     }
 
-    function draw_steps(meta_json){
-        for( var i = 0; i < meta_json["steps"].length; i++ )
-        {
+    function draw_steps(meta_json) {
+        for (var i = 0; i < meta_json["steps"].length; i++) {
             meta_json["steps"][i]["index"] = i;
             var step_btn = create_step(meta_json["steps"][i], i == meta_json["active"]);
-            document.getElementById("breadcrumbs").appendChild(step_btn);
+            $("#topPagination li:last-child").before(step_btn);
         }
     }
 
-    function create_step(step_json, active){
+    function create_step(step_json, active) {
         var step_dom = document.createElement("li");
-        if(active){
-            step_dom.className = "step_active";
-
-        } else{
-            step_dom.className = "step";
+        // First create the dom object depending on active or not
+        if (active) {
+            step_dom.className = "topcrumb active";
+        } else {
+            step_dom.className = "topcrumb";
         }
-        step_dom.appendChild(document.createTextNode(step_json['title']));
+        $(step_dom).html(`<span class="d-flex align-items-center justify-content-center text-capitalize w-100">${step_json['title']}</span>`)
         var code = step_json['valid'];
         stat = "";
         msg = "";
-        if( code < 100 )
-        {
-            step_dom.classList.add("step_untouched");
-
+        if (code < 100) {
+            $(step_dom).children().first().append("<i class='ml-2 far fa-square'></i>")
             stat = "";
             msg = "";
-        }
-        else if( code < 200 )
-        {
-            step_dom.classList.add("step_invalid");
+        } else if (code < 200) {
+            $(step_dom).children().first().append("<i class='ml-2 fas fa-minus-square'></i>")
             stat = "invalid";
             msg = step_json['message'];
-        }
-        else if( code < 300 )
-        {
-            step_dom.classList.add("step_valid");
+        } else if (code < 300) {
+            $(step_dom).children().first().append("<i class='ml-2 far fa-check-square'></i>")
             stat = "valid";
             msg = step_json['message'];
         }
-        if( step_json['enabled'] == false )
-        {
-            step_dom.classList.add("step_hidden");
+        if (step_json['enabled'] == false) {
+            step_dom.classList.add("disabled");
         }
-        if(active)
-        {
+        if (active) {
             update_message(msg, stat);
         }
-        step_dom.classList.add("btn");
 
         var step_number = step_json['index'];
         return step_dom;
     }
 
-    function cancel_wf(){
+    function cancel_wf() {
         var form = $("#workflow_pop_form");
         var formData = form.serialize();
         var req = new XMLHttpRequest();
         req.open("POST", "/wf/workflow/finish/", false);
         req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        req.onerror = function() { alert("problem occurred while trying to cancel current workflow"); }
-        req.onreadystatechange = function() { if(req.readyState === 4){
-            refresh_iframe();
-        }};
+        req.onerror = function () {
+            alert("problem occurred while trying to cancel current workflow");
+        }
+        req.onreadystatechange = function () {
+            if (req.readyState === 4) {
+                refresh_iframe();
+            }
+        };
         req.send(formData);
     }
 
@@ -364,43 +429,45 @@
         req = new XMLHttpRequest();
         url = "/wf/workflow/";
         req.open("GET", url, true);
-        req.onload = function(e) {
+        req.onload = function (e) {
             var doc = document.getElementById("viewport-iframe").contentWindow.document;
-            doc.open(); doc.write(this.responseText); doc.close();
+            doc.open();
+            doc.write(this.responseText);
+            doc.close();
         }
         req.send();
     }
 
-    function write_iframe(contents)
-    {
-        document.getElementById("viewport-iframe").contentWindow.document.innerHTML= contents;
+    function write_iframe(contents) {
+        document.getElementById("viewport-iframe").contentWindow.document.innerHTML = contents;
     }
 
-    function redirect_root()
-    {
+    function redirect_root() {
         window.location.replace('/wf/');
     }
 
-    function add_wf(type){
+    function add_wf(type) {
         add_wf_internal(type, false);
     }
 
-    function add_edit_wf(type, target){
+    function add_edit_wf(type, target) {
         add_wf_internal(type, target);
     }
 
-    function add_wf_internal(type, itemid){
-        data = {"add": type};
-        if(itemid){
+    function add_wf_internal(type, itemid) {
+        data = {
+            "add": type
+        };
+        if (itemid) {
             data['target'] = itemid;
         }
         $.ajax({
             type: "POST",
             url: "/wf/manager/",
             data: data,
-            beforeSend: function(request) {
+            beforeSend: function (request) {
                 request.setRequestHeader("X-CSRFToken",
-                $('input[name="csrfmiddlewaretoken"]').val()
+                    $('input[name="csrfmiddlewaretoken"]').val()
                 );
             },
             success: refresh_wf_iframe()
@@ -408,66 +475,12 @@
     }
 
     function refresh_wf_iframe() {
-        window.location=window.location;
+        window.location = window.location;
     }
 </script>
-<div id="iframe_header" class="row view-header">
-    <div class="col-lg-12 step_header">
-        <h1 class="step_title" id="view_title"></h1>
-        <p class="description" id="view_desc"></p>
-        <p class="step_message" id="view_message"></p>
-    </div>
-    <style>
-        #view_desc{
-            margin-bottom: 15px;
-            margin-top: 5px;
-            margin-left: 30px;
-            display: inline;
-        }
-        #view_title{
-            margin-top: 5px;
-            margin-bottom: 0px;
-            display: inline;
-        }
-        #view_message{
-            margin-top: 10px;
-            margin-bottom: 5px;
-            float: right;
-        }
-        .message_invalid{
-            color: #ff4400;
-        }
-        .message_valid{
-            color: #44cc00;
-        }
-        .step_header{
-            border-bottom: 1px solid #eee;
-            border-top: 1px solid #eee;
-            left: 101px;
-            width: calc(100% - 202px);
-        }
-    </style>
-    <script>
-        function update_description(title, desc){
-            document.getElementById("view_title").innerText = title;
-            document.getElementById("view_desc").innerText = desc;
-        }
-        function update_message(message, stepstatus){
-            document.getElementById("view_message").innerText = message;
-            document.getElementById("view_message").className = "step_message";
-            document.getElementById("view_message").classList.add("message_" + stepstatus);
-        }
-
-    </script>
-    <!-- /.col-lg-12 -->
-</div>
 <div style="display: none;" id="workflow_pop_form_div">
-<form id="workflow_pop_form" action="/wf/workflow/finish/" method="post">
-    {% csrf_token %}
-</form>
-</div>
-
-<div class="iframe_div">
-        <iframe src="/wf/workflow" class="iframe_elem" scrolling="yes" id="viewport-iframe"></iframe>
+    <form id="workflow_pop_form" action="/wf/workflow/finish/" method="post">
+        {% csrf_token %}
+    </form>
 </div>
 {% endblock content %}
