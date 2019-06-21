@@ -16,6 +16,7 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.shortcuts import redirect, render
 from django.db.models import Q
+from django.urls import reverse
 
 from resource_inventory.models import ResourceBundle, HostProfile, Image, Host
 from resource_inventory.resource_manager import ResourceManager
@@ -60,14 +61,13 @@ def quick_create(request):
 
         if form.is_valid():
             try:
-                create_from_form(form, request)
+                booking = create_from_form(form, request)
+                messages.success(request, "We've processed your request. "
+                                          "Check Account->My Bookings for the status of your new booking")
+                return redirect(reverse('booking:booking_detail', kwargs={'booking_id': booking.id}))
             except Exception as e:
                 messages.error(request, "Whoops, an error occurred: " + str(e))
-                return render(request, 'workflow/exit_redirect.html', context)
-
-            messages.success(request, "We've processed your request. "
-                                      "Check Account->My Bookings for the status of your new booking")
-            return render(request, 'workflow/exit_redirect.html', context)
+                return render(request, 'booking/quick_deploy.html', context)
         else:
             messages.error(request, "Looks like the form didn't validate. Check that you entered everything correctly")
             return render(request, 'booking/quick_deploy.html', context)

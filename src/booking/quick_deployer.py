@@ -326,6 +326,8 @@ def create_from_form(form, request):
     JobFactory.makeCompleteJob(booking)
     NotificationHandler.notify_new_booking(booking)
 
+    return booking
+
 
 def drop_filter(user):
     installer_filter = {}
