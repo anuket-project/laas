@@ -4,6 +4,7 @@
     grid-template-columns: 1fr 1fr 1fr;
     border: 0px;
 }
+
 .class_grid_wrapper {
     border: 0px;
     text-align: center;
@@ -20,96 +21,78 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
 }
+
 .grid-item {
     cursor: pointer;
-    border:1px solid #cccccc;
+    border: 1px solid #cccccc;
     border-radius: 5px;
-    margin:20px;
+    margin: 20px;
     height: 200px;
     padding: 7px;
-    transition-property: box-shadow, background-color;
-    transition-duration: .2s;
-}
-
-.grid-item:hover {
-    box-shadow: 0px 0px 7px 0px rgba(0,0,0,0.45);
-    transition-property: box-shadow;
-    transition-duration: .2s;
-
+    transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
+    box-shadow: 0 1px 1px rgba(0,0,0,.075);
 }
 
 .selected_node {
-    box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.45);
-    background-color: #fff;
-    transition-property: background-color;
-    transition-duration: .2s;
+    border-color: #40c640;
+    box-shadow: 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(109, 243, 76, 0.6);
+    transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
 }
 
 .disabled_node {
     cursor: not-allowed;
     background-color: #EFEFEF;
-    transition-property: box-shadow;
-    transition-duration: .2s;
-    border: 1px solid #ccc;
 }
 
-.disabled_node:hover {
-}
+.disabled_node:hover {}
 
 .cleared_node {
     background-color: #FFFFFF;
 }
 
-.grid-item-header
-{
+.grid-item-header {
     font-weight: bold;
     font-size: 20px;
     margin-top: 10px;
 }
 
-#dropdown_wrapper > div > h5 {
-    margin: 12px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-#dropdown_wrapper > div > button {
-    padding: 7px;
-    margin: 2px;
-    float: right;
-    width: 80px;
-}
-#dropdown_wrapper > div > input {
-    padding: 7px;
-    margin: 2px;
-    float: right;
-    width: 300px;
-    width: calc(100% - 240px);
-}
-
-#dropdown_wrapper > div {
-    border:2px;
-    border-style:none;
-    border-color:black;
+.dropdown_item {
+    border: 1px;
+    border-style: solid;
+    border-color: lightgray;
     border-radius: 5px;
-    margin:20px;
+    margin: 20px;
     padding: 2px;
-    box-shadow: 0px 0px 7px 0px rgba(0,0,0,0.75);
-    transition-property: box-shadow, background-color;
-    transition-duration: .2s;
-    display: inline-block;
-    vertical-align: middle;
+    grid-column: 1;
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr;
+    justify-items: center;
+}
+
+.dropdown_item > button {
+    margin: 2px;
+    justify-self: end;
+}
+
+.dropdown_item > h5 {
+    margin: auto;
+}
+
+.dropdown_item > input {
+    padding: 7px;
+    margin: 2px;
+    width: 90%;
 }
 
 #dropdown_wrapper {
     display: grid;
-    grid-template-columns: 3fr 5fr;
+    grid-template-columns: 4fr 5fr;
 }
-
 </style>
+
 <input name="filter_field" id="filter_field" type="hidden"/>
 <div id="grid_wrapper" class="grid_wrapper">
-{% for object_class, object_list in filter_objects %}
+{% for object_class, object_list in display_objects %}
     <div class="class_grid_wrapper">
         <div style="display:inline-block;margin:auto">
             <h4>{{object_class}}</h4>
@@ -120,12 +103,8 @@
                 <p class="grid-item-header">{{obj.name}}</p>
                 <p class="grid-item-description">{{obj.description}}</p>
                 <button type="button" class="btn btn-success grid-item-select-btn" onclick="processClick(
-                    '{{obj.id}}',
-                    {% if obj.multiple %}true
-                    {% else %}false
-                    {% endif %});">{% if obj.multiple %}Add{% else %}Select{% endif %}</button>
+                    '{{obj.id}}');">{% if obj.multiple %}Add{% else %}Select{% endif %}</button>
             </div>
-            <input type="hidden" name="{{obj.id}}_selected" value="false"/>
         {% endfor %}
         </div>
     </div>
@@ -137,62 +116,55 @@
 
 <script>
 var initialized = false;
-var mapping = {{ mapping|safe }};
+var inputs = [];
+var graph_neighbors = {{ neighbors|safe }};
 var filter_items = {{ filter_items|safe }};
 var result = {};
-var selection = {{selection_data|default_if_none:"null"|safe}};
 var dropdown_count = 0;
 
-{% if selection_data %}
-make_selection({{selection_data|safe}});
-{% endif %}
+{% if initial_value %}
 
-function make_selection( selection_data ){
-    if(!initialized) {
-        filter_field_init();
-    }
-    for(var k in selection_data) {
-        selected_items = selection_data[k];
-        for( var selected_item in selected_items ){
-            var node = filter_items[selected_item];
-            if(!node['multiple']){
-                var input_value = selected_items[selected_item];
-                if( input_value != 'false' ) {
-                    select(node);
-                    markAndSweep(node);
-                }
-                var div = document.getElementById(selected_item)
-                var inputs = div.parentNode.getElementsByTagName("input")
-                var input = div.parentNode.getElementsByTagName("input")[0]
-                input.value = input_value;
-                updateResult(selected_item);
-            } else {
-                make_multiple_selection(selected_items, selected_item);
+var initial_value = {{ initial_value|safe }};
+
+
+function make_selection( initial_data ){
+    try_init();
+    for(var item_class in initial_data) {
+        var selected_items = initial_data[item_class];
+        for( var node_id in selected_items ){
+            var node = filter_items[node_id];
+            var selection_data = selected_items[node_id]
+            if( selection_data.selected ) {
+                select(node);
+                markAndSweep(node);
+                updateResult(node);
+            }
+            if(node['multiple']){
+                make_multiple_selection(node, selection_data);
             }
         }
     }
 }
 
-function make_multiple_selection(data, item_class){
-    var node = filter_items[item_class];
-    select(node);
-    markAndSweep(node);
-    prepop_data = data[item_class];
-    for(var i=0; i<prepop_data.length; i++){
-        var div = add_item_prepopulate(node, prepop_data[i]);
-        updateObjectResult(div);
+function make_multiple_selection(node, selection_data){
+    prepop_data = selection_data.values;
+    for(var k in prepop_data){
+        var div = add_item_prepopulate(node, prepop_data[k]);
+        updateObjectResult(node, div.id, prepop_data[k]);
     }
 }
 
+make_selection({{initial_value|safe}});
+
+{% endif %}
+
 function markAndSweep(root){
-    for(var nodeId in filter_items) {
-        node = filter_items[nodeId];
+    for(var i in filter_items) {
+        node = filter_items[i];
         node['marked'] = true; //mark all nodes
-        //clears grey background of everything
     }
 
     toCheck = [root];
-
     while(toCheck.length > 0){
         node = toCheck.pop();
         if(!node['marked']) {
@@ -200,11 +172,10 @@ function markAndSweep(root){
             continue;
         }
         node['marked'] = false; //mark as visited
-        if(node['follow'] || node == root){ //add neighbors if we want to follow this node (labs)
-            var mappingId = node.id
-            var neighbors = mapping[mappingId];
-            for(var neighId in neighbors) {
-                neighId = neighbors[neighId];
+        if(node['follow'] || node == root){ //add neighbors if we want to follow this node
+            var neighbors = graph_neighbors[node.id];
+            for(var i in neighbors) {
+                var neighId = neighbors[i];
                 var neighbor = filter_items[neighId];
                 toCheck.push(neighbor);
             }
@@ -212,8 +183,8 @@ function markAndSweep(root){
     }
 
     //now remove all nodes still marked
-    for(var nodeId in filter_items){
-        node = filter_items[nodeId];
+    for(var i in filter_items){
+        node = filter_items[i];
         if(node['marked']){
             disable_node(node);
         }
@@ -224,7 +195,7 @@ function process(node) {
     if(node['selected']) {
         markAndSweep(node);
     }
-    else {
+    else {  //TODO: make this not dumb
         var selected = []
         //remember the currently selected, then reset everything and reselect one at a time
         for(var nodeId in filter_items) {
@@ -233,7 +204,6 @@ function process(node) {
                 selected.push(node);
             }
             clear(node);
-
         }
         for(var i=0; i<selected.length; i++) {
             node = selected[i];
@@ -249,9 +219,6 @@ function select(node) {
     elem.classList.remove('cleared_node');
     elem.classList.remove('disabled_node');
     elem.classList.add('selected_node');
-    var input = elem.parentNode.getElementsByTagName("input")[0];
-    input.disabled = false;
-    input.value = true;
 }
 
 function clear(node) {
@@ -261,7 +228,6 @@ function clear(node) {
     elem.classList.add('cleared_node')
     elem.classList.remove('disabled_node');
     elem.classList.remove('selected_node');
-    elem.parentNode.getElementsByTagName("input")[0].disabled = true;
 }
 
 function disable_node(node) {
@@ -271,21 +237,22 @@ function disable_node(node) {
     elem.classList.remove('cleared_node');
     elem.classList.add('disabled_node');
     elem.classList.remove('selected_node');
-    elem.parentNode.getElementsByTagName("input")[0].disabled = true;
 }
 
-function processClick(id, multiple){
-    if(!initialized){
-        filter_field_init();
-    }
-    var element = document.getElementById(id);
+function processClick(id){
+    try_init();
     var node = filter_items[id];
-    if(!node['selectable']){
+    if(!node['selectable'])
         return;
+
+    if(node['multiple']){
+        return processClickMultiple(node);
+    } else {
+        return processClickSingle(node);
     }
-    if(multiple){
-        return processClickMultipleObject(node);
-    }
+}
+
+function processClickSingle(node){
     node['selected'] = !node['selected']; //toggle on click
 
     if(node['selected']) {
@@ -294,20 +261,19 @@ function processClick(id, multiple){
         clear(node);
     }
     process(node);
-    updateResult(id);
+    updateResult(node);
 }
 
-function processClickMultipleObject(node){
+function processClickMultiple(node){
     select(node);
-    add_node(node);
+    var div = add_node(node);
     process(node);
+    updateObjectResult(node, div.id, "");
 }
 
 function add_node(node){
-    return add_item_prepopulate(node, {});
+    return add_item_prepopulate(node, false);
 }
-
-inputs = []
 
 function restrictchars(input){
     if( input.validity.patternMismatch ){
@@ -318,8 +284,7 @@ function restrictchars(input){
     checkunique(input);
 }
 
-function checkunique(tocheck)
-{
+function checkunique(tocheck){
     val = tocheck.value;
     for( var i = 0; i < inputs.length; i++ )
     {
@@ -333,109 +298,83 @@ function checkunique(tocheck)
     tocheck.setCustomValidity("");
 }
 
-function add_item_prepopulate(node, prepopulate){
-    inputs = [];
-    var div = document.createElement("DIV");
-    div.class = node['id'];
-    div.id = "dropdown_" + dropdown_count;
-    dropdown_count++;
-    var label = document.createElement("H5");
-    label.appendChild(document.createTextNode(node['name']));
-    div.appendChild(label);
-    button = document.createElement("BUTTON");
+function make_remove_button(div, node){
+    var button = document.createElement("BUTTON");
     button.type = "button";
     button.appendChild(document.createTextNode("Remove"));
     button.classList.add("btn-danger");
     button.classList.add("btn");
-    div.appendChild(button);
-    for(var i=0; i<node['forms'].length; i++){
-        form = node['forms'][i];
-        var input = document.createElement("INPUT");
-        input.type = form['type'];
-        input.name = form['name'];
-        input.pattern = "(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})";
-        input.title = "Only alphanumeric characters (a-z, A-Z, 0-9), underscore(_), and hyphen (-) are allowed"
-        input.placeholder = form['placeholder'];
-        inputs.push(input);
-        input.onchange = function() { updateObjectResult(div); restrictchars(this); };
-        input.oninput = function() { restrictchars(this); };
-        if(form['name'] in prepopulate){
-            input.value = prepopulate[form['name']];
-        }
-        div.appendChild(input);
-    }
-    //add class id to dropdown object
-    var hiddenInput = document.createElement("INPUT");
-    hiddenInput.type = "hidden";
-    hiddenInput.name = "class";
-    hiddenInput.value = node['id'];
-    div.appendChild(hiddenInput);
     button.onclick = function(){
-        remove_dropdown(div.id);
+        remove_dropdown(div.id, node.id);
     }
+    return button;
+}
+
+function make_input(div, node, prepopulate){
+    var input = document.createElement("INPUT");
+    input.type = node.form.type;
+    input.name = node.id + node.form.name
+    input.pattern = "(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})";
+    input.title = "Only alphanumeric characters (a-z, A-Z, 0-9), underscore(_), and hyphen (-) are allowed"
+    input.placeholder = node.form.placeholder;
+    inputs.push(input);
+    input.onchange = function() { updateObjectResult(node, div.id, input.value); restrictchars(this); };
+    input.oninput = function() { restrictchars(this); };
+    if(prepopulate)
+        input.value = prepopulate;
+    return input;
+}
+
+function add_item_prepopulate(node, prepopulate){
+    var div = document.createElement("DIV");
+    div.id = "dropdown_" + dropdown_count;
+    div.classList.add("dropdown_item");
+    dropdown_count++;
+    var label = document.createElement("H5")
+    label.appendChild(document.createTextNode(node['name']))
+    div.appendChild(label);
+    div.appendChild(make_input(div, node, prepopulate));
+    div.appendChild(make_remove_button(div, node));
     document.getElementById("dropdown_wrapper").appendChild(div);
-    var linebreak = document.createElement("BR");
-    document.getElementById("dropdown_wrapper").appendChild(linebreak);
-    updateObjectResult(div);
     return div;
 }
 
-function remove_dropdown(id){
-    var div = document.getElementById(id);
+function remove_dropdown(div_id, node_id){
+    var div = document.getElementById(div_id);
+    var node = filter_items[node_id]
     var parent = div.parentNode;
     div.parentNode.removeChild(div);
+    delete result[node.class][node.id]['values'][div.id];
+
     //checks if we have removed last item in class
-    var deselect_class = true;
-    var div_inputs = div.getElementsByTagName("input");
-    var div_class = div_inputs[div_inputs.length-1].value;
-    var result_class = document.getElementById(div_class).parentNode.parentNode.id;
-    delete result[result_class][div.id];
-    for(var i=0; i<parent.children.length; i++){
-        var inputs = parent.children[i].getElementsByTagName("input");
-        var object_class = "";
-        for(var k=0; k<inputs.length; k++){
-            if(inputs[k].name == "class"){
-                object_class = inputs[k].value;
-            }
-        }
-        if(object_class == div_class){
-            deselect_class = false;
-        }
+    if(jQuery.isEmptyObject(result[node.class][node.id]['values'])){
+        delete result[node.class][node.id];
+        clear(node);
     }
-    if(deselect_class){
-        clear(filter_items[div_class]);
+}
+function updateResult(node){
+    try_init();
+    if(!node['multiple']){
+        result[node.class][node.id] = {selected: node.selected, id: node.model_id}
+        if(!node.selected)
+            delete result[node.class][node.id];
     }
 }
 
-function updateResult(nodeId){
-    if(!initialized){
-        filter_field_init();
-    }
-    if(!filter_items[nodeId]['multiple']){
-        var node = document.getElementById(nodeId);
-        var value = {}
-        value[nodeId] = node.parentNode.getElementsByTagName("input")[0].value;
-        result[node.parentNode.id] = {};
-        result[node.parentNode.id][nodeId] = value;
-    }
+function updateObjectResult(node, childKey, childValue){
+    try_init();
+    if(!result[node.class][node.id])
+        result[node.class][node.id] = {selected: true, id: node.model_id, values: {}}
+
+    result[node.class][node.id]['values'][childKey] = childValue;
 }
 
-function updateObjectResult(parentElem){
-    node_type = document.getElementById(parentElem.class).parentNode.id;
-    input = {};
-    inputs = parentElem.getElementsByTagName("input");
-    for(var i in inputs){
-        var e = inputs[i];
-        input[e.name] = e.value;
-    }
-    result[node_type][parentElem.id] = input;
-}
-
-function filter_field_init() {
+function try_init() {
+    if(initialized) return;
     for(nodeId in filter_items) {
-        element = document.getElementById(nodeId);
-        node = filter_items[nodeId];
-        result[element.parentNode.id] = {}
+        var element = document.getElementById(nodeId);
+        var node = filter_items[nodeId];
+        result[node.class] = {}
         }
     initialized = true;
 }

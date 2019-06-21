@@ -79,33 +79,38 @@
 </div>
 </div>
 <script type="text/javascript">
-    var normalize = function(data)
+
+    function submit_form()
     {
-        //converts the top level keys in data to map to lists
-        var normalized = {}
-        for( var key in data ){
-            normalized[key] = [];
-            for( var subkey in data[key] ){
-                normalized[key].push(data[key][subkey]);
-            }
-        }
-        return normalized;
-    }
-    var update_page_contents = function(response)
-    {
-        document.open();
-        document.write(response);
-        document.close();
+        //formats data for form submission
+        document.getElementById("filter_field").value = JSON.stringify(result);
     }
 
-    //form hamdler code
-    submit_form = function()
-    {
-        //altered from initial prototype: form submits automatically,
-        //but needs formatting for multiple select field
-        var data = normalize(result);
-        data = JSON.stringify(data);
-        document.getElementById("filter_field").value = data;
+    function hide_dropdown(drop_id) {
+        var drop = document.getElementById(drop_id);
+        //select 'blank' option
+        for( var i=0; i < drop.length; i++ )
+        {
+            if ( drop.options[i].text == '---------' )
+                drop.selectedIndex = i;
+        }
+
+        //cross browser hide children
+        $('#id_image').children().hide();
+        for( var i = 0; i < drop.childNodes.length; i++ )
+        {
+            drop.childNodes[i].disabled = true; // closest we can get on safari to hiding it outright
+        }
+    }
+
+    function get_selected_value(key){
+        for( var attr in result[key] ){
+            if( attr in {} )
+                continue;
+            else
+                return attr;
+        }
+        return null;
     }
 
     var sup_image_dict = {{ image_filter|safe }};
@@ -113,43 +118,18 @@
     var sup_scenario_dict = {{ scenario_filter|safe }};
 
     function imageHider() {
-        var data = normalize(result);
         var drop = document.getElementById("id_image");
-        for( var i=0; i < drop.length; i++ )
-        {
-            if ( drop.options[i].text == '---------' )
-            {
-                drop.selectedIndex = i;
-            }
-        }
 
-        $('#id_image').children().hide();
+        hide_dropdown("id_image");
 
-        for( var i = 0; i < drop.childNodes.length; i++ )
-        {
-            drop.childNodes[i].disabled = true; // closest we can get on safari to hiding it outright
-        }
-
-
-        var empty_map = {}
+        var lab_pk = get_selected_value("lab");
+        var host_pk = get_selected_value("host");
 
         for ( var i=0; i < drop.childNodes.length; i++ )
         {
             var image_object = sup_image_dict[drop.childNodes[i].value];
             if( image_object ) //weed out empty option
             {
-                var lab_pk = ""
-                for( var j in data["labs"][0] )
-                {
-                    if( j in {} ) { continue; }
-                    else { lab_pk = j; break; }
-                }
-                var host_pk = "";
-                for( var j in data["hosts"][0] )
-                {
-                    if( j in {} ) { continue; }
-                    else { host_pk = j; break; }
-                }
                 if( image_object.host_profile == host_pk && image_object.lab == lab_pk )
                 {
                     drop.childNodes[i].style.display = "inherit";
@@ -180,28 +160,15 @@
     document.getElementById('id_installer').addEventListener('change', scenarioHider);
 
     function dropFilter(target, target_filter, master) {
-        ob = document.getElementById(target);
+        var dropdown = document.getElementById(target);
 
-        for(var i=0; i<ob.options.length; i++) {
-            if ( ob.options[i].text == '---------' ) {
-                ob.selectedIndex = i;
-                }
-        }
+        hide_dropdown(target);
 
-        targ_id = "#" + target;
-
-        $(targ_id).children().hide();
-
-        for (var i = 0; i < document.getElementById(target).childNodes.length; i++)
-        {
-            document.getElementById(target).childNodes[i].disabled = true;
-        }
         var drop = document.getElementById(master);
         var opts = target_filter[drop.options[drop.selectedIndex].value];
         if (!opts) {
             opts = {};
         }
-        var emptyMap = {}
 
         var map = Object.create(null);
         for (var i = 0; i < opts.length; i++) {
@@ -209,34 +176,14 @@
             map[j] = true;
         }
 
-        for (var i = 0; i < document.getElementById(target).childNodes.length; i++) {
-            if (document.getElementById(target).childNodes[i].value in opts && !(document.getElementById(target).childNodes[i].value in emptyMap) ) {
-                document.getElementById(target).childNodes[i].style.display = "inherit";
-                document.getElementById(target).childNodes[i].disabled = false;
+        for (var i = 0; i < dropdown.childNodes.length; i++) {
+            if (dropdown.childNodes[i].value in opts && !(dropdown.childNodes[i].value in {}) ) {
+                dropdown.childNodes[i].style.display = "inherit";
+                dropdown.childNodes[i].disabled = false;
             }
         }
     }
 </script>
     <button id="quick_booking_confirm" onclick="submit_form();" class="btn btn-success">Confirm</button>
 </form>
-<script>
-    //context vars
-    var prefill_host_selection = "{{host_select_field_prefill_data|default:""|safe}}";
-    var prefill_purpose = "{{prefill_purpose|default:""|safe}}";
-    var prefill_project = "{{prefill_project|default:""|safe}}";
-    var prefill_hostname = "{{prefill_hostname|default:""|safe}}";
-
-    //to handle prefill
-    function prefill_host_select_field(data)
-    {
-        //
-        if(data)
-        {
-            make_selection(data);
-        }
-    }
-
-    //call init functions
-    prefill_host_select_field(prefill_host_selection);
-</script>
 {% endblock %}
