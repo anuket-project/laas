@@ -1,4 +1,5 @@
 <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+<script src="/static/js/dashboard.js"></script>
 
 <div id="search_select_outer" class="autocomplete">
     <div id="warning_pane" style="background: #FFFFFF; color: #CC0000;">
@@ -16,7 +17,7 @@
 
     </div>
 
-    <input id="user_field" name="ignore_this" class="form-control" autocomplete="off" type="text" placeholder="{{placeholder}}" value="" oninput="search(this.value)"
+    <input id="user_field" name="ignore_this" class="form-control" autocomplete="off" type="text" placeholder="{{placeholder}}" value="" oninput="searchable_select_multiple_widget.search(this.value)"
     {% if disabled %} disabled {% endif %}
     >
     </input>
@@ -161,16 +162,34 @@
 </div>
 
 <script type="text/javascript">
-    //flags
-    var show_from_noentry = {{show_from_noentry|yesno:"true,false"}}; // whether to show any results before user starts typing
-    var show_x_results = {{show_x_results|default:-1}}; // how many results to show at a time, -1 shows all results
-    var results_scrollable = {{results_scrollable|yesno:"true,false"}}; // whether list should be scrollable
-    var selectable_limit = {{selectable_limit|default:-1}}; // how many selections can be made, -1 allows infinitely many
-    var placeholder = "{{placeholder|default:"begin typing"}}"; // placeholder that goes in text box
+    function searchableSelectMultipleWidgetEntry() {
+        let format_vars = {
+            "show_from_noentry": {{show_from_noentry|yesno:"true,false"}},
+            "show_x_results": {{show_x_results|default:-1}},
+            "results_scrollable": {{results_scrollable|yesno:"true,false"}},
+            "selectable_limit": {{selectable_limit|default:-1}},
+            "placeholder": "{{placeholder|default:"begin typing"}}"
+        };
 
-    //needed info
-    var items = {{items|safe}} // items to add to trie. Type is a dictionary of dictionaries with structure:
-        /*
+        let field_dataset = {{items|safe}};
+
+        let field_initial = {{ initial|safe }};
+
+        //global
+        searchable_select_multiple_widget = new SearchableSelectMultipleWidget(format_vars, field_dataset, field_initial);
+    }
+
+    searchableSelectMultipleWidgetEntry();
+
+    /*
+    var show_from_noentry = context(show_from_noentry|yesno:"true,false") // whether to show any results before user starts typing
+    var show_x_results = context(show_x_results|default:-1) // how many results to show at a time, -1 shows all results
+    var results_scrollable = {{results_scrollable|yesno:"true,false") // whether list should be scrollable
+    var selectable_limit = {{selectable_limit|default:-1) // how many selections can be made, -1 allows infinitely many
+    var placeholder = "context(placeholder|default:"begin typing")" // placeholder that goes in text box
+
+    needed info
+    var items = context(items|safe) // items to add to trie. Type is a dictionary of dictionaries with structure:
         {
             id# : {
                 "id": any, identifiable on backend
@@ -179,311 +198,12 @@
                 "string": string, not displayed, still searchable
             }
         }
-        */
 
-    /* used later:
-    {{ selectable_limit }}: changes what number displays for field
-    {{ name }}: form identifiable name, relevant for backend
+     used later:
+    context(selectable_limit): changes what number displays for field
+    context(name): form identifiable name, relevant for backend
         // when submitted, form will contain field data in post with name as the key
-    {{ placeholder }}: "greyed out" contents put into search field initially to guide user as to what they're searching for
-    {{ initial }}: in search_field_init(), marked safe, an array of id's each referring to an id from items
+    context(placeholder): "greyed out" contents put into search field initially to guide user as to what they're searching for
+    context(initial): in search_field_init(), marked safe, an array of id's each referring to an id from items
     */
-
-    //tries
-    var expanded_name_trie = {}
-    expanded_name_trie.isComplete = false;
-    var small_name_trie = {}
-    small_name_trie.isComplete = false;
-    var string_trie = {}
-    string_trie.isComplete = false;
-
-    var added_items = [];
-
-    search_field_init();
-
-    if( show_from_noentry )
-    {
-        search("");
-    }
-
-    function disable() {
-        var textfield = document.getElementById("user_field");
-        var drop = document.getElementById("drop_results");
-
-        textfield.disabled = "True";
-        drop.style.display = "none";
-
-        var btns = document.getElementsByClassName("btn-remove");
-        for( var i = 0; i < btns.length; i++ )
-        {
-            btns[i].classList.add("disabled");
-        }
-    }
-
-    function search_field_init() {
-        build_all_tries(items);
-
-        var initial = {{ initial|safe }};
-
-        for( var i = 0; i < initial.length; i++)
-        {
-            select_item(String(initial[i]));
-        }
-        if(initial.length == 1)
-        {
-            search(items[initial[0]]["small_name"]);
-            document.getElementById("user_field").value = items[initial[0]]["small_name"];
-        }
-    }
-
-    function build_all_tries(dict)
-    {
-        for( var i in dict )
-        {
-            add_item(dict[i]);
-        }
-    }
-
-    function add_item(item)
-    {
-        var id = item['id'];
-        add_to_tree(item['expanded_name'], id, expanded_name_trie);
-        add_to_tree(item['small_name'], id, small_name_trie);
-        add_to_tree(item['string'], id, string_trie);
-    }
-
-    function add_to_tree(str, id, trie)
-    {
-        inner_trie = trie;
-        while( str )
-        {
-            if( !inner_trie[str.charAt(0)] )
-            {
-                new_trie = {};
-                inner_trie[str.charAt(0)] = new_trie;
-            }
-            else
-            {
-                new_trie = inner_trie[str.charAt(0)];
-            }
-
-            if( str.length == 1 )
-            {
-                new_trie.isComplete = true;
-                if( !new_trie.ids )
-                {
-                    new_trie.ids = [];
-                }
-                new_trie.ids.push(id);
-            }
-            inner_trie = new_trie;
-            str = str.substring(1);
-        }
-    }
-
-    function search(input)
-    {
-        if( input.length == 0 && !show_from_noentry){
-            dropdown([]);
-            return;
-        }
-        else if( input.length == 0 && show_from_noentry)
-        {
-            dropdown(items); //show all items
-        }
-        else
-        {
-            var trees = []
-            var tr1 = getSubtree(input, expanded_name_trie);
-            trees.push(tr1);
-            var tr2 = getSubtree(input, small_name_trie);
-            trees.push(tr2);
-            var tr3 = getSubtree(input, string_trie);
-            trees.push(tr3);
-            var results = collate(trees);
-            dropdown(results);
-        }
-    }
-
-    function getSubtree(input, given_trie)
-    {
-        /*
-        recursive function to return the trie accessed at input
-        */
-
-        if( input.length == 0 ){
-            return given_trie;
-        }
-
-        else{
-        var substr = input.substring(0, input.length - 1);
-        var last_char = input.charAt(input.length-1);
-        var subtrie = getSubtree(substr, given_trie);
-        if( !subtrie ) //substr not in the trie
-        {
-            return {};
-        }
-        var indexed_trie = subtrie[last_char];
-        return indexed_trie;
-        }
-    }
-
-    function serialize(trie)
-    {
-        /*
-        takes in a trie and returns a list of its item id's
-        */
-        var itemIDs = [];
-        if ( !trie )
-        {
-            return itemIDs; //empty, base case
-        }
-        for( var key in trie )
-        {
-            if(key.length > 1)
-            {
-                continue;
-            }
-            itemIDs = itemIDs.concat(serialize(trie[key]));
-        }
-        if ( trie.isComplete )
-        {
-            itemIDs.push(...trie.ids);
-        }
-
-        return itemIDs;
-    }
-
-    function collate(trees)
-    {
-        /*
-        takes a list of tries
-        returns a list of ids of objects that are available
-        */
-        results = [];
-        for( var i in trees )
-        {
-            var available_IDs = serialize(trees[i]);
-            for( var j=0; j<available_IDs.length; j++){
-                var itemID = available_IDs[j];
-                results[itemID] = items[itemID];
-            }
-        }
-        return results;
-    }
-
-    function generate_element_text(obj)
-    {
-        var content_strings = [obj['expanded_name'], obj['small_name'], obj['string']].filter(x => Boolean(x));
-        var result = content_strings.shift();
-        if( result == null || content_strings.length < 1) return result;
-        return result + " (" + content_strings.join(", ") + ")";
-    }
-
-    function dropdown(ids)
-    {
-        /*
-        takes in a mapping of ids to objects in  items
-        and displays them in the dropdown
-        */
-        var drop = document.getElementById("drop_results");
-        while(drop.firstChild)
-        {
-            drop.removeChild(drop.firstChild);
-        }
-
-        for( var id in ids )
-        {
-            var result_entry = document.createElement("li");
-            var result_button = document.createElement("a");
-            var obj = items[id];
-            var result_text = generate_element_text(obj);
-            result_button.appendChild(document.createTextNode(result_text));
-            result_button.setAttribute('onclick', 'select_item("' + obj['id'] + '")');
-            var tooltip = document.createElement("span");
-            var tooltiptext = document.createTextNode(result_text);
-            tooltip.appendChild(tooltiptext);
-            tooltip.setAttribute('class', 'entry_tooltip');
-            result_button.appendChild(tooltip);
-            result_entry.appendChild(result_button);
-            drop.appendChild(result_entry);
-        }
-
-        var scroll_restrictor = document.getElementById("scroll_restrictor");
-
-        if( !drop.firstChild )
-        {
-            scroll_restrictor.style.visibility = 'hidden';
-        }
-        else
-        {
-            scroll_restrictor.style.visibility = 'inherit';
-        }
-    }
-
-    function select_item(item_id)
-    {
-        //TODO make faster
-        var item = items[item_id]['id'];
-        if( (selectable_limit > -1 && added_items.length < selectable_limit) || selectable_limit < 0 )
-        {
-            if( added_items.indexOf(item) == -1 )
-            {
-                added_items.push(item);
-            }
-        }
-        update_selected_list();
-        // clear search bar contents
-        document.getElementById("user_field").value = "";
-        document.getElementById("user_field").focus();
-        search("");
-    }
-
-    function remove_item(item_ref)
-    {
-        item = Object.values(items)[item_ref];
-        var index = added_items.indexOf(item);
-        added_items.splice(index, 1);
-
-        update_selected_list()
-        document.getElementById("user_field").focus();
-    }
-
-    function update_selected_list()
-    {
-        document.getElementById("added_number").innerText = added_items.length;
-        selector = document.getElementById('selector');
-        selector.value = JSON.stringify(added_items);
-        added_list = document.getElementById('added_list');
-
-        while(selector.firstChild)
-        {
-            selector.removeChild(selector.firstChild);
-        }
-        while(added_list.firstChild)
-        {
-            added_list.removeChild(added_list.firstChild);
-        }
-
-        list_html = "";
-
-        for( var key in added_items )
-        {
-            item_id = added_items[key];
-            item = items[item_id];
-
-            var element_entry_text = generate_element_text(item);
-
-            list_html += '<div class="list_entry">'
-                + '<p class="added_entry_text">'
-                + element_entry_text
-                + '</p>'
-                + '<button onclick="remove_item('
-                + Object.values(items).indexOf(item)
-                + ')" class="btn-remove btn">remove</button>';
-                list_html += '</div>';
-        }
-
-        added_list.innerHTML = list_html;
-    }
 </script>
