@@ -151,54 +151,55 @@ class Define_Nets(WorkflowStep):
         except Exception:
             return None
 
+    def make_mx_host_dict(self, generic_host):
+        host = {
+            'id': generic_host.resource.name,
+            'interfaces': [],
+            'value': {
+                "name": generic_host.resource.name,
+                "description": generic_host.profile.description
+            }
+        }
+        for iface in generic_host.profile.interfaceprofile.all():
+            host['interfaces'].append({
+                "name": iface.name,
+                "description": "speed: " + str(iface.speed) + "M\ntype: " + iface.nic_type
+            })
+        return host
+
     def get_context(self):
-        # TODO: render *primarily* on hosts in repo models
         context = super(Define_Nets, self).get_context()
-        context['form'] = NetworkDefinitionForm()
+        context.update({
+            'form': NetworkDefinitionForm(),
+            'debug': settings.DEBUG,
+            'hosts': [],
+            'added_hosts': [],
+            'removed_hosts': []
+        })
+        vlans = self.get_vlans()
+        if vlans:
+            context['vlans'] = vlans
         try:
-            context['hosts'] = []
             models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
-            vlans = self.get_vlans()
-            if vlans:
-                context['vlans'] = vlans
             hosts = models.get("hosts", [])
-            hostlist = self.repo_get(self.repo.GRB_LAST_HOSTLIST, None)
-            added_list = []
-            added_dict = {}
-            context['debug'] = settings.DEBUG
-            context['added_hosts'] = []
-            if hostlist is not None:
-                new_hostlist = []
-                for host in models['hosts']:
-                    intcount = host.profile.interfaceprofile.count()
-                    new_hostlist.append(str(host.resource.name) + "*" + str(host.profile) + "&" + str(intcount))
-                context['removed_hosts'] = list(set(hostlist) - set(new_hostlist))
-                added_list = list(set(new_hostlist) - set(hostlist))
-                for hoststr in added_list:
-                    key = hoststr.split("*")[0]
-                    added_dict[key] = hoststr
+            # calculate if the selected hosts have changed
+            added_hosts = set()
+            host_set = set(self.repo_get(self.repo.GRB_LAST_HOSTLIST, []))
+            if len(host_set):
+                new_host_set = set([h.resource.name + "*" + h.profile.name for h in models['hosts']])
+                context['removed_hosts'] = [h.split("*")[0] for h in (host_set - new_host_set)]
+                added_hosts.update([h.split("*")[0] for h in (new_host_set - host_set)])
+
+            # add all host info to context
             for generic_host in hosts:
-                host_profile = generic_host.profile
-                host = {}
-                host['id'] = generic_host.resource.name
-                host['interfaces'] = []
-                for iface in host_profile.interfaceprofile.all():
-                    host['interfaces'].append(
-                        {
-                            "name": iface.name,
-                            "description": "speed: " + str(iface.speed) + "M\ntype: " + iface.nic_type
-                        }
-                    )
-                host['value'] = {"name": generic_host.resource.name}
-                host['value']['description'] = generic_host.profile.description
-                context['hosts'].append(json.dumps(host))
-                if host['id'] in added_dict:
-                    context['added_hosts'].append(json.dumps(host))
+                host = self.make_mx_host_dict(generic_host)
+                host_serialized = json.dumps(host)
+                context['hosts'].append(host_serialized)
+                if host['id'] in added_hosts:
+                    context['added_hosts'].append(host_serialized)
             bundle = models.get("bundle", False)
-            if bundle and bundle.xml:
-                context['xml'] = bundle.xml
-            else:
-                context['xml'] = False
+            if bundle:
+                context['xml'] = bundle.xml or False
 
         except Exception:
             pass
@@ -208,11 +209,8 @@ class Define_Nets(WorkflowStep):
     def post_render(self, request):
         models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
         if 'hosts' in models:
-            hostlist = []
-            for host in models['hosts']:
-                intcount = host.profile.interfaceprofile.count()
-                hostlist.append(str(host.resource.name) + "*" + str(host.profile) + "&" + str(intcount))
-            self.repo_put(self.repo.GRB_LAST_HOSTLIST, hostlist)
+            host_set = set([h.resource.name + "*" + h.profile.name for h in models['hosts']])
+            self.repo_put(self.repo.GRB_LAST_HOSTLIST, host_set)
         try:
             xmlData = request.POST.get("xml")
             self.updateModels(xmlData)

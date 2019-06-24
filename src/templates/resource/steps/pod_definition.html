@@ -8,580 +8,7 @@
     var mxLoadStylesheets = false;
 </script>
 <script type="text/javascript" src="/static/js/mxClient.min.js" ></script>
-<style>
-p {
-    word-break: normal;
-    white-space: normal;
-}
-</style>
-<script type="text/javascript">
-var currentWindow;
-var currentGraph;
-var netCount = 0;
-var netColors = ['red', 'blue', 'purple', 'green', 'orange', '#8CCDF5', '#1E9BAC'];
-var hostCount = 0;
-var lastHostBottom = 100;
-var networks = new Set([]);
-var has_public_net = false;
-
-function main(graphContainer, overviewContainer, toolbarContainer) {
-    //check if the browser is supported
-    if (!mxClient.isBrowserSupported()) {
-        mxUtils.error('Browser is not supported', 200, false);
-        return null;
-    }
-
-    // Workaround for Internet Explorer ignoring certain styles
-    if (mxClient.IS_QUIRKS) {
-        document.body.style.overflow = 'hidden';
-        new mxDivResizer(graphContainer);
-    }
-    var editor = new mxEditor();
-    var graph = editor.graph;
-    var model = graph.getModel();
-    editor.setGraphContainer(graphContainer);
-
-    doGlobalConfig(graph);
-    currentGraph = graph;
-
-    {% if xml %}
-        restoreFromXml('{{xml|safe}}', editor);
-    {% elif hosts %}
-        {% for host in hosts %}
-        var host = {{host|safe}};
-        makeHost(host);
-        {% endfor %}
-    {% endif %}
-    {% if added_hosts %}
-        {% for host in added_hosts %}
-        var host = {{host|safe}}
-        makeHost(host);
-        {% endfor %}
-        updateHosts([]);
-    {% endif %}
-
-    addToolbarButton(editor, toolbarContainer, 'zoomIn', '', "/static/img/mxgraph/zoom_in.png", true);
-    addToolbarButton(editor, toolbarContainer, 'zoomOut', '', "/static/img/mxgraph/zoom_out.png", true);
-
-    {% if debug %}
-    editor.addAction('printXML', function(editor, cell) {
-        mxLog.write(encodeGraph(graph));
-        mxLog.show();
-    });
-    addToolbarButton(editor, toolbarContainer, 'printXML', '', '/static/img/mxgraph/fit_to_size.png', true);
-    {% endif %}
-
-    var outline = new mxOutline(graph, overviewContainer);
-
-    var checkAllowed = function(edge, terminal, source) {
-        //check if other terminal is null, and that they are different
-        otherTerminal = edge.getTerminal(!source);
-        if(terminal != null && otherTerminal != null) {
-            if( terminal.getParent().getId().split('_')[0] == //'host' or 'network'
-                otherTerminal.getParent().getId().split('_')[0] ) {
-                    //not allowed
-                    graph.removeCells([edge]);
-                    return false;
-                }
-        }
-        return true;
-    };
-
-    var colorEdge = function(edge, terminal, source) {
-        if(terminal.getParent().getId().indexOf('network') >= 0) {
-            styles = terminal.getParent().getStyle().split(';');
-            color = 'black';
-            for(var i=0; i<styles.length; i++){
-                kvp = styles[i].split('=');
-                if(kvp[0] == "fillColor"){
-                    color = kvp[1];
-                }
-            }
-            edge.setStyle('strokeColor=' + color);
-        }
-    };
-
-    var alertVlan = function(edge, terminal, source) {
-        if( terminal == null || edge.getTerminal(!source) == null) {
-            return;
-        }
-        var vlanHTML = '<form> <input type="radio" name="tagged" value="True" checked> Tagged<br>'
-        vlanHTML += '<input type="radio" name="tagged" value="False"> Untagged </form>'
-        vlanHTML += '<button onclick=parseVlanWindow(' + edge.getId() + ');>Okay</button>'
-        vlanHTML += '<button onclick=deleteVlanWindow(' + edge.getId() + ');>Cancel</button>'
-        content = document.createElement('div');
-        content.innerHTML = vlanHTML;
-        showWindow(graph, "Vlan Selection", content, 200, 200);
-    }
-
-    //sets the edge color to be the same as the network
-    graph.addListener(mxEvent.CELL_CONNECTED, function(sender, event){
-        edge = event.getProperty('edge');
-        terminal = event.getProperty('terminal')
-        source = event.getProperty('source');
-        if(checkAllowed(edge, terminal, source)) {
-            colorEdge(edge, terminal, source);
-            alertVlan(edge, terminal, source);
-        }
-    });
-
-    createDeleteDialog = function(id) {
-        var content = document.createElement('div');
-        var innerHTML = "<button style='width: 46%;' onclick=deleteCell('" + id + "');>Remove</button>"
-        innerHTML += "<button style='width: 46%;' onclick='currentWindow.destroy();'>Cancel</button>"
-        content.innerHTML = innerHTML;
-        showWindow(currentGraph, 'Do you want to delete this network?', content, 200, 62);
-    }
-
-    graph.dblClick = function(evt, cell) {
-
-        if( cell != null ){
-            if( cell.getParent() != null && cell.getParent().getId().indexOf("network") > -1) {
-                cell = cell.getParent();
-            }
-            if( cell.isEdge() || cell.getId().indexOf("network") > -1 ) {
-                createDeleteDialog(cell.getId());
-            }
-            else {
-            showDetailWindow(cell);
-           }
-        }
-    };
-
-    updateHosts({{ removed_hosts|default:"[]"|safe }});
-    if(!has_public_net){
-        addPublicNetwork();
-    }
-}
-
-function showDetailWindow(cell) {
-    var info = JSON.parse(cell.getValue());
-    var content = document.createElement("div");
-    var inner = "<pre>Name: " + info.name + "\n";
-    inner += "Description:\n" + info.description + "</pre>";
-    inner += '<button onclick="currentWindow.destroy();">Okay</button>'
-    content.innerHTML = inner
-    showWindow(currentGraph, 'Details', content, 400, 400);
-}
-
-function restoreFromXml(xml, editor) {
-    var doc = mxUtils.parseXml(xml);
-    var node = doc.documentElement;
-    editor.readGraphModel(node);
-
-    //Iterate over all children, and parse the networks to add them to the sidebar
-    var root = currentGraph.getDefaultParent();
-    for( var i=0; i<root.getChildCount(); i++) {
-        var cell = root.getChildAt(i);
-        if(cell.getId().indexOf("network") > -1) {
-            var info = JSON.parse(cell.getValue());
-            var name = info['name'];
-            networks.add(name);
-            var styles = cell.getStyle().split(";");
-            var color = null;
-            for(var j=0; j< styles.length; j++){
-                var kvp = styles[j].split('=');
-                if(kvp[0] == "fillColor") {
-                    color = kvp[1];
-                    break;
-                }
-            }
-            if(info.public){
-                has_public_net = true;
-            }
-            netCount++;
-            makeSidebarNetwork(name, color, cell.getId());
-        }
-    }
-}
-
-function deleteCell(cellId) {
-    var cell = currentGraph.getModel().getCell(cellId);
-    if( cellId.indexOf("network") > -1 ) {
-        elem = document.getElementById(cellId);
-        elem.parentElement.removeChild(elem);
-    }
-    currentGraph.removeCells([cell]);
-    currentWindow.destroy();
-}
-
-function newNetworkWindow() {
-    var innerHtml = 'Name: <input type="text" name="net_name" maxlength="100" id="net_name_input" style="margin:5px;"><br>';
-    innerHtml += '<button style="width: 46%;" onclick="parseNetworkWindow()">Okay</button>';
-    innerHtml += '<button style="width: 46%;" onclick="currentWindow.destroy();">Cancel</button><br>';
-    innerHtml += '<div id="current_window_errors"/>';
-    var content = document.createElement("div");
-    content.innerHTML = innerHtml;
-
-    showWindow(currentGraph, "Network Creation", content, 300, 300);
-}
-
-function parseNetworkWindow() {
-    var net_name = document.getElementById("net_name_input").value
-    var error_div = document.getElementById("current_window_errors");
-    if( networks.has(net_name) ){
-        error_div.innerHTML = "All network names must be unique";
-        return;
-    }
-    addNetwork(net_name);
-    currentWindow.destroy();
-}
-
-function addToolbarButton(editor, toolbar, action, label, image, isTransparent)
-{
-    var button = document.createElement('button');
-    button.style.fontSize = '10';
-    if (image != null)
-    {
-        var img = document.createElement('img');
-        img.setAttribute('src', image);
-        img.style.width = '16px';
-        img.style.height = '16px';
-        img.style.verticalAlign = 'middle';
-        img.style.marginRight = '2px';
-        button.appendChild(img);
-    }
-    if (isTransparent)
-    {
-        button.style.background = 'transparent';
-        button.style.color = '#FFFFFF';
-        button.style.border = 'none';
-    }
-    mxEvent.addListener(button, 'click', function(evt)
-    {
-        editor.execute(action);
-    });
-    mxUtils.write(button, label);
-    toolbar.appendChild(button);
-};
-
-function encodeGraph(graph) {
-    var encoder = new mxCodec();
-    var xml = encoder.encode(graph.getModel());
-    return mxUtils.getXml(xml);
-}
-
-function doGlobalConfig(graph) {
-    //general graph stuff
-    graph.setMultigraph(false);
-    graph.setCellsSelectable(false);
-    graph.setCellsMovable(false);
-
-    //testing
-    graph.vertexLabelIsMovable = true;
-
-
-    //edge behavior
-    graph.setConnectable(true);
-    graph.setAllowDanglingEdges(false);
-    mxEdgeHandler.prototype.snapToTerminals = true;
-    mxConstants.MIN_HOTSPOT_SIZE = 16;
-    mxConstants.DEFAULT_HOTSPOT = 1;
-    //edge 'style' (still affects behavior greatly)
-    style = graph.getStylesheet().getDefaultEdgeStyle();
-    style[mxConstants.STYLE_EDGE] = mxConstants.EDGESTYLE_ELBOW;
-    style[mxConstants.STYLE_ENDARROW] = mxConstants.NONE;
-    style[mxConstants.STYLE_ROUNDED] = true;
-    style[mxConstants.STYLE_FONTCOLOR] = 'black';
-    style[mxConstants.STYLE_STROKECOLOR] = 'red';
-
-    style[mxConstants.STYLE_LABEL_BACKGROUNDCOLOR] = '#FFFFFF';
-    style[mxConstants.STYLE_STROKEWIDTH] = '3';
-    style[mxConstants.STYLE_ROUNDED] = true;
-    style[mxConstants.STYLE_EDGE] = mxEdgeStyle.EntityRelation;
-
-    hostStyle = graph.getStylesheet().getDefaultVertexStyle();
-    hostStyle[mxConstants.STYLE_ROUNDED] = 1;
-
-    // TODO: Proper override
-    graph.convertValueToString = function(cell) {
-        try{
-            //changes value for edges with xml value
-            if(cell.isEdge()) {
-                if(JSON.parse(cell.getValue())["tagged"]) {
-                    return "tagged";
-                }
-                return "untagged";
-            } else{
-                    return JSON.parse(cell.getValue())['name'];
-            }
-        }
-        catch(e){
-                return cell.getValue();
-        }
-    };
-}
-
-function showWindow(graph, title, content, width, height) {
-    //create transparent black background
-    var background = document.createElement('div');
-    background.style.position = 'absolute';
-    background.style.left = '0px';
-    background.style.top = '0px';
-    background.style.right = '0px';
-    background.style.bottom = '0px';
-    background.style.background = 'black';
-    mxUtils.setOpacity(background, 50);
-    document.body.appendChild(background);
-
-    //deal with IE quirk
-    if (mxClient.IS_IE) {
-        new mxDivResizer(background);
-    }
-
-    var x = Math.max(0, document.body.scrollWidth/2-width/2);
-    var y = Math.max(10, (document.body.scrollHeight ||
-                document.documentElement.scrollHeight)/2-height*2/3);
-
-    var wnd = new mxWindow(title, content, x, y, width, height, false, true);
-    wnd.setClosable(false);
-
-    wnd.addListener(mxEvent.DESTROY, function(evt) {
-        graph.setEnabled(true);
-        mxEffects.fadeOut(background, 50, true, 10, 30, true);
-    });
-    currentWindow = wnd;
-
-    graph.setEnabled(false);
-    wnd.setVisible(true);
-};
-
-function closeWindow() {
-    //allows the current window to be destroyed
-    currentWindow.destroy();
-};
-
-function othersUntagged(edgeID) {
-    var edge = currentGraph.getModel().getCell(edgeID);
-    var end1 = edge.getTerminal(true);
-    var end2 = edge.getTerminal(false);
-
-    if( end1.getParent().getId().split('_')[0] == 'host' ){
-        var netint = end1;
-    } else {
-        var netint = end2;
-    }
-
-    var edges = netint.edges;
-
-    for( var i=0; i < edges.length; i++ ) {
-        if( edges[i].getValue() ) {
-            var tagged = JSON.parse(edges[i].getValue()).tagged;
-        } else {
-            var tagged = true;
-        }
-        if( !tagged ) {
-            return true;
-        }
-    }
-    return false;
-};
-
-
-function deleteVlanWindow(edgeID) {
-    var cell = currentGraph.getModel().getCell(edgeID);
-    currentGraph.removeCells([cell]);
-    currentWindow.destroy();
-}
-
-function parseVlanWindow(edgeID) {
-    //do parsing and data manipulation
-    var radios = document.getElementsByName("tagged");
-    edge = currentGraph.getModel().getCell(edgeID);
-
-    for(var i=0; i<radios.length; i++) {
-        if(radios[i].checked) {
-            //set edge to be tagged or untagged
-            //cellValue.setAttribute("tagged", radios[i].value);
-            if( radios[i].value == "False")
-            {
-                if( othersUntagged(edgeID) )
-                {
-                    alert("Only one untagged VLAN is allowed per interface");
-                    return;
-                }
-            }
-            edgeVal = Object();
-            edgeVal['tagged'] = radios[i].value == "True";
-            edge.setValue(JSON.stringify(edgeVal));
-            break;
-        }
-    }
-    currentGraph.refresh(edge);
-    closeWindow();
-}
-
-function makeMxNetwork(net_name, public = false) {
-    model = currentGraph.getModel();
-    width = 10;
-    height = 1700;
-    xoff = 400 + (30 * netCount);
-    yoff = -10;
-    var color = netColors[netCount];
-    if( netCount > (netColors.length - 1)) {
-        color = Math.floor(Math.random() * 16777215); //int in possible color space
-        color = '#' + color.toString(16).toUpperCase(); //convert to hex
-        //alert(color);
-    }
-    var net_val = Object();
-    net_val['name'] = net_name;
-    net_val['public'] = public;
-    net = currentGraph.insertVertex(
-        currentGraph.getDefaultParent(),
-        'network_' + netCount,
-        JSON.stringify(net_val),
-        xoff,
-        yoff,
-        width,
-        height,
-        'fillColor=' + color,
-        false
-    );
-    var num_ports = 45;
-    for(var i=0; i<num_ports; i++){
-        port = currentGraph.insertVertex(
-            net,
-            null,
-            '',
-            0,
-            (1/num_ports) * i,
-            10,
-            height / num_ports,
-            'fillColor=black;opacity=0',
-            true
-        );
-    }
-
-    var retVal = Object();
-    retVal['color'] = color;
-    retVal['element_id'] = "network_" + netCount;
-
-    networks.add(net_name);
-
-    netCount++;
-    return retVal;
-}
-
-function addPublicNetwork() {
-    var net = makeMxNetwork("public", true);
-    makeSidebarNetwork("public", net['color'], net['element_id']);
-    has_public_net = true;
-}
-
-function addNetwork(net_name) {
-    var ret = makeMxNetwork(net_name);
-    var color = ret['color'];
-    var net_id = ret['element_id'];
-    makeSidebarNetwork(net_name, color, net_id);
-}
-
-function updateHosts(removed) {
-    for(var i=0; i < removed.length; i++)
-    {
-        var hoststring = removed[i];
-        var hostid = "host_" + hoststring.split("*")[0];
-        var cell = currentGraph.getModel().getCell(hostid);
-        currentGraph.removeCells([cell]);
-    }
-
-    var hosts = currentGraph.getChildVertices(currentGraph.getDefaultParent());
-    var topdist = 100;
-    for(var i=0; i<hosts.length; i++) {
-        var host = hosts[i];
-        if(!host.id.startsWith("host_"))
-        {
-            continue;
-        }
-        var geometry = host.getGeometry();
-        geometry.y = topdist + 50;
-        topdist = geometry.y + geometry.height;
-        host.setGeometry(geometry);
-    }
-}
-
-function makeSidebarNetwork(net_name, color, net_id){
-    var newNet = document.createElement("li");
-    var colorBlob = document.createElement("div");
-    colorBlob.className = "colorblob";
-    var textContainer = document.createElement("p");
-    textContainer.className = "network_innertext";
-    newNet.id = net_id;
-    var deletebutton = document.createElement("button");
-    deletebutton.className = "btn btn-danger";
-    deletebutton.style = "float: right; height: 20px; line-height: 8px; vertical-align: middle; width: 20px; padding-left: 5px;";
-    deleteButtonText = document.createTextNode("X");
-    deletebutton.appendChild(deleteButtonText);
-    deletebutton.addEventListener("click", function() {
-            createDeleteDialog(net_id);
-    }, false);
-    var text = net_name;
-    var newNetValue = document.createTextNode(text);
-    textContainer.appendChild(newNetValue);
-    colorBlob.style['background'] = color;
-    newNet.appendChild(colorBlob);
-    newNet.appendChild(textContainer);
-    if( net_name != "public" )
-    {
-        newNet.appendChild(deletebutton);
-    }
-    document.getElementById("network_list").appendChild(newNet);
-}
-
-function makeHost(hostInfo) {
-    value = JSON.stringify(hostInfo['value']);
-    interfaces = hostInfo['interfaces'];
-    graph = currentGraph;
-    width = 100;
-    height = (25 * interfaces.length) + 25;
-    xoff = 75;
-    yoff = lastHostBottom + 50;
-    lastHostBottom = yoff + height;
-    host = graph.insertVertex(
-        graph.getDefaultParent(),
-        'host_' + hostInfo['id'],
-        value,
-        xoff,
-        yoff,
-        width,
-        height,
-        'editable=0',
-        false
-    );
-    host.getGeometry().offset = new mxPoint(-50,0);
-    host.setConnectable(false);
-    hostCount++;
-
-    for(var i=0; i<interfaces.length; i++) {
-        port = graph.insertVertex(
-            host,
-            null,
-            JSON.stringify(interfaces[i]),
-            90,
-            (i * 25) + 12,
-            20,
-            20,
-            'fillColor=blue;editable=0',
-            false
-        );
-        port.getGeometry().offset = new mxPoint(-4*interfaces[i].name.length -2,0);
-        currentGraph.refresh(port);
-    }
-    currentGraph.refresh(host);
-}
-
-function submitForm() {
-    var form = document.getElementById("xml_form");
-    var input_elem = document.getElementById("hidden_xml_input");
-    var s = encodeGraph(currentGraph);
-    input_elem.value = s;
-    req = new XMLHttpRequest();
-    req.open("POST", "/wf/workflow/", false);
-    req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    req.onerror = function() { alert("problem with form submission"); }
-    var formData = $("#xml_form").serialize();
-    req.send(formData);
-}
-</script>
+<script type="text/javascript" src="/static/js/dashboard.js" ></script>
 {% endblock extrahead %}
 
 <!-- Calls the main function after the page has loaded. Container is dynamically created. -->
@@ -605,6 +32,10 @@ function submitForm() {
     </div>
 
     <style>
+        p {
+            word-break: normal;
+            white-space: normal;
+        }
         #network_select {
                 background: inherit;
                 padding: 0px;
@@ -656,11 +87,11 @@ function submitForm() {
 
     <div id="network_select" style="position:absolute;top:0px;bottom:0px;width:25%;right:0px;left:auto;">
         <div id="toolbar_extension">
-        <button id="btn_add_network" type="button" class="btn btn-primary" onclick="newNetworkWindow();">Add Network</button>
+        <button id="btn_add_network" type="button" class="btn btn-primary" onclick="network_step.newNetworkWindow();">Add Network</button>
         </div>
         <ul id="network_list">
         </ul>
-        <button type="button" style="display: none" onclick="submitForm();">Submit</button>
+        <button type="button" style="display: none" onclick="network_step.submitForm();">Submit</button>
     </div>
     <form id="xml_form" method="post" action="/wf/workflow/">
         {% csrf_token %}
@@ -668,14 +99,42 @@ function submitForm() {
     </form>
 
 <script>
-    main(
+    //gather context data
+    let debug = false;
+    {% if debug %}
+    debug = true;
+    {% endif %}
+
+    let xml = '';
+    {% if xml %}
+    xml = '{{xml|safe}}';
+    {% endif %}
+
+    let hosts = [];
+    {% for host in hosts %}
+    hosts.push({{host|safe}});
+    {% endfor %}
+    
+    let added_hosts = [];
+    {% for host in added_hosts %}
+    added_hosts.push({{host|safe}});
+    {% endfor %}
+
+    let removed_host_ids = {{removed_hosts|safe}};
+
+    network_step = new NetworkStep(
+        debug,
+        xml,
+        hosts,
+        added_hosts,
+        removed_host_ids,
         document.getElementById('graphContainer'),
         document.getElementById('outlineContainer'),
         document.getElementById('toolbarContainer'),
         document.getElementById('sidebarContainer')
-    )
+    );
 </script>
 {% endblock content %}
 {% block onleave %}
-submitForm();
+network_step.submitForm();
 {% endblock %}
