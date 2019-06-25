@@ -123,8 +123,9 @@
                     '{{obj.id}}');">
                 <p class="grid-item-header">{{obj.name}}</p>
                 <p class="grid-item-description">{{obj.description}}</p>
-                <button type="button" class="btn btn-success grid-item-select-btn" onclick="multi_filter_widget.processClick(
-                    '{{obj.id}}');">{% if obj.multiple %}Add{% else %}Select{% endif %}</button>
+                <button type="button" class="btn btn-success grid-item-select-btn">
+                    {% if obj.multiple %}Add{% else %}Select{% endif %}
+                </button>
             </div>
         {% endfor %}
         </div>
