@@ -90,7 +90,7 @@ class MultipleSelectFilterWidget {
             }
             for(let node of selected) {
                 this.select(node);
-                this.markAndSweep(selected[i]);
+                this.markAndSweep(node);
             }
         }
     }
@@ -732,7 +732,7 @@ class NetworkStep {
 
     addNetwork(net_name) {
         const ret = this.makeMxNetwork(net_name);
-        this.makeSidebarNetwork(...ret);
+        this.makeSidebarNetwork(net_name, ret.color, ret.element_id);
     }
 
     updateHosts(removed) {
