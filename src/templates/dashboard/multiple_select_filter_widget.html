@@ -1,3 +1,6 @@
+<script src="/static/js/dashboard.js">
+</script>
+
 <style>
 .object_class_wrapper {
     display: grid;
@@ -102,7 +105,7 @@
             <div id="{{ obj.id|default:'not_provided' }}" class="grid-item">
                 <p class="grid-item-header">{{obj.name}}</p>
                 <p class="grid-item-description">{{obj.description}}</p>
-                <button type="button" class="btn btn-success grid-item-select-btn" onclick="processClick(
+                <button type="button" class="btn btn-success grid-item-select-btn" onclick="multi_filter_widget.processClick(
                     '{{obj.id}}');">{% if obj.multiple %}Add{% else %}Select{% endif %}</button>
             </div>
         {% endfor %}
@@ -113,270 +116,15 @@
 
 <div id="dropdown_wrapper">
 </div>
-
 <script>
-var initialized = false;
-var inputs = [];
-var graph_neighbors = {{ neighbors|safe }};
-var filter_items = {{ filter_items|safe }};
-var result = {};
-var dropdown_count = 0;
+function multipleSelectFilterWidgetEntry() {
+    const graph_neighbors = {{ neighbors|safe }};
+    const filter_items = {{ filter_items|safe }};
+    const initial_value = {{ initial_value|default_if_none:"{}"|safe }};
 
-{% if initial_value %}
-
-var initial_value = {{ initial_value|safe }};
-
-
-function make_selection( initial_data ){
-    try_init();
-    for(var item_class in initial_data) {
-        var selected_items = initial_data[item_class];
-        for( var node_id in selected_items ){
-            var node = filter_items[node_id];
-            var selection_data = selected_items[node_id]
-            if( selection_data.selected ) {
-                select(node);
-                markAndSweep(node);
-                updateResult(node);
-            }
-            if(node['multiple']){
-                make_multiple_selection(node, selection_data);
-            }
-        }
-    }
+    //global variable
+    multi_filter_widget = new MultipleSelectFilterWidget(graph_neighbors, filter_items, initial_value);
 }
 
-function make_multiple_selection(node, selection_data){
-    prepop_data = selection_data.values;
-    for(var k in prepop_data){
-        var div = add_item_prepopulate(node, prepop_data[k]);
-        updateObjectResult(node, div.id, prepop_data[k]);
-    }
-}
-
-make_selection({{initial_value|safe}});
-
-{% endif %}
-
-function markAndSweep(root){
-    for(var i in filter_items) {
-        node = filter_items[i];
-        node['marked'] = true; //mark all nodes
-    }
-
-    toCheck = [root];
-    while(toCheck.length > 0){
-        node = toCheck.pop();
-        if(!node['marked']) {
-            //already visited, just continue
-            continue;
-        }
-        node['marked'] = false; //mark as visited
-        if(node['follow'] || node == root){ //add neighbors if we want to follow this node
-            var neighbors = graph_neighbors[node.id];
-            for(var i in neighbors) {
-                var neighId = neighbors[i];
-                var neighbor = filter_items[neighId];
-                toCheck.push(neighbor);
-            }
-        }
-    }
-
-    //now remove all nodes still marked
-    for(var i in filter_items){
-        node = filter_items[i];
-        if(node['marked']){
-            disable_node(node);
-        }
-    }
-}
-
-function process(node) {
-    if(node['selected']) {
-        markAndSweep(node);
-    }
-    else {  //TODO: make this not dumb
-        var selected = []
-        //remember the currently selected, then reset everything and reselect one at a time
-        for(var nodeId in filter_items) {
-            node = filter_items[nodeId];
-            if(node['selected']) {
-                selected.push(node);
-            }
-            clear(node);
-        }
-        for(var i=0; i<selected.length; i++) {
-            node = selected[i];
-            select(node);
-            markAndSweep(selected[i]);
-        }
-    }
-}
-
-function select(node) {
-    elem = document.getElementById(node['id']);
-    node['selected'] = true;
-    elem.classList.remove('cleared_node');
-    elem.classList.remove('disabled_node');
-    elem.classList.add('selected_node');
-}
-
-function clear(node) {
-    elem = document.getElementById(node['id']);
-    node['selected'] = false;
-    node['selectable'] = true;
-    elem.classList.add('cleared_node')
-    elem.classList.remove('disabled_node');
-    elem.classList.remove('selected_node');
-}
-
-function disable_node(node) {
-    elem = document.getElementById(node['id']);
-    node['selected'] = false;
-    node['selectable'] = false;
-    elem.classList.remove('cleared_node');
-    elem.classList.add('disabled_node');
-    elem.classList.remove('selected_node');
-}
-
-function processClick(id){
-    try_init();
-    var node = filter_items[id];
-    if(!node['selectable'])
-        return;
-
-    if(node['multiple']){
-        return processClickMultiple(node);
-    } else {
-        return processClickSingle(node);
-    }
-}
-
-function processClickSingle(node){
-    node['selected'] = !node['selected']; //toggle on click
-
-    if(node['selected']) {
-        select(node);
-    } else {
-        clear(node);
-    }
-    process(node);
-    updateResult(node);
-}
-
-function processClickMultiple(node){
-    select(node);
-    var div = add_node(node);
-    process(node);
-    updateObjectResult(node, div.id, "");
-}
-
-function add_node(node){
-    return add_item_prepopulate(node, false);
-}
-
-function restrictchars(input){
-    if( input.validity.patternMismatch ){
-        input.setCustomValidity("Only alphanumeric characters (a-z, A-Z, 0-9), underscore(_), and hyphen (-) are allowed");
-        input.reportValidity();
-    }
-    input.value = input.value.replace(/([^A-Za-z0-9-_.])+/g, "");
-    checkunique(input);
-}
-
-function checkunique(tocheck){
-    val = tocheck.value;
-    for( var i = 0; i < inputs.length; i++ )
-    {
-        if( inputs[i].value == val && inputs[i] != tocheck)
-        {
-            tocheck.setCustomValidity("All hostnames must be unique");
-            tocheck.reportValidity();
-            return;
-        }
-    }
-    tocheck.setCustomValidity("");
-}
-
-function make_remove_button(div, node){
-    var button = document.createElement("BUTTON");
-    button.type = "button";
-    button.appendChild(document.createTextNode("Remove"));
-    button.classList.add("btn-danger");
-    button.classList.add("btn");
-    button.onclick = function(){
-        remove_dropdown(div.id, node.id);
-    }
-    return button;
-}
-
-function make_input(div, node, prepopulate){
-    var input = document.createElement("INPUT");
-    input.type = node.form.type;
-    input.name = node.id + node.form.name
-    input.pattern = "(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})";
-    input.title = "Only alphanumeric characters (a-z, A-Z, 0-9), underscore(_), and hyphen (-) are allowed"
-    input.placeholder = node.form.placeholder;
-    inputs.push(input);
-    input.onchange = function() { updateObjectResult(node, div.id, input.value); restrictchars(this); };
-    input.oninput = function() { restrictchars(this); };
-    if(prepopulate)
-        input.value = prepopulate;
-    return input;
-}
-
-function add_item_prepopulate(node, prepopulate){
-    var div = document.createElement("DIV");
-    div.id = "dropdown_" + dropdown_count;
-    div.classList.add("dropdown_item");
-    dropdown_count++;
-    var label = document.createElement("H5")
-    label.appendChild(document.createTextNode(node['name']))
-    div.appendChild(label);
-    div.appendChild(make_input(div, node, prepopulate));
-    div.appendChild(make_remove_button(div, node));
-    document.getElementById("dropdown_wrapper").appendChild(div);
-    return div;
-}
-
-function remove_dropdown(div_id, node_id){
-    var div = document.getElementById(div_id);
-    var node = filter_items[node_id]
-    var parent = div.parentNode;
-    div.parentNode.removeChild(div);
-    delete result[node.class][node.id]['values'][div.id];
-
-    //checks if we have removed last item in class
-    if(jQuery.isEmptyObject(result[node.class][node.id]['values'])){
-        delete result[node.class][node.id];
-        clear(node);
-    }
-}
-function updateResult(node){
-    try_init();
-    if(!node['multiple']){
-        result[node.class][node.id] = {selected: node.selected, id: node.model_id}
-        if(!node.selected)
-            delete result[node.class][node.id];
-    }
-}
-
-function updateObjectResult(node, childKey, childValue){
-    try_init();
-    if(!result[node.class][node.id])
-        result[node.class][node.id] = {selected: true, id: node.model_id, values: {}}
-
-    result[node.class][node.id]['values'][childKey] = childValue;
-}
-
-function try_init() {
-    if(initialized) return;
-    for(nodeId in filter_items) {
-        var element = document.getElementById(nodeId);
-        var node = filter_items[nodeId];
-        result[node.class] = {}
-        }
-    initialized = true;
-}
-
+multipleSelectFilterWidgetEntry();
 </script>

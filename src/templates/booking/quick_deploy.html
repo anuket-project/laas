@@ -83,7 +83,7 @@
     function submit_form()
     {
         //formats data for form submission
-        document.getElementById("filter_field").value = JSON.stringify(result);
+        multi_filter_widget.finish();
     }
 
     function hide_dropdown(drop_id) {
@@ -104,10 +104,8 @@
     }
 
     function get_selected_value(key){
-        for( var attr in result[key] ){
-            if( attr in {} )
-                continue;
-            else
+        for( var attr in multi_filter_widget.result[key] ){
+            if(!(attr in {}) )
                 return attr;
         }
         return null;
