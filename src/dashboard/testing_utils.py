@@ -80,7 +80,7 @@ def make_booking(owner=None, start=timezone.now(),
                  topology={}, installer=None, scenario=None):
 
     grb, host_set = make_grb(topology, owner, lab)
-    config_bundle = make_config_bundle(grb, owner, topology, host_set, installer, scenario)
+    config_bundle, opnfv_bundle = make_config_bundle(grb, owner, topology, host_set, installer, scenario)
     resource = ResourceManager.getInstance().convertResourceBundle(grb, config=config_bundle)
     if not resource:
         raise Exception("Resource not created")
@@ -93,7 +93,8 @@ def make_booking(owner=None, start=timezone.now(),
         owner=owner,
         purpose=purpose,
         project=project,
-        lab=lab
+        lab=lab,
+        opnfv_config=opnfv_bundle
     )
 
 
@@ -124,7 +125,7 @@ def make_config_bundle(grb, owner, topology={}, host_set={},
             host_config=host_config,
             opnfv_config=opnfv_config
         )
-    return cb
+    return cb, opnfv_config
 
 
 def make_network(name, lab, grb, public):
@@ -230,7 +231,7 @@ def make_vlan_manager(vlans=None, block_size=20, allow_overlapping=False, reserv
     )
 
 
-def make_lab(user=None, name="Test Lab Instance",
+def make_lab(user=None, name="Test_Lab_Instance",
              status=LabStatus.UP, vlan_manager=None,
              pub_net_count=5):
     if not vlan_manager:
