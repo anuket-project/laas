@@ -482,7 +482,7 @@ class NetworkStep {
         yes_button.appendChild(document.createTextNode("Okay"));
 
         const cancel_button = document.createElement("button");
-        cancel_button.onclick = function() {thid.closeWindow();}.bind(this);
+        cancel_button.onclick = function() {this.closeWindow();}.bind(this);
         cancel_button.appendChild(document.createTextNode("Cancel"));
 
         const error_div = document.createElement("div");
