@@ -4,13 +4,8 @@
 {% load bootstrap4 %}
 
 {% block content %}
-<style>
-.meta_container {
-    padding: 50px;
-}
-</style>
 {% bootstrap_form_errors form type='non_fields' %}
-<div class="meta_container">
+<div class="p-4">
     <form id="meta_form" action="/wf/workflow/" method="POST" class="form">
     {% csrf_token %}
     <div class="form-group">

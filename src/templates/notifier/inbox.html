@@ -5,61 +5,6 @@
 
 {% block content %}
 
-<style media="screen">
-    .inbox-panel {
-        display: grid;
-        grid-template-columns: 30% 5% 65%;
-    }
-
-    .section-panel {
-        padding: 10px;
-    }
-
-    .iframe-panel {
-        padding: 0px;
-        margin-top: 0px;
-    }
-
-    .card-container {
-        border: 1px solid #cccccc;
-        border-bottom: 0px;
-    }
-
-    .card {
-        height: 50px;
-        position: relative;
-        border-bottom: 1px solid #cccccc;
-        padding: 10px;
-        width: 100%;
-        background-color: #ffffff;
-        z-index: 5;
-    }
-
-    .selected-card {
-        background-color: #f3f3f3;
-    }
-
-    .card:hover {
-        box-shadow: 0px 0 5px 2px #cccccc;
-        z-index: 6;
-    }
-
-    .half_width {
-        width: 50%;
-    }
-
-    #page-wrapper {
-        padding: 0px;
-    }
-
-    .read_notification {
-        background-color: #efefef;
-    }
-
-    .scrollable {
-        overflow-y: auto;
-    }
-</style>
 <div class="container-fluid d-flex flex-grow-1 flex-column">
     <div class="row mt-3 mb-2">
         <div class="col-2 px-0">
@@ -73,7 +18,7 @@
     <div class="row flex-grow-1" id="fixHeight">
         <!-- Notification list && Controls -->
         <div class="mb-2 mb-lg-0 col-lg-2 px-0 mh-100">
-            <div class="list-group rounded-0 rounded-left scrollable mh-100 notifications" id="unreadNotifications" data-read="0">
+            <div class="list-group rounded-0 rounded-left overflow-auto mh-100 notifications" id="unreadNotifications" data-read="0">
                 {% for notification in unread_notifications %}
                     <a
                         href="#"
@@ -83,7 +28,7 @@
                     </a>
                 {% endfor %}
             </div>
-            <div class="list-group rounded-0 rounded-left scrollable mh-100 notifications" id="readNotifications" data-read="1">
+            <div class="list-group rounded-0 rounded-left overflow-auto mh-100 notifications" id="readNotifications" data-read="1">
                 {% for notification in read_notifications %}
                     <a
                         href="#"
@@ -96,15 +41,14 @@
         </div>
         <!-- Content -->
         <div class="col ml-lg-2 border mh-100 p-4">
-            <iframe class="w-100 h-100" id="inbox-iframe" frameBorder="0" scrolling="yes">Please select a notification</iframe>
+            <iframe name="messageView" class="w-100 h-100" id="inbox-iframe" frameBorder="0" scrolling="yes">Please select a notification</iframe>
         </div>
     </div>
 </div>
 
 <script type="text/javascript">
     function showmessage(msg_id) {
-        iframe = document.getElementById("inbox-iframe");
-        iframe.src = "notification/" + msg_id;
+        window.frames["messageView"].location = "notification/" + msg_id;
     }
 
     function setactive(obj) {

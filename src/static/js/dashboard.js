@@ -98,7 +98,7 @@ class MultipleSelectFilterWidget {
     select(node) {
         const elem = document.getElementById(node['id']);
         node['selected'] = true;
-        elem.classList.remove('disabled_node', 'cleared_node');
+        elem.classList.remove('bg-white', 'not-allowed', 'bg-light');
         elem.classList.add('selected_node');
     }
 
@@ -106,16 +106,16 @@ class MultipleSelectFilterWidget {
         const elem = document.getElementById(node['id']);
         node['selected'] = false;
         node['selectable'] = true;
-        elem.classList.add('cleared_node')
-        elem.classList.remove('disabled_node', 'selected_node');
+        elem.classList.add('bg-white')
+        elem.classList.remove('not-allowed', 'bg-light', 'selected_node');
     }
 
     disable_node(node) {
         const elem = document.getElementById(node['id']);
         node['selected'] = false;
         node['selectable'] = false;
-        elem.classList.remove('cleared_node', 'selected_node');
-        elem.classList.add('disabled_node');
+        elem.classList.remove('bg-white', 'selected_node');
+        elem.classList.add('not-allowed', 'bg-light');
     }
 
     processClick(id){
@@ -173,7 +173,7 @@ class MultipleSelectFilterWidget {
         const button = document.createElement("BUTTON");
         button.type = "button";
         button.appendChild(document.createTextNode("Remove"));
-        button.classList.add("btn", "btn-danger");
+        button.classList.add("btn", "btn-danger", "d-inline-block");
         const that = this;
         button.onclick = function(){ that.remove_dropdown(div.id, node.id); }
         return button;
@@ -183,6 +183,7 @@ class MultipleSelectFilterWidget {
         const input = document.createElement("INPUT");
         input.type = node.form.type;
         input.name = node.id + node.form.name
+        input.classList.add("form-control", "w-auto", "d-inline-block");
         input.pattern = "(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})";
         input.title = "Only alphanumeric characters (a-z, A-Z, 0-9), underscore(_), and hyphen (-) are allowed"
         input.placeholder = node.form.placeholder;
@@ -198,7 +199,7 @@ class MultipleSelectFilterWidget {
     add_item_prepopulate(node, prepopulate){
         const div = document.createElement("DIV");
         div.id = "dropdown_" + this.dropdown_count;
-        div.classList.add("dropdown_item");
+        div.classList.add("list-group-item");
         this.dropdown_count++;
         const label = document.createElement("H5")
         label.appendChild(document.createTextNode(node['name']))
@@ -756,21 +757,28 @@ class NetworkStep {
     }
 
     makeSidebarNetwork(net_name, color, net_id){
-        const newNet = document.createElement("li");
         const colorBlob = document.createElement("div");
-        colorBlob.className = "colorblob";
-        const textContainer = document.createElement("p");
-        textContainer.className = "network_innertext";
-        newNet.id = net_id;
-        const deletebutton = document.createElement("button");
-        deletebutton.className = "btn btn-danger";
-        deletebutton.style = "float: right; height: 20px; line-height: 8px; vertical-align: middle; width: 20px; padding-left: 5px;";
-        deletebutton.appendChild(document.createTextNode("X"));
-        deletebutton.addEventListener("click", function() { this.createDeleteDialog(net_id); }.bind(this), false);
-        textContainer.appendChild(document.createTextNode(net_name));
+        colorBlob.className = "square-20 rounded-circle";
         colorBlob.style['background'] = color;
+
+        const textContainer = document.createElement("span");
+        textContainer.className = "ml-2";
+        textContainer.appendChild(document.createTextNode(net_name));
+
+        const timesIcon = document.createElement("i");
+        timesIcon.classList.add("fas", "fa-times");
+
+        const deletebutton = document.createElement("button");
+        deletebutton.className = "btn btn-danger ml-auto square-20 p-0 d-flex justify-content-center";
+        deletebutton.appendChild(timesIcon);
+        deletebutton.addEventListener("click", function() { this.createDeleteDialog(net_id); }.bind(this), false);
+
+        const newNet = document.createElement("li");
+        newNet.classList.add("list-group-item", "d-flex", "bg-light");
+        newNet.id = net_id;
         newNet.appendChild(colorBlob);
         newNet.appendChild(textContainer);
+
         if( net_name != "public" ) {
             newNet.appendChild(deletebutton);
         }
@@ -1052,14 +1060,14 @@ class SearchableSelectMultipleWidget {
             const result_button = document.createElement("a");
             const obj = this.items[id];
             const result_text = this.generate_element_text(obj);
-            result_button.appendChild(document.createTextNode(result_text));
-            result_button.onclick = function() { searchable_select_multiple_widget.select_item(obj.id); };
+            result_entry.classList.add("list-group-item", "list-group-item-action");
+            result_entry.innerText = result_text;
+            result_entry.onclick = function() { searchable_select_multiple_widget.select_item(obj.id); };
             const tooltip = document.createElement("span");
             const tooltiptext = document.createTextNode(result_text);
             tooltip.appendChild(tooltiptext);
-            tooltip.setAttribute('class', 'entry_tooltip');
-            result_button.appendChild(tooltip);
-            result_entry.appendChild(result_button);
+            tooltip.classList.add("d-none");
+            result_entry.appendChild(tooltip);
             drop.appendChild(result_entry);
         }
 
@@ -1120,13 +1128,11 @@ class SearchableSelectMultipleWidget {
 
             const element_entry_text = this.generate_element_text(item);
 
-            list_html += '<div class="list_entry">'
-                + '<p class="added_entry_text">'
+            list_html += '<div class="border rounded mt-2 w-100 d-flex align-items-center pl-2">'
                 + element_entry_text
-                + '</p>'
                 + '<button onclick="searchable_select_multiple_widget.remove_item('
                 + item_id
-                + ')" class="btn-remove btn">remove</button>';
+                + ')" class="btn btn-danger ml-auto">Remove</button>';
             list_html += '</div>';
         }
         added_list.innerHTML = list_html;

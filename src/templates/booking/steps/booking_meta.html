@@ -5,72 +5,33 @@
 
 {% block content %}
 
-<style>
-    .bkmeta_panel {
-        padding: 5%;
-    }
-
-    .bkcontrib_panel {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .bkcontrib_panel > .form-group {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .panel{
-        padding: 5%;
-        /*border: solid 1px black;*/
-    }
-
-    .panel_wrap {
-        width: 100%;
-        display: grid;
-        grid-template-columns: 45% 10% 45%;
-        border: none;
-    }
-
-    #id_length {
-        -moz-appearance: none;
-        border: none;
-        box-shadow: none;
-    }
-    input[type=range]::-moz-range-track {
-        background: #cccccc;
-    }
-</style>
-
 {% bootstrap_form_errors form type='non_fields' %}
 <form id="booking_meta_form" action="/wf/workflow/" method="POST" class="form">
 {% csrf_token %}
-<div id="form_div">
+<div id="form_div" class="container-fluid">
+    <div class="row">
+        <div class="p-4 col">
+            {% bootstrap_field form.purpose %}
+            {% bootstrap_field form.project %}
+            {% bootstrap_field form.length %}
+            <span>Days: </span><output id="daysout">0</output>
+            <script>
+                document.getElementById("id_length").oninput = function() { daysout.value=this.value; }
+                document.getElementById("daysout").value = document.getElementById("id_length").value;
+            </script>
+            {% bootstrap_field form.info_file %}
+            <p>You must provide a url to your project's INFO.yaml file if you are a PTL and you are trying to book a POD with multiple servers in it.</p>
+            {% bootstrap_field form.deploy_opnfv %}
+        </div>
+        <div class="p-4 col">
+            <p>You may add collaborators on your booking to share resources with coworkers.</p>
+            {% bootstrap_field form.users label="Collaborators" %}
+        </div>
+    </div>
     <div class="panel_wrap">
-    <div class="panel bkmeta_panel">
-        {% bootstrap_field form.purpose %}
-        {% bootstrap_field form.project %}
-        {% bootstrap_field form.length %}
-        <p style="display:inline;">Days: </p><output id="daysout" style="display:inline;">0</output>
-        <script>
-            document.getElementById("id_length").setAttribute("oninput", "daysout.value=this.value");
-            document.getElementById("daysout").value = document.getElementById("id_length").value;
-        </script>
-        {% bootstrap_field form.info_file %}
-        <p>You must provide a url to your project's INFO.yaml file if you are a PTL and you are trying to book a POD with multiple servers in it.</p>
-        {% bootstrap_field form.deploy_opnfv %}
-    </div>
-    <div class="panel panel_center">
-    </div>
-    <div class="panel bkcontrib_panel">
-        <p>You may add collaborators on your booking to share resources with coworkers.</p>
-        {% bootstrap_field form.users label="Collaborators" %}
-    </div>
-
-    {% buttons %}
-    <button type="submit" style="display: none;" class="btn btn-success">Confirm</button>
-    {% endbuttons %}
+        {% buttons %}
+            <button type="submit" class="btn btn-success d-none">Confirm</button>
+        {% endbuttons %}
     </div>
 </div>
 </form>

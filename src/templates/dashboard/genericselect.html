@@ -5,77 +5,18 @@
 
 {% block content %}
 
-<style>
-    #page-wrapper {
-        display: flex;
-        flex-direction: column;
-    }
-
-    #{{select_type}}_form_div div {
-    }
-
-    #{{select_type}}_form_div > * {
-        margin-left: 10px;
-        margin-right: 10px;
-        margin-bottom: 20px;
-    }
-
-    #{{select_type}}_form_div div * {
-    }
-
-    #{{select_type}}_form_div {
-        flex: 1;
-        margin: 30px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #select_section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #{{select_type}}_select_form {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .autocomplete {
-        flex: 1;
-    }
-
-    #create_section {
-    }
-
-    #select_header_section {
-    }
-
-    h3 {
-        margin-top: 0;
-        margin-bottom: 0;
-        vertical-align: middle;
-    }
-
-    .divider {
-        border-top: 1px solid #ccc;
-    }
-
-
-</style>
-
-<div id="{{select_type}}_form_div">
+<div id="{{select_type}}_form_div" class="h-100 border d-flex flex-column p-4">
     <h3 id="create_section">Create a Resource
         <button class="btn btn-primary {% if disabled %} disabled {% endif %}"
             {% if not disabled %}onclick="parent.add_wf({{addable_type_num}})"
             {% endif %}>Here
         </button>
     </h3>
-    <div class="divider"></div>
+    <div class="border-top"></div>
     <h3 id="select_header_section">Or select from the list below:</h3>
-    <div id="select_section">
-        <form id="{{select_type}}_select_form" method="post" action="" class="form" id="{{select_type}}selectorform">
+    <div id="select_section" class="d-flex flex-column">
+        <form id="{{select_type}}_select_form" method="post" action=""
+            class="form d-flex flex-column" id="{{select_type}}selectorform">
         {% csrf_token %}
         {{ form|default:"<p>no form loaded</p>" }}
         {% buttons %}

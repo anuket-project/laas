@@ -2,88 +2,64 @@
 {% load staticfiles %}
 {% load bootstrap4 %}
 {% block content %}
-<style>
-    .grid_container {
-        display: grid;
-        grid-template-columns: repeat(12, 1fr);
-        padding: 30px;
-    }
-    .grid_element {
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        margin: 10px;
-        padding: 7px;
-    }
-    .grid_element_wide {
-        grid-column-start: span 12;
-    }
-    .grid_element_half {
-        grid-column-start: span 6;
-    }
-    .grid_element_1third {
-        grid-column-start: span 4;
-    }
-    .grid_element_2third {
-        grid-column-start: span 8;
-    }
-    .collaborator_pane {
-        display: flex;
-        flex-direction: column;
-    }
-    #id_length {
-        -moz-appearance: none;
-        border: none;
-        box-shadow: none;
-    }
 
-    input[type=range]::-moz-range-track {
-        background: #cccccc;
-    }
-
-    .grid_element {
-        overflow: hidden;
-    }
-</style>
 {% bootstrap_form_errors form type='non_fields' %}
 <form id="quick_booking_form" action="/booking/quick/" method="POST" class="form">
-{% csrf_token %}
-<div class="grid_container">
-<div class="grid_element host_select_pane grid_element_wide">
-<p>Please select a host type you wish to book. Only available types are shown.</p>
-{% bootstrap_field form.filter_field show_label=False %}
-</div>
-<div class="grid_element booking_info_pane grid_element_1third">
-    {% bootstrap_field form.purpose %}
-    {% bootstrap_field form.project %}
-    {% bootstrap_field form.length %}
-    <p style="display:inline;">Days: </p><output id="daysout" style="display:inline;">0</output>
-    <script>
-        document.getElementById("id_length").setAttribute("oninput", "daysout.value=this.value");
-        document.getElementById("daysout").value = document.getElementById("id_length").value;
-    </script>
-</div>
-<div class="grid_element collaborator_pane grid_element_1third">
-        <label>Collaborators</label>
-        {{ form.users }}
-</div>
-<div class="grid_element_1third">
-    <div class="configuration_pane grid_element">
-        {% bootstrap_field form.hostname %}
-        {% bootstrap_field form.image %}
+    {% csrf_token %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12 px-1 my-2">
+                <div class="col py-2 rounded border">
+                    <p>Please select a host type you wish to book. Only available types are shown.</p>
+                    {% bootstrap_field form.filter_field show_label=False %}
+                </div>
+            </div>
+            <div class="col-12 col-lg-3 px-1 my-2">
+                <div class="col border rounded py-2 h-100">
+                    {% bootstrap_field form.purpose %}
+                    {% bootstrap_field form.project %}
+                    {% bootstrap_field form.length %}
+                    <span>Days: </span><output id="daysout">0</output>
+                    <script>
+                        document.getElementById("id_length").setAttribute("oninput", "daysout.value=this.value");
+                        document.getElementById("daysout").value = document.getElementById("id_length").value;
+                    </script>
+                </div>
+            </div>
+            <div class="col-12 col-lg-3 px-1 my-2">
+                <div class="col border rounded py-2 h-100">
+                    <label>Collaborators</label>
+                    {{ form.users }}
+                </div>
+            </div>
+            <div class="col-12 col-lg-3 px-1 my-2">
+                <div class="col border rounded py-2 h-100">
+                    {% bootstrap_field form.hostname %}
+                    {% bootstrap_field form.image %}
+                </div>
+            </div>
+            <div class="col-12 col-lg-3 px-1 my-2">
+                <div class="col border rounded py-2 h-100">
+                    <strong>OPNFV: (Optional)</strong>
+                    {% bootstrap_field form.installer %}
+                    {% bootstrap_field form.scenario %}
+                </div>
+            </div>
+            <div class="col-12 d-flex px-0 mt-2 justify-content-end">
+                <button id="quick_booking_confirm" onclick="submit_form();" type="button" class="btn btn-success">Confirm</button>
+            </div>
+        </div>
     </div>
-    <div class="configuration_pane grid_element">
-        <strong>OPNFV: (Optional)</strong>
-        {% bootstrap_field form.installer %}
-        {% bootstrap_field form.scenario %}
-    </div>
-</div>
-</div>
-<script type="text/javascript">
+</form>
 
+<script type="text/javascript">
     function submit_form()
     {
         //formats data for form submission
         multi_filter_widget.finish();
+        // Submit the form manually since confirm button is type="button" now
+        // due to the form submitting before the data was even created by finish()
+        document.getElementById("quick_booking_form").submit();
     }
 
     function hide_dropdown(drop_id) {
@@ -94,13 +70,6 @@
             if ( drop.options[i].text == '---------' )
                 drop.selectedIndex = i;
         }
-
-        //cross browser hide children
-        $('#id_image').children().hide();
-        for( var i = 0; i < drop.childNodes.length; i++ )
-        {
-            drop.childNodes[i].disabled = true; // closest we can get on safari to hiding it outright
-        }
     }
 
     function get_selected_value(key){
@@ -108,12 +77,11 @@
             if(!(attr in {}) )
                 return attr;
         }
-        return null;
     }
 
-    var sup_image_dict = {{ image_filter|safe }};
-    var sup_installer_dict = {{ installer_filter|safe }};
-    var sup_scenario_dict = {{ scenario_filter|safe }};
+    var sup_image_dict = {{image_filter | safe}};
+    var sup_installer_dict = {{installer_filter | safe}};
+    var sup_scenario_dict = {{scenario_filter | safe}};
 
     function imageHider() {
         var drop = document.getElementById("id_image");
@@ -123,15 +91,13 @@
         var lab_pk = get_selected_value("lab");
         var host_pk = get_selected_value("host");
 
-        for ( var i=0; i < drop.childNodes.length; i++ )
-        {
-            var image_object = sup_image_dict[drop.childNodes[i].value];
-            if( image_object ) //weed out empty option
+        for (const childNode of drop.childNodes) {
+            var image_object = sup_image_dict[childNode.value];
+            if (image_object) //weed out empty option
             {
-                if( image_object.host_profile == host_pk && image_object.lab == lab_pk )
-                {
-                    drop.childNodes[i].style.display = "inherit";
-                    drop.childNodes[i].disabled = false;
+                if (image_object.host_profile == host_pk && image_object.lab == lab_pk) {
+                    childNode.style.display = "inherit";
+                    childNode.disabled = false;
                 }
             }
         }
@@ -142,7 +108,7 @@
     $('#id_scenario').children().hide();
 
 
-    Array.from(document.getElementsByClassName("grid-item-select-btn")).forEach(function(element) {
+    Array.from(document.getElementsByClassName("grid-item-select-btn")).forEach(function (element) {
         element.addEventListener('click', imageHider);
     });
 
@@ -175,13 +141,11 @@
         }
 
         for (var i = 0; i < dropdown.childNodes.length; i++) {
-            if (dropdown.childNodes[i].value in opts && !(dropdown.childNodes[i].value in {}) ) {
+            if (dropdown.childNodes[i].value in opts && !(dropdown.childNodes[i].value in {})) {
                 dropdown.childNodes[i].style.display = "inherit";
                 dropdown.childNodes[i].disabled = false;
             }
         }
     }
 </script>
-    <button id="quick_booking_confirm" onclick="submit_form();" class="btn btn-success">Confirm</button>
-</form>
 {% endblock %}

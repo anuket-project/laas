@@ -5,7 +5,6 @@
 
 
 <!-- Custom CSS -->
-<link href="{% static "css/detail_view.css" %}" rel="stylesheet">
 <link href="{% static "css/base.css" %}" rel="stylesheet">
 <script type="text/javascript">
     function cwf(type) {
@@ -30,70 +29,33 @@
     function continue_wf() {
         window.location.replace("/wf/");
     }
-
-    function toggle_create_drop() {
-        drop_div = document.getElementById("create_drop");
-
-        if (drop_div.style.display === "none") {
-            drop_div.style.display = "inherit";
-        } else {
-            drop_div.style.display = "none";
-        }
-    }
 </script>
-<style>
-    .navbar {
-        min-width: 200px;
-    }
-
-    .create_drop {
-        display: none;
-        width: 100%;
-    }
-
-    .create_drop button {
-        width: 100%;
-    }
-
-    .drop_btn {
-        border-radius: 0px;
-        background-color: CCCCCC
-    }
-
-    .drop_btn:hover {
-        color: #555;
-        border-top: 1px solid #E7E7E7;
-        border-bottom: 1px solid #E7E7E7;
-    }
-
-    #wrapper {
-        height: 100vh;
-    }
-</style>
 
 {% endblock %}
 {% block basecontent %}
 <div id="wrapper" class="d-flex flex-column">
     <!-- Navigation -->
-    <nav class="navbar navbar-light bg-light navbar-fixed-top border-bottom py-0" role="navigation" style="margin-bottom: 0">
-        <div class="container-fluid">
-            <div class="col order-2 order-lg-1 text-center text-lg-left">
+    <nav class="navbar navbar-light bg-light navbar-fixed-top border-bottom py-0 mb-0" role="navigation">
+        <div class="container-fluid pb-2 pb-sm-0">
+            <!-- Logo -->
+            <div class="col-12 col-sm order-1 order-sm-2 text-center text-lg-left">
                 <a href="https://www.opnfv.org/" class="navbar-brand">
                     <img src="{% static "img/opnfv-logo.png" %}">
                 </a>
-                <a class="navbar-brand" href={% url 'dashboard:index' %}>
+                <a class="navbar-brand d-none d-lg-inline" href={% url 'dashboard:index' %}>
                     Pharos Dashboard
                 </a>
             </div>
-            <!-- /.navbar-header -->
-            <div class="col-2 order-1 order-lg-3 d-lg-none">
-                <button class="btn border" type="button" data-toggle="collapse" data-target="#sidebar"
+            <!-- Sidebar button -->
+            <div class="col-6 col-sm-2 d-flex order-1 order-lg-3 d-lg-none">
+                <button class="btn border mx-auto" type="button" data-toggle="collapse" data-target="#sidebar"
                     aria-expanded="false" aria-controls="sidebar">
-                    <i class="fas fa-bars"></i>
+                    <i class="fas fa-bars d-inline"></i>
                 </button>
             </div>
-            <div class="col-2 order-3">
-                <ul class="nav ml-auto">
+            <!-- Login dropdown -->
+            <div class="col-6 col-sm-2 order-3 d-flex">
+                <ul class="nav mx-auto mr-sm-0">
                     <li class="dropdown ml-auto">
                         <a class="nav-link p-0 text-dark p-2" data-toggle="dropdown" href="#">
                             {% if request.user.username %}
@@ -119,19 +81,18 @@
                                     Login with Jira
                                 </a>
                             {% endif %}
-                        </div> <!-- End dropdown-menu -->
-                    </li> <!-- End dropdown -->
+                        </div>
+                    </li>
                 </ul>
-            </div> <!-- End top right account menu -->
+            </div>
         </div>
     </nav>
-    <!-- /.navbar-top-links -->
 
     <!-- Page Content -->
-    <div class="container-fluid d-lg-flex flex-lg-grow-1 px-0">
-        <div class="row h-100 w-100 mx-0">
+    <div class="container-fluid d-flex flex-grow-1 px-0 align-items-start flex-column">
+        <div class="row flex-grow-1 w-100 mx-0 align-content-start flex-lg-grow-1">
             <div class="col-12 col-lg-auto px-0 border-right border-left bg-light" role="navigation">
-                <nav class="navbar navbar-expand-lg border-bottom p-0 w-100">
+                <nav class="navbar navbar-expand-lg border-bottom p-0 w-100 sidebar">
                     <div class="collapse navbar-collapse" id="sidebar">
                         <div class="list-group list-group-flush w-100 bg-light">
                             <a href="/" class="list-group-item list-group-item-action bg-light">
@@ -176,9 +137,6 @@
                             <a href="{% url 'booking:stats' %}" class="list-group-item list-group-item-action bg-light">
                                 Booking Statistics
                             </a>
-                            <!-- <a href="{% url 'account:my-account' %}" class="list-group-item list-group-item-action bg-light">
-                                Account
-                            </a> -->
                             <a class="list-group-item list-group-item-action bg-light" data-toggle="collapse"
                                 href="#accountList" role="button">
                                 Account <i class="fas fa-angle-down rotate"></i>
@@ -206,17 +164,13 @@
                         </div>
                     </div>
                 </nav>
-                <!--/.well -->
             </div>
-            <!--/span-->
-
-            <div class="col flex-grow-1 d-flex flex-column">
+            <div class="col overflow-auto flex-grow-1 d-flex flex-column h-100">
                 {% if title %}
                 <div class="row flex-shrink-1">
                     <div class="col-lg-12">
                         <h1 class="page-header">{{ title }}</h1>
                     </div>
-                    <!-- /.col-lg-12 -->
                 </div>
                 {% endif %}
                 <div id="bsm">{% bootstrap_messages %}</div>
@@ -224,13 +178,7 @@
                 {% block content %}
                 {% endblock content %}
             </div>
-            <!--/span-->
-
-
         </div>
-        <!--/row-->
     </div>
-    <!-- /#page-wrapper -->
 </div>
-<!-- /#wrapper -->
 {% endblock basecontent %}
