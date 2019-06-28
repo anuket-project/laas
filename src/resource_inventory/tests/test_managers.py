@@ -11,7 +11,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 
 from resource.inventory_manager import InventoryManager
-from resource.resource_manager import ResourceManager
+from resource.resource_manager import ResourceManager, HostNameValidator
 from account.models import Lab
 from resource.models import (
     Host,
@@ -247,3 +247,55 @@ class ResourceManagerTestCase(TestCase):
     def test_convert_bundle(self):
         ResourceManager.getInstance().convertResoureBundle(self.genericBundle, self.lab.name)
         # verify bundle configuration
+
+
+class HostNameValidatorTestCase(TestCase):
+
+    def test_valid_hostnames(self):
+        self.assertTrue(HostNameValidator.is_valid_hostname("localhost"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("Localhost"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("localHost"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("LOCALHOST"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("f"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("abc123doreyme"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("F9999999"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("my-host"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("My-Host"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("MY-HOST"))
+        self.assertTrue(HostNameValidator.is_valid_hostname("a-long-name-for-my-host"))
+
+    def test_invalid_hostnames(self):
+        self.assertFalse(HostNameValidator.is_valid_hostname("-long-name-for-my-host"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("546"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+
+    def test_invalid_chars(self):
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains!char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains@char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains#char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains$char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains%char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains^char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains&char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains*char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains(char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains)char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains_char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains=char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains+char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains|char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains\\char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains[char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains]char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains;char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains:char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains'char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname('contains"char'))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains'char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains<char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains>char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains,char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains?char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains/char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains`char"))
+        self.assertFalse(HostNameValidator.is_valid_hostname("contains~char"))

@@ -6,7 +6,7 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-
+import re
 
 from dashboard.exceptions import (
     ResourceExistenceException,
@@ -172,3 +172,13 @@ class ResourceManager:
         self.releaseNetworks(grb, vlan_manager, vlans)
         for host in hosts:
             self.releaseHost(host)
+
+
+class HostNameValidator(object):
+    regex = r'^[A-Za-z0-9][A-Za-z0-9-]*$'
+    message = "Hostnames can only contain alphanumeric characters and hyphens (-). Hostnames must start with a letter"
+    pattern = re.compile(regex)
+
+    @classmethod
+    def is_valid_hostname(cls, hostname):
+        return len(hostname) < 65 and cls.pattern.fullmatch(hostname) is not None
