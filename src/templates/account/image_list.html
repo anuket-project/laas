@@ -1,36 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Images I Own</h2>
-<div class="card_container">
+<div class="row">
 {% for image in images %}
-    <div class="card">
-        <div class="card-header">
-            <h3>Image {{image.id}}</h3>
-        </div>
-        <div class="card-body">
-            <ul class="list-group">
-                <li class="list-group-item">id: {{image.id}}</li>
-                <li class="list-group-item">lab: {{image.from_lab.name}}</li>
-                <li class="list-group-item">name: {{image.name}}</li>
-                <li class="list-group-item">description: {{image.description}}</li>
-                <li class="list-group-item">host profile: {{image.host_type.name}}</li>
-            </ul>
-        </div>
-        <div class="card-footer">
-            <button
-                class="btn btn-danger w-100"
-                onclick='delete_image({{image.id}});'
-                data-toggle="modal"
-                data-target="#imageModal"
-            >Delete</button>
-        </div>
-    </div>
-{% endfor %}
-</div>
-<h2>Public Images</h2>
-<div class="card_container">
-    {% for image in public_images %}
-        <div class="card">
+    <div class="p-2 col-12 col-md-6 col-lg-4 col-xl-3">
+        <div class="card h-100">
             <div class="card-header">
                 <h3>Image {{image.id}}</h3>
             </div>
@@ -43,6 +17,34 @@
                     <li class="list-group-item">host profile: {{image.host_type.name}}</li>
                 </ul>
             </div>
+            <div class="card-footer">
+                <button class="btn btn-danger w-100" onclick='delete_image({{image.id}});'
+                    data-toggle="modal" data-target="#imageModal">
+                    Delete
+            </button>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+</div>
+<h2>Public Images</h2>
+<div class="row">
+    {% for image in public_images %}
+        <div class="p-2 col-12 col-md-6 col-lg-4 col-xl-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3>Image {{image.id}}</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item">id: {{image.id}}</li>
+                        <li class="list-group-item">lab: {{image.from_lab.name}}</li>
+                        <li class="list-group-item">name: {{image.name}}</li>
+                        <li class="list-group-item">description: {{image.description}}</li>
+                        <li class="list-group-item">host profile: {{image.host_type.name}}</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     {% endfor %}
 </div>
@@ -52,7 +54,6 @@
     var used_images = {{used_images|safe|default:"{}"}};
     function delete_image(image_id) {
         current_image_id = image_id;
-        document.getElementById('modal_warning').style['max-height'] = '0px';
         var warning_header = document.getElementById("warning_header");
         var warning_text = document.getElementById("warning_text");
         var delete_image_button = document.getElementById("final_delete_b");
@@ -94,11 +95,11 @@
         }
     }
 </script>
-<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="my_modal" aria-hidden="true">
-    <div class="modal-dialog" style="width: 450px;" role="document">
+<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="my_modal" style="display: inline; float: left;">Delete Configuration?</h4>
+                <h4 class="modal-title d-inline float-left">Delete Configuration?</h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -106,17 +107,20 @@
             <form id="image_delete_form">
                 {% csrf_token %}
             </form>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('modal_warning').style['max-height'] = '500px';">Delete</button>
-            </div>
-            <div id="modal_warning" class="modal-footer" style="max-height:0px;" >
-                <div style="text-align:center; margin: 5px">
-                    <h3 id="warning_header">Are You Sure?</h3>
-                    <p id="warning_text">This cannot be undone</p>
-                    <button class="btn" onclick="document.getElementById('modal_warning').style['max-height'] = '0px';">Nevermind</button>
-                    <button id="final_delete_b" class="btn btn-danger" data-dismiss="modal" onclick="submit_delete_form();">I'm Sure</button>
+            <div class="modal-footer d-flex flex-column">
+                <div class="mb-2">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#warning">Delete</button>
                 </div>
+                <div class="collapse w-100 text-center border-top" id="warning">
+                    <div class="p-4">
+                        <h3 id="warning_header">Are You Sure?</h3>
+                        <p id="warning_text">This cannot be undone</p>
+                        <button class="btn btn-outline-secondary" data-dismiss="modal">Nevermind</button>
+                        <button id="final_delete_b" class="btn btn-danger" data-dismiss="modal" onclick="submit_delete_form();">I'm Sure</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

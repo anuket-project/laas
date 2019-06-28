@@ -5,32 +5,10 @@
 
 {% block content %}
 
-<style>
-#resource_meta_form {
-    padding: 80px;
-    display: grid;
-}
-
-#resource_meta_form td > * {
-    width: 100%;
-    margin-bottom: 20px;
-    margin-top: 20px;
-}
-
-#resource_meta_form > table > tbody > tr {
-    border-bottom: 1px solid #cccccc;
-}
-
-#resource_meta_form > table > tbody > tr:last-child {
-    border-bottom: none;
-}
-
-</style>
-
 <form id="resource_meta_form" method="post" action="/wf/workflow/">
     {% csrf_token %}
-    <table>
-        {{form}}
+    <table class="px-4">
+        {% bootstrap_form form field_class="px-4" label_class="px-4 mt-2" %}
     </table>
 </form>
 {% endblock content %}

@@ -1,3 +1,30 @@
+/* Sizing */
+#wrapper {
+    height: 100vh;
+}
+
+/* Used for turning divs into square */
+.square-20 {
+    height: 20px;
+    width: 20px;
+}
+
+/* Make links stay the same color with no underline */
+.discrete-a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.discrete-a:hover {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Allow for sidebar to be small, but also resize on small screens */
+.sidebar {
+    min-width: 200px;
+}
+
 /* Rotating arrows when dropdown happens */
 i.fas.rotate {
     transition: transform 0.3s ease-in-out;
@@ -5,4 +32,61 @@ i.fas.rotate {
 
 a[aria-expanded="true"] > i.rotate {
     transform: rotate(180deg);
+}
+/* End rotating arrows */
+
+/* Start breadcrumbs for workflow */
+#topPagination .topcrumb {
+    flex: 1 1 0;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    border: 1px solid #dee2e6;
+    border-left: none;
+}
+
+.topcrumb > span {
+    color: #343a40;
+    cursor: default;
+}
+
+.topcrumb.active > span {
+    background: #007bff;
+    color: white;
+}
+
+.topcrumb.disabled > span {
+    color: #6c757d;
+    background: #f8f9fa;
+}
+
+/* Booking Node Styles */
+.selected_node {
+    border-color: #40c640;
+    box-shadow: 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(109, 243, 76, 0.6);
+    transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
+}
+#grid_wrapper > .row > div:first-child {
+    border-right: 1px solid gray;
+}
+
+/* Cursor effects */
+.not-allowed {
+    cursor: not-allowed;
+}
+
+/* Used with position-absolute class to make a full height object */
+.topToBottom {
+    bottom: 0;
+    top: 0;
+}
+
+/* Dropdown for collaborators */
+#drop_results {
+    max-height: 10rem;
+    z-index: 2;
+}
+
+#drop_results > li {
+    word-wrap: anywhere;
 }

@@ -15,9 +15,9 @@
 
 {% block content %}
 {% if error %}
-    <h1 style="text-align:center;">{{ error }}</h1>
+    <h1 class="text-center">{{ error }}</h1>
 {% else %}
-<div style="padding: 5%;">
+<div class="p-2">
     <form method="post" action="" class="form" id="table_formset">
         {% csrf_token %}
 

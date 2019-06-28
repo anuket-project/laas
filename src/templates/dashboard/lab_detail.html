@@ -11,80 +11,92 @@
     <div class="col-lg-4">
         <div class="card my-2">
             <div class="card-header d-flex">
-               <h4>Lab Profile</h4>
-               <button class="btn btn-outline-secondary ml-auto" data-toggle="collapse" data-target="#panel_overview">Expand</button>
+                <h4>Lab Profile</h4>
+                <button class="btn btn-outline-secondary ml-auto" data-toggle="collapse" data-target="#panel_overview">Expand</button>
             </div>
-            <div id="panel_overview" class="card-body collapse show">
-                <table class="table">
-                    <tr>
-                        <td>Lab Name: </td><td>{{lab.name}}</td>
-                    </tr>
-                    <tr>
-                        <td>Lab Location: </td><td>{{lab.location}}</td>
-                    </tr>
-                    <tr>
-                        <td>Lab Email: </td>
-                        <td>{{lab.contact_email}}</td>
-                    </tr>
-                    {% if lab.contact_phone %}
-                    <tr>
-                        <td>Lab Phone: </td>
-                        <td>{{lab.contact_phone}}</td>
-                    </tr>
-                    {% endif %}
-                    <tr>
-                        <td>Lab Status: </td>
-                        {% if lab.status < 100 %}
-                        <td><div style="border-radius: 50%; background:#40B976; height: 20px; width: 20px; display: inline-block;"></div>
-                        Up</td>
-                        {% elif lab.status < 200 %}
-                        <td>
-                        <div style="border-radius: 50%; background:#eeee00; height: 20px; width: 20px; display: inline-block;"></div>
-                        Temporarily Offline</td>
-                        {% else %}
-                        <td>
-                        <div style="border-radius: 50%; background:#e50000; height: 20px; width: 20px; display: inline-block;"></div>
-                        Offline Indefinitely</td>
+            <div class="collapse show" id="panel_overview">
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <td>Lab Name: </td>
+                            <td>{{lab.name}}</td>
+                        </tr>
+                        <tr>
+                            <td>Lab Location: </td>
+                            <td>{{lab.location}}</td>
+                        </tr>
+                        <tr>
+                            <td>Lab Email: </td>
+                            <td>{{lab.contact_email}}</td>
+                        </tr>
+                        {% if lab.contact_phone %}
+                            <tr>
+                                <td>Lab Phone: </td>
+                                <td>{{lab.contact_phone}}</td>
+                            </tr>
                         {% endif %}
-                    </tr>
-                </table>
+                        <tr>
+                            <td>Lab Status: </td>
+                            {% if lab.status < 100 %}
+                                <td>
+                                    <div class="rounded-circle bg-success square-20 d-inline-block"></div>
+                                    Up
+                                </td>
+                            {% elif lab.status < 200 %}
+                                <td>
+                                    <div class="rounded-circle bg-warning square-20 d-inline-block"></div>
+                                    Temporarily Offline
+                                </td>
+                            {% else %}
+                                <td>
+                                    <div class="rounded-circle bg-danger square-20 d-inline-block"></div>
+                                    Offline Indefinitely
+                                </td>
+                            {% endif %}
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
         <div class="card my-2">
             <div class="card-header d-flex">
                 <h4 class="d-inline-block">Host Profiles</h4>
-               <button data-toggle="collapse" data-target="#profile_panel" class="btn btn-outline-secondary ml-auto" style="line-height: 1;" >Expand</button>
+                <button data-toggle="collapse" data-target="#profile_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
-            <div id="profile_panel" class="card-body collapse show">
-                <table class="table">
-                    {% for profile in hostprofiles %}
-                    <tr>
-                        <td>{{profile.name}}</td>
-                        <td>{{profile.description}}</td>
-                        <td><a href="/resource/profiles/{{ profile.id }}" class="btn btn-info">Profile</a></td>
-                    </tr>
-                    {% endfor %}
-                </table>
+            <div class="collapse show" id="profile_panel">
+                <div class="card-body">
+                    <table class="table">
+                        {% for profile in hostprofiles %}
+                            <tr>
+                                <td>{{profile.name}}</td>
+                                <td>{{profile.description}}</td>
+                                <td><a href="/resource/profiles/{{ profile.id }}" class="btn btn-info">Profile</a></td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
             </div>
         </div>
 
 
         <div class="card my-2">
             <div class="card-header d-flex">
-                <h4 style="display: inline;">Networking Capabilities</h4>
-            <button data-toggle="collapse" data-target="#network_panel" class="btn btn-outline-secondary ml-auto" style="line-height: 1;" >Expand</button>
+                <h4 class="d-inline">Networking Capabilities</h4>
+                <button data-toggle="collapse" data-target="#network_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
 
-            <div class="card-body collapse show" id="network_panel">
-                <table class="table">
-                    <tr>
-                        <td>Block Size: (number of VLANs allowed per deployment)</td><td>{{lab.vlan_manager.block_size}}</td>
-                    </tr>
-                    <tr>
-                        <td>Overlapping Vlans Allowed (user can pick which VLANs they wish to use): </td>
-                        <td>{{lab.vlan_manager.allow_overlapping}}</td>
-                    </tr>
-                </table>
+            <div class="collapse show" id="network_panel">
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <td>Block Size: (number of VLANs allowed per deployment)</td><td>{{lab.vlan_manager.block_size}}</td>
+                        </tr>
+                        <tr>
+                            <td>Overlapping Vlans Allowed (user can pick which VLANs they wish to use): </td>
+                            <td>{{lab.vlan_manager.allow_overlapping}}</td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
         <div class="card my-2">
@@ -92,23 +104,25 @@
                 <h4>Images</h4>
                 <button data-toggle="collapse" data-target="#image_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
-            <div class="card-body collapse show" id="image_panel">
-                <table class="table">
-                    <tr>
-                        <th>Name</th>
-                        <th>Owner</th>
-                        <th>For Host Type</th>
-                        <th>Description</th>
-                    </tr>
-                    {% for image in images %}
-                    <tr>
-                        <td>{{image.name}}</td>
-                        <td>{{image.owner}}</td>
-                        <td>{{image.host_type}}</td>
-                        <td>{{image.description}}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
+            <div class="collapse show" id="image_panel">
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>Name</th>
+                            <th>Owner</th>
+                            <th>For Host Type</th>
+                            <th>Description</th>
+                        </tr>
+                        {% for image in images %}
+                            <tr>
+                                <td>{{image.name}}</td>
+                                <td>{{image.owner}}</td>
+                                <td>{{image.host_type}}</td>
+                                <td>{{image.description}}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -120,29 +134,31 @@
                 <button data-toggle="collapse" data-target="#lab_hosts_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
 
-            <div class="card-body collapse show" id="lab_hosts_panel">
-                <table class="table">
-                    <tr>
-                        <th>Name</th>
-                        <th>Profile</th>
-                        <th>Booked</th>
-                        <th>Working</th>
-                        <th>Vendor</th>
-                    </tr>
-                    {% for host in lab.host_set.all %}
-                    <tr>
-                        <td>{{host.labid}}</td>
-                        <td>{{host.profile}}</td>
-                        <td>{{host.booked}}</td>
-                        {% if host.working %}
-                        <td style="background-color: #40B976;">{{host.working}}</td>
-                        {% else %}
-                        <td>{{host.working}}</td>
-                        {% endif %}
-                        <td>{{host.vendor}}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
+            <div class="collapse show" id="lab_hosts_panel">
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>Name</th>
+                            <th>Profile</th>
+                            <th>Booked</th>
+                            <th>Working</th>
+                            <th>Vendor</th>
+                        </tr>
+                        {% for host in lab.host_set.all %}
+                            <tr>
+                                <td>{{host.labid}}</td>
+                                <td>{{host.profile}}</td>
+                                <td>{{host.booked}}</td>
+                                {% if host.working %}
+                                    <td class="bg-success text-white">{{host.working}}</td>
+                                {% else %}
+                                    <td>{{host.working}}</td>
+                                {% endif %}
+                                <td>{{host.vendor}}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
             </div>
         </div>
     </div>

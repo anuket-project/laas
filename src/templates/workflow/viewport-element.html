@@ -4,15 +4,12 @@
 
 {% block basecontent %}
 
-    <div id="wrapper">
+    <div id="wrapper" class="h-100">
         <!-- Page Content -->
-        <div id="page-wrapper">
-
+        <div id="page-wrapper" class="h-100">
             {% block content %}
-
             {% endblock content %}
         </div>
-        <!-- /#page-wrapper -->
     </div>
     {% block vport_comm %}
              <script type="text/javascript">
@@ -53,9 +50,9 @@
 
     <script>
     function step_on_leave() {
-    {% block onleave %}
-        alert("override onleave");
-    {% endblock %}
+        {% block onleave %}
+            alert("override onleave");
+        {% endblock %}
     }
     </script>
 
@@ -64,6 +61,4 @@
         {% bootstrap_messages %}
         {% endblock %}
     </div>
-
-    <!-- /#wrapper -->
 {% endblock basecontent %}

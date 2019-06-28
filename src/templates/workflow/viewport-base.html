@@ -5,158 +5,6 @@
 
 {% block content %}
 
-<style>
-    .go_btn {
-
-        position: absolute;
-        width: 100px;
-        top: 170px;
-        height: calc(100% - 170px);
-
-    }
-
-    .go_btn_disabled {
-        background-color: #ffffff;
-    }
-
-    .go_forward {
-        right: 0px;
-        border-left: none;
-    }
-
-    .go_back {
-        left: 251px;
-        border-right: none;
-    }
-
-
-    .btn_wrapper {
-        text-align: center;
-        margin-bottom: 5px;
-
-    }
-
-    {% if DEBUG %}
-        .add_btn_wrapper {
-            right: 130px;
-            top: 10px;
-            position: absolute;
-        }
-    {% endif %}
-
-    #breadcrumbs {
-        margin-bottom: 0;
-    }
-
-    .btn_wrapper {
-        margin: 0;
-    }
-
-    .step {
-        display: inline;
-        padding: 7px;
-        margin: 1px;
-        font-size: 14pt;
-        cursor: default;
-    }
-
-    .step:active {
-        -webkit-box-shadow: inherit;
-        box-shadow: inherit;
-    }
-
-    .step_active:active {
-        -webkit-box-shadow: inherit;
-        box-shadow: inherit;
-    }
-
-    .step_active {
-        display: inline;
-        padding: 7px;
-        margin: 1px;
-        cursor: default;
-        font-size: 14pt;
-        padding-bottom: 4px !important;
-        border-bottom: 4px solid #41ba78 !important;
-    }
-
-    .step_hidden {
-        background: #EFEFEF;
-        color: #999999;
-    }
-
-    .step_invalid::after {
-        content: " \2612";
-        color: #CC3300;
-    }
-
-    .step_valid::after {
-        content: " \2611";
-        color: #41ba78;
-    }
-
-    .step_untouched::after {
-        content: " \2610";
-    }
-
-    .iframe_div {
-        width: calc(100% - 450px);
-        margin-left: 70px;
-        height: calc(100vh - 155px);
-        position: absolute;
-        border: none;
-    }
-
-    .iframe_elem {
-        width: 100%;
-        height: calc(100vh - 155px);
-        border: none;
-    }
-
-    #breadcrumbs {
-        background-color: inherit;
-    }
-
-    #breadcrumbs.breadcrumb>li {
-        border: 1px solid #cccccc;
-        border-left: none;
-    }
-
-    #breadcrumbs.breadcrumb>li:first-child {
-        border-left: 1px solid #cccccc;
-    }
-
-    #breadcrumbs.breadcrumb>li+li:before {
-        content: "";
-        width: 0;
-        margin: 0;
-        padding: 0;
-    }
-
-    #topPagination .topcrumb {
-        flex: 1 1 0;
-        display: flex;
-        align-content: center;
-        justify-content: center;
-        border: 1px solid #dee2e6;
-        border-left: none;
-    }
-
-    .topcrumb > span {
-        color: #343a40;
-        cursor: default;
-    }
-
-    .topcrumb.active > span {
-        background: #007bff;
-        color: white;
-    }
-
-    .topcrumb.disabled > span {
-        color: #6c757d;
-        background: #f8f9fa;
-    }
-</style>
 <!-- Pagination -->
 <div class="row mt-3">
     <div class="col">
@@ -205,10 +53,10 @@
 <div class="row px-4">
     <div class="col">
         <div id="iframe_header" class="row view-header">
-            <div class="col-lg-12 step_header">
-                <h1 class="step_title d-inline-block" id="view_title"></h1>
+            <div class="col-lg-12">
+                <h1 class="d-inline-block" id="view_title"></h1>
                 <span class="description text-muted" id="view_desc"></span>
-                <p class="step_message" id="view_message"></p>
+                <p id="view_message"></p>
             </div>
             <script>
                 function update_description(title, desc) {
@@ -222,27 +70,21 @@
                     document.getElementById("view_message").classList.add("message_" + stepstatus);
                 }
             </script>
-            <!-- /.col-lg-12 -->
         </div>
     </div>
     <div class="col-auto align-self-center d-flex">
         <button id="cancel_btn" class="btn btn-danger ml-auto" onclick="cancel_wf()">Cancel</button>
     </div>
 </div>
-<!-- Content here -->
 <div class="row d-flex flex-column flex-grow-1">
     <div class="container-fluid d-flex flex-column h-100">
         <div class="row d-flex flex-grow-1 p-4">
-            <!-- iframe workflow -->
-            <div class="col-12 d-flex border flex-grow-1">
-                <!-- This was where the iframe went -->
+            <div class="col-12 d-flex border flex-grow-1 px-0">
                 <iframe src="/wf/workflow" class="w-100 h-100" scrolling="yes" id="viewport-iframe"
                     frameBorder="0"></iframe>
             </div>
         </div>
     </div>
-</div>
-<div class="btn_wrapper">
 </div>
 {% csrf_token %}
 
@@ -478,7 +320,7 @@
         window.location = window.location;
     }
 </script>
-<div style="display: none;" id="workflow_pop_form_div">
+<div class="d-none" id="workflow_pop_form_div">
     <form id="workflow_pop_form" action="/wf/workflow/finish/" method="post">
         {% csrf_token %}
     </form>

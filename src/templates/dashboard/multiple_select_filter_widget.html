@@ -1,139 +1,37 @@
 <script src="/static/js/dashboard.js">
 </script>
 
-<style>
-.object_class_wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    border: 0px;
-}
-
-.class_grid_wrapper {
-    border: 0px;
-    text-align: center;
-    border-right: 1px;
-    border-style: solid;
-    border-color: grey;
-}
-
-.class_grid_wrapper:last-child {
-    border-right: none;
-}
-
-.grid_wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-}
-
-.grid-item {
-    cursor: pointer;
-    border: 1px solid #cccccc;
-    border-radius: 5px;
-    margin: 20px;
-    height: 200px;
-    padding: 7px;
-    transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
-    box-shadow: 0 1px 1px rgba(0,0,0,.075);
-
-    display: flex;
-    flex-direction: column;
-}
-
-.grid-item > .btn:active, .grid-item > .btn:focus {
-    outline: none; !important;
-    box-shadow: none;
-}
-
-.grid-item-description {
-    flex: 1;
-}
-
-.selected_node {
-    border-color: #40c640;
-    box-shadow: 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(109, 243, 76, 0.6);
-    transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
-}
-
-.grid-item:hover:not(.selected_node):not(.disabled_node) {
-    box-shadow: 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(100, 100, 100, 0.3);
-    transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
-}
-
-.disabled_node {
-    cursor: not-allowed;
-    background-color: #EFEFEF;
-}
-
-.disabled_node:hover {}
-
-.cleared_node {
-    background-color: #FFFFFF;
-}
-
-.grid-item-header {
-    font-weight: bold;
-    font-size: 20px;
-    margin-top: 10px;
-}
-
-.dropdown_item {
-    border: 1px;
-    border-style: solid;
-    border-color: lightgray;
-    border-radius: 5px;
-    margin: 20px;
-    padding: 2px;
-    grid-column: 1;
-    display: grid;
-    grid-template-columns: 1fr 3fr 1fr;
-    justify-items: center;
-}
-
-.dropdown_item > button {
-    margin: 2px;
-    justify-self: end;
-}
-
-.dropdown_item > h5 {
-    margin: auto;
-}
-
-.dropdown_item > input {
-    padding: 7px;
-    margin: 2px;
-    width: 90%;
-}
-
-#dropdown_wrapper {
-    display: grid;
-    grid-template-columns: 4fr 5fr;
-}
-</style>
-
 <input name="filter_field" id="filter_field" type="hidden"/>
-<div id="grid_wrapper" class="grid_wrapper">
-{% for object_class, object_list in display_objects %}
-    <div class="class_grid_wrapper">
-        <div style="display:inline-block;margin:auto">
-            <h4>{{object_class}}</h4>
-        </div>
-        <div id="{{object_class}}" class="object_class_wrapper">
-        {% for obj in object_list %}
-            <div id="{{ obj.id|default:'not_provided' }}" class="grid-item" onclick="multi_filter_widget.processClick(
-                    '{{obj.id}}');">
-                <p class="grid-item-header">{{obj.name}}</p>
-                <p class="grid-item-description">{{obj.description}}</p>
-                <button type="button" class="btn btn-success grid-item-select-btn">
-                    {% if obj.multiple %}Add{% else %}Select{% endif %}
-                </button>
+<div id="grid_wrapper" class="container-fluid p-4">
+    <div class="row">
+        {% for object_class, object_list in display_objects %}
+            <div class="col-12 col-lg d-flex flex-column pt-2 my-2">
+                <div class="w-100">
+                    <h4 class="text-capitalize">{{object_class}}</h4>
+                </div>
+                <div id="{{object_class}}" class="row h-100">
+                {% for obj in object_list %}
+                    <div class="col-12 col-md-6 col-xl-4 my-2">
+                        <div id="{{ obj.id|default:'not_provided' }}" class="card h-100" onclick="multi_filter_widget.processClick('{{obj.id}}');">
+                            <div class="card-header">
+                                <p class="h5 font-weight-bold mt-2">{{obj.name}}</p>
+                            </div>
+                            <div class="card-body">
+                                <p class="grid-item-description">{{obj.description}}</p>
+                            </div>
+                            <div class="card-footer">
+                                <button type="button" class="btn btn-success grid-item-select-btn w-100">{% if obj.multiple %}Add{% else %}Select{% endif %}</button>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
             </div>
         {% endfor %}
-        </div>
     </div>
-{% endfor %}
 </div>
 
-<div id="dropdown_wrapper">
+<div id="dropdown_wrapper" class="px-3 list-group-flush w-25 mt-2">
 </div>
 <script>
 function multipleSelectFilterWidgetEntry() {

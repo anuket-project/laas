@@ -13,85 +13,29 @@
 
 <!-- Calls the main function after the page has loaded. Container is dynamically created. -->
 {% block content %}
-    <div id="graphParent"
-         style="position:absolute;overflow:hidden;top:0px;bottom:0px;width:75%;left:0px;">
-        <div id="graphContainer"
-            style="position:relative;overflow:hidden;top:36px;bottom:0px;left:0px;right:0px;background-image:url('/static/img/mxgraph/grid.gif');cursor:default;">
+    <div class="row p-0 w-100 mx-0 position-absolute overflow-hidden topToBottom">
+        <div id="graphParent" class="col px-0">
+            <div class="row">
+                <div class="col pr-0">
+                    <div id="toolbarContainer" class="bg-light pl-4"></div>
+                </div>
+            </div>
+            <!-- Creates a container for the sidebar -->
+            <div id="graphContainer"></div>
         </div>
 
-
-        <!-- Creates a container for the sidebar -->
-        <div id="toolbarContainer"
-            style="position:absolute;white-space:nowrap;overflow:hidden;top:0px;left:0px;right:0px;padding:6px;">
+        <div id="network_select" class="p-0 w-25 ml-auto col-2">
+            <div class="px-0 mb-2">
+                <!-- Creates a container for the outline -->
+                <div id="outlineContainer" class="border"></div>
+            </div>
+            <div>
+                <button id="btn_add_network" type="button" class="btn btn-primary w-100" onclick="network_step.newNetworkWindow();">Add Network</button>
+            </div>
+            <ul id="network_list" class="list-group">
+            </ul>
+            <button type="button" class="d-none" onclick="network_step.submitForm();">Submit</button>
         </div>
-
-        <!-- Creates a container for the outline -->
-        <div id="outlineContainer"
-            style="position:absolute;overflow:hidden;top:36px;right:0px;width:200px;height:140px;background:transparent;border-style:solid;border-color:black;">
-        </div>
-    </div>
-
-    <style>
-        p {
-            word-break: normal;
-            white-space: normal;
-        }
-        #network_select {
-                background: inherit;
-                padding: 0px;
-                padding-top: 0px;
-        }
-        #toolbarContainer {
-                background: #DDDDDD;
-                height: 36px;
-        }
-        #toolbar_extension {
-                height: 36px;
-                background: #DDDDDD;
-        }
-        #btn_add_network {
-                width: 100%;
-        }
-        #vlan_notice {
-                margin: 20px;
-        }
-        #network_list li {
-                border-radius: 2px;
-                margin: 5px;
-                padding: 5px;
-                vertical-align: middle;
-                background: #DDDDDD;
-        }
-        #network_list {
-                list-style-type: none;
-                padding: 0;
-        }
-        .colorblob {
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                display: inline-block;
-                vertical-align: middle;
-        }
-        .network_innertext {
-                display: inline-block;
-                padding-left: 10px;
-                vertical-align: middle;
-                padding-bottom: 0px;
-                margin-bottom: 2px;
-        }
-        .mxWindow {
-                background: #FFFFFF;
-        }
-    </style>
-
-    <div id="network_select" style="position:absolute;top:0px;bottom:0px;width:25%;right:0px;left:auto;">
-        <div id="toolbar_extension">
-        <button id="btn_add_network" type="button" class="btn btn-primary" onclick="network_step.newNetworkWindow();">Add Network</button>
-        </div>
-        <ul id="network_list">
-        </ul>
-        <button type="button" style="display: none" onclick="network_step.submitForm();">Submit</button>
     </div>
     <form id="xml_form" method="post" action="/wf/workflow/">
         {% csrf_token %}
@@ -114,7 +58,7 @@
     {% for host in hosts %}
     hosts.push({{host|safe}});
     {% endfor %}
-    
+
     let added_hosts = [];
     {% for host in added_hosts %}
     added_hosts.push({{host|safe}});

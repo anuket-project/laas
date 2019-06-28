@@ -4,174 +4,164 @@
 
 {% block extrahead %}
     {{block.super}}
-<script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
 {% endblock %}
 
 {% block content %}
-
-<style>
-#modal_warning {
-    transition: max-height 0.5s ease-out;
-    overflow: hidden;
-}
-
-</style>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12 col-lg-5">
             <div class="card mb-4">
                 <div class="card-header d-flex">
-                    <h4 style="display: inline;">Overview</h4>
+                    <h4 class="d-inline">Overview</h4>
                     <button data-toggle="collapse" data-target="#panel_overview" class="btn btn-outline-secondary ml-auto">Expand</button>
                 </div>
-                <div class="card-body collapse show" id="panel_overview">
-                    <table class="table">
-                        <tr>
-                            <td>Purpose</td>
-                            <td>{{ booking.purpose }}</td>
-                        </tr>
-                        <tr>
-                            <td>Project</td>
-                            <td>{{ booking.project }}</td>
-                        </tr>
-                        <tr>
-                            <td>Start Time</td>
-                            <td>{{ booking.start }}</td>
-                        </tr>
-                        <tr>
-                            <td>End Time</td>
-                            <td>{{ booking.end }}</td>
-                        </tr>
-                        <tr>
-                            <td>Pod Definition</td>
-                            <td>{{ booking.resource.template }}</td>
-                        </tr>
-                        <tr>
-                            <td>Pod Configuration</td>
-                            <td>{{ booking.config_bundle }}</td>
-                        </tr>
-                        <tr>
-                            <td>Lab Deployed At</td>
-                            <td>{{ booking.lab }}</td>
-                        </tr>
-                    </table>
+                <div class="collapse show" id="panel_overview">
+                    <div class="card-body">
+                        <table class="table">
+                            <tr>
+                                <td>Purpose</td>
+                                <td>{{ booking.purpose }}</td>
+                            </tr>
+                            <tr>
+                                <td>Project</td>
+                                <td>{{ booking.project }}</td>
+                            </tr>
+                            <tr>
+                                <td>Start Time</td>
+                                <td>{{ booking.start }}</td>
+                            </tr>
+                            <tr>
+                                <td>End Time</td>
+                                <td>{{ booking.end }}</td>
+                            </tr>
+                            <tr>
+                                <td>Pod Definition</td>
+                                <td>{{ booking.resource.template }}</td>
+                            </tr>
+                            <tr>
+                                <td>Pod Configuration</td>
+                                <td>{{ booking.config_bundle }}</td>
+                            </tr>
+                            <tr>
+                                <td>Lab Deployed At</td>
+                                <td>{{ booking.lab }}</td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-header d-flex">
-                            <h4 style="display: inline;">Pod</h4>
+                            <h4 class="d-inline">Pod</h4>
                             <button data-toggle="collapse" data-target="#pod_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
                         </div>
-                        <div class="card-body collapse show" id="pod_panel">
-                            <table class="table">
-                            {% for host in booking.resource.hosts.all %}
-                            <tr>
-                                <td><h4>{{host.template.resource.name}}</h4></td>
-                                <td>
-                                    <table class="table">
-                                        <tr>
-                                            <td>Hostname:</td>
-                                            <td>{{host.template.resource.name}}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Profile:</td>
-                                            <td>{{host.name}}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Role:</td>
-                                            <td>{{host.config.opnfvRole}}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Image:</td>
-                                            <td id="host_image_{{host.id}}">
-                                                {{host.config.image}}
-                                                <button
-                                                    style="margin-left:10px;"
-                                                    class="btn btn-primary"
-                                                    data-toggle="modal"
-                                                    data-target="#imageModal"
-                                                    onclick="set_image_dropdown('{{host.profile.name}}', {{host.id}});"
-                                                >Change/Reset</button></td>
-                                        </tr>
-                                        <tr>
-                                            <td>RAM:</td>
-                                            <td>{{host.profile.ramprofile.first.amount}}G,
-                                                {{host.profile.ramprofile.first.channels}} channels</td>
-                                        </tr>
-                                        <tr>
-                                            <td>CPU:</td>
-                                            <td>
-                                                <table class="table">
-                                                    <tr>
-                                                        <td>Arch:</td>
-                                                        <td>{{host.profile.cpuprofile.first.architecture}}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Cores:</td>
-                                                        <td>{{host.profile.cpuprofile.first.cores}}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Sockets:</td>
-                                                        <td>{{host.profile.cpuprofile.first.cpus}}</td>
-                                                    </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>DISK:</td>
-                                            <td>
-                                                <table class="table">
-                                                    <tr>
-                                                        <td>Size:</td>
-                                                        <td>{{host.profile.storageprofile.first.size}} GiB</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Type:</td>
-                                                        <td>{{host.profile.storageprofile.first.media_type}}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>Mount Point:</td>
-                                                        <td>{{host.profile.storageprofile.first.name}}</td>
-                                                    </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Interfaces:</td>
-                                            <td>
-                                                <style>
-                                                    .borderless td {
-                                                        border: none !important;
-                                                    }
-                                                </style>
-                                                <table class="table">
-                                                {% for intprof in host.profile.interfaceprofile.all %}
-                                                <tr>
-                                                    <td>
-                                                    <table class="table borderless">
+                        <div class="collapse show" id="pod_panel">
+                            <div class="card-body">
+                                <table class="table">
+                                {% for host in booking.resource.hosts.all %}
+                                <tr>
+                                    <td><h4>{{host.template.resource.name}}</h4></td>
+                                    <td>
+                                        <table class="table">
+                                            <tr>
+                                                <td>Hostname:</td>
+                                                <td>{{host.template.resource.name}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Profile:</td>
+                                                <td>{{host.name}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Role:</td>
+                                                <td>{{host.config.opnfvRole}}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Image:</td>
+                                                <td id="host_image_{{host.id}}">
+                                                    {{host.config.image}}
+                                                    <button
+                                                        class="btn btn-primary ml-4"
+                                                        data-toggle="modal"
+                                                        data-target="#imageModal"
+                                                        onclick="set_image_dropdown('{{host.profile.name}}', {{host.id}});"
+                                                    >Change/Reset</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>RAM:</td>
+                                                <td>{{host.profile.ramprofile.first.amount}}G,
+                                                    {{host.profile.ramprofile.first.channels}} channels</td>
+                                            </tr>
+                                            <tr>
+                                                <td>CPU:</td>
+                                                <td>
+                                                    <table class="table">
                                                         <tr>
-                                                            <td>Name:</td>
-                                                            <td>{{intprof.name}}</td>
+                                                            <td>Arch:</td>
+                                                            <td>{{host.profile.cpuprofile.first.architecture}}</td>
                                                         </tr>
                                                         <tr>
-                                                            <td>Speed:</td>
-                                                            <td>{{intprof.speed}}</td>
+                                                            <td>Cores:</td>
+                                                            <td>{{host.profile.cpuprofile.first.cores}}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Sockets:</td>
+                                                            <td>{{host.profile.cpuprofile.first.cpus}}</td>
                                                         </tr>
                                                     </table>
-                                                    </td>
-                                                </tr>
-                                                {% endfor %}
-                                                </table>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            {% endfor %}
-                            </tr>
-                            </table>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>DISK:</td>
+                                                <td>
+                                                    <table class="table">
+                                                        <tr>
+                                                            <td>Size:</td>
+                                                            <td>{{host.profile.storageprofile.first.size}} GiB</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Type:</td>
+                                                            <td>{{host.profile.storageprofile.first.media_type}}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Mount Point:</td>
+                                                            <td>{{host.profile.storageprofile.first.name}}</td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Interfaces:</td>
+                                                <td>
+                                                    <table class="table">
+                                                    {% for intprof in host.profile.interfaceprofile.all %}
+                                                    <tr>
+                                                        <td>
+                                                        <table class="table table-borderless">
+                                                            <tr>
+                                                                <td>Name:</td>
+                                                                <td>{{intprof.name}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Speed:</td>
+                                                                <td>{{intprof.speed}}</td>
+                                                            </tr>
+                                                        </table>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                {% endfor %}
+                                </tr>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -180,105 +170,72 @@
         <div class="col">
             <div class="card mb-4">
                 <div class="card-header d-flex">
-                    <h4 style="display: inline;">Deployment Progress</h4>
-                    <p style="display: inline; margin-left: 10px;">  These are the different tasks that have to be completed before your deployment is ready</p>
+                    <h4 class="d-inline">Deployment Progress</h4>
+                    <p>These are the different tasks that have to be completed before your deployment is ready</p>
                     <button data-toggle="collapse" data-target="#panel_tasks" class="btn btn-outline-secondary ml-auto">Expand</button>
                 </div>
-                <div class="card-body collapse show" id="panel_tasks">
-                    <table class="table">
-                        <style>
-                            .progress {
-                                display: inline-block;
-                                border: 3px solid #f3f3f3;
-                                border-radius: 50%;
-                                border-top: 3px solid #12aebb;
-                                width: 20px;
-                                height: 20px;
-                                -webkit-animation: spin 2s linear infinite; /* Safari */
-                                animation: spin 2s linear infinite;
-                              }
-
-                              @keyframes spin {
-                                  0% {transform: rotate(0deg);}
-                                  100% {transform: rotate(360deg);}
-                              }
-
-                              .new {
-                                  display: inline-block;
-                                  width: 20px;
-                                  height: 20px;
-                                  background: #f3f3f3;
-                                  border-radius: 50%;
-                                  animation: fadeInOut 1s infinite alternate;
-
-                              }
-                              @keyframes fadeInOut {
-                                  from { opacity: 0;}
-                              }
-                              .done {
-                                  display: inline-block;
-                                  width: 20px;
-                                  height: 20px;
-                                  background: #40B976;
-                                  border-radius: 50%;
-                              }
-                            </style>
-                        <tr>
-                            <th></th>
-                            <th>Status</th>
-                            <th>Lab Response</th>
-                            <th>Type</th>
-                        </tr>
-                        {% for task in booking.job.get_tasklist %}
-                        <tr>
-                            <td>
-                                {% if task.status < 100 %}
-                                    <div class="new"></div>
-                                {% elif task.status < 200 %}
-                                    <div class="progress"></div>
-                                {% else %}
-                                    <div class="done"></div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if task.status < 100 %}
-                                    PENDING
-                                {% elif task.status < 200 %}
-                                    IN PROGRESS
-                                {% else %}
-                                    DONE
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if task.message %}
-                                {% if task.type_str == "Access Task" and user_id != task.config.user.id %}
-                                Message from Lab: <pre>--secret--</pre>
-                                {% else %}
-                                Message from Lab: <pre>{{ task.message }}</pre>
-                                {% endif %}
-                                {% else %}
-                                No response provided (yet)
-                                {% endif %}
-                            </td>
-                            <td>
-                                {{ task.type_str }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </table>
+                <div class="collapse show" id="panel_tasks">
+                    <div class="card-body">
+                        <table class="table">
+                            <tr>
+                                <th></th>
+                                <th>Status</th>
+                                <th>Lab Response</th>
+                                <th>Type</th>
+                            </tr>
+                            {% for task in booking.job.get_tasklist %}
+                            <tr>
+                                <td>
+                                    {% if task.status < 100 %}
+                                        <div class="rounded-circle bg-secondary square-20"></div>
+                                    {% elif task.status < 200 %}
+                                        <div class="spinner-border text-primary square-20"></div>
+                                    {% else %}
+                                        <div class="rounded-circle bg-success square-20"></div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.status < 100 %}
+                                        PENDING
+                                    {% elif task.status < 200 %}
+                                        IN PROGRESS
+                                    {% else %}
+                                        DONE
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.message %}
+                                    {% if task.type_str == "Access Task" and user_id != task.config.user.id %}
+                                    Message from Lab: <pre>--secret--</pre>
+                                    {% else %}
+                                    Message from Lab: <pre>{{ task.message }}</pre>
+                                    {% endif %}
+                                    {% else %}
+                                    No response provided (yet)
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ task.type_str }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col">
                     <div class="card">
                         <div class="card-header d-flex">
-                            <h4 style="display: inline;">PDF</h4>
+                            <h4 class="d-inline">PDF</h4>
                             <button data-toggle="collapse" data-target="#pdf_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
                         </div>
-                        <div class="card-body collapse show" id="pdf_panel" style="padding: 0px;">
-                            <pre class="prettyprint lang-yaml" style="margin: 0px; padding: 15px; border: none;">
-                                {{pdf}}
-                            </pre>
+                        <div class="collapse show" id="pdf_panel">
+                            <div class="card-body p-0">
+                                <pre class="prettyprint lang-yaml m-0 p-4 border-0">
+                                    {{pdf}}
+                                </pre>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -289,10 +246,10 @@
 
 
 <div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" style="width: 450px;" role="document">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title" id="exampleModalLabel" style="display: inline; float: left;">Host Image</h4>
+                <h4 class="modal-title d-inline float-left" id="exampleModalLabel">Host Image</h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -300,23 +257,24 @@
             <div class="modal-body">
                 <form id="image_host_form">
                     {% csrf_token %}
-                    <select class="form-control" style="width: 80%; margin-left: 10%" id="image_select" name="image_id">
+                    <select class="form-control" id="image_select" name="image_id">
                     </select>
                     <input id="host_id_input" type="hidden" name="host_id">
                     </input>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="document.getElementById('modal_warning').style['max-height'] = '500px';">Reset Host</button>
-            </div>
-            <div id="modal_warning" class="modal-footer" style="max-height:0px;" >
-                <div style="text-align:center; margin: 5px">
+            <div class="modal-footer d-flex flex-column">
+                <div>
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#modal_warning" aria-expanded="false">Reset Host</button>
+                </div>
+                <div class="border-top collapse mt-3 py-2 text-center w-100" id="modal_warning">
                     <h3>Are You Sure?</h3>
                     <p>This will wipe the disk and reimage the host</p>
-                    <button class="btn" onclick="document.getElementById('modal_warning').style['max-height'] = '0px';">Nevermind</button>
+                    <button class="btn btn-outline-secondary" data-dismiss="modal">Nevermind</button>
                     <button class="btn btn-danger" data-dismiss="modal" onclick="submit_image_form();">I'm Sure</button>
                 </div>
+            </div>
         </div>
     </div>
 </div>
@@ -342,7 +300,7 @@
             dropdown.options.add(opt);
         }
 
-        document.getElementById("modal_warning").style['max-height'] = '0px';
+        document.getElementById("modal_warning").classList.add("collapse");
     }
 
     function submit_image_form() {
