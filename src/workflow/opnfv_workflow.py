@@ -74,8 +74,8 @@ class Pick_Installer(WorkflowStep):
         context["form"] = OPNFVSelectionForm(initial=initial)
         return context
 
-    def post_render(self, request):
-        form = OPNFVSelectionForm(request.POST)
+    def post(self, post_data, user):
+        form = OPNFVSelectionForm(post_data)
         if form.is_valid():
             installer = form.cleaned_data['installer']
             scenario = form.cleaned_data['scenario']
@@ -87,8 +87,6 @@ class Pick_Installer(WorkflowStep):
             self.set_valid("Step Completed")
         else:
             self.set_invalid("Please select an Installer and Scenario")
-
-        return self.render(request)
 
 
 class Assign_Network_Roles(WorkflowStep):
@@ -150,11 +148,11 @@ class Assign_Network_Roles(WorkflowStep):
             confirm['network roles'][role['role']] = role['network'].name
         self.repo_put(self.repo.CONFIRMATION, confirm)
 
-    def post_render(self, request):
+    def post(self, post_data, user):
         models = self.repo_get(self.repo.OPNFV_MODELS, {})
         config_bundle = self.repo_get(self.repo.SELECTED_CONFIG_BUNDLE)
         roles = OPNFV_SETTINGS.NETWORK_ROLES
-        net_role_formset = self.create_netformset(roles, config_bundle, data=request.POST)
+        net_role_formset = self.create_netformset(roles, config_bundle, data=post_data)
         if net_role_formset.is_valid():
             results = []
             for form in net_role_formset:
@@ -168,7 +166,6 @@ class Assign_Network_Roles(WorkflowStep):
             self.update_confirmation()
         else:
             self.set_invalid("Please complete all fields")
-        return self.render(request)
 
 
 class Assign_Host_Roles(WorkflowStep):  # taken verbatim from Define_Software in sw workflow, merge the two?
@@ -227,8 +224,8 @@ class Assign_Host_Roles(WorkflowStep):  # taken verbatim from Define_Software in
             confirm['host roles'][role['host_name']] = role['role'].name
         self.repo_put(self.repo.CONFIRMATION, confirm)
 
-    def post_render(self, request):
-        formset = self.create_host_role_formset(data=request.POST)
+    def post(self, post_data, user):
+        formset = self.create_host_role_formset(data=post_data)
 
         models = self.repo_get(self.repo.OPNFV_MODELS, {})
         host_roles = models.get("host_roles", [])
@@ -254,8 +251,6 @@ class Assign_Host_Roles(WorkflowStep):  # taken verbatim from Define_Software in
         else:
             self.set_invalid("Please complete all fields")
 
-        return self.render(request)
-
 
 class MetaInfo(WorkflowStep):
     template = 'config_bundle/steps/config_software.html'
@@ -280,11 +275,11 @@ class MetaInfo(WorkflowStep):
         confirm['description'] = meta['description']
         self.repo_put(self.repo.CONFIRMATION, confirm)
 
-    def post_render(self, request):
+    def post(self, post_data, user):
         models = self.repo_get(self.repo.OPNFV_MODELS, {})
         info = models.get("meta", {})
 
-        form = BasicMetaForm(request.POST)
+        form = BasicMetaForm(post_data)
         if form.is_valid():
             info['name'] = form.cleaned_data['name']
             info['description'] = form.cleaned_data['description']
@@ -294,6 +289,4 @@ class MetaInfo(WorkflowStep):
             self.set_valid("Complete")
         else:
             self.set_invalid("Please correct the errors shown below")
-
         self.repo_put(self.repo.OPNFV_MODELS, models)
-        return self.render(request)

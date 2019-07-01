@@ -49,15 +49,15 @@ class Select_Host_Step(WorkflowStep):
             context['chosen'] = chosen
         return context
 
-    def post_render(self, request):
-        host_data = request.POST.get("host")
+    def post(self, post_data, user):
+        host_data = post_data.get("host")
         if not host_data:
             self.set_invalid("Please select a host")
-            return self.render(request)
+            return
         host = json.loads(host_data)
         if 'name' not in host or 'booking' not in host:
             self.set_invalid("Invalid host selected")
-            return self.render(request)
+            return
         name = host['name']
         booking_id = host['booking']
         booking = Booking.objects.get(pk=booking_id)
@@ -76,7 +76,6 @@ class Select_Host_Step(WorkflowStep):
         confirm['snapshot'] = snap_confirm
         self.repo_put(self.repo.CONFIRMATION, confirm)
         self.set_valid("Success")
-        return self.render(request)
 
 
 class Image_Meta_Step(WorkflowStep):
@@ -97,8 +96,8 @@ class Image_Meta_Step(WorkflowStep):
         context['form'] = form
         return context
 
-    def post_render(self, request):
-        form = BasicMetaForm(request.POST)
+    def post(self, post_data, user):
+        form = BasicMetaForm(post_data)
         if form.is_valid():
             name = form.cleaned_data['name']
             self.repo_put(self.repo.SNAPSHOT_NAME, name)
@@ -115,5 +114,3 @@ class Image_Meta_Step(WorkflowStep):
             self.set_valid("Success")
         else:
             self.set_invalid("Please Fill out the Form")
-
-        return self.render(request)

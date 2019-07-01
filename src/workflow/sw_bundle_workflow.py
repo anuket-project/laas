@@ -104,7 +104,7 @@ class Define_Software(WorkflowStep):
 
         return context
 
-    def post_render(self, request):
+    def post(self, post_data, user):
         models = self.repo_get(self.repo.CONFIG_MODELS, {})
         if "bundle" not in models:
             models['bundle'] = ConfigBundle(owner=self.repo_get(self.repo.SESSION_USER))
@@ -112,8 +112,8 @@ class Define_Software(WorkflowStep):
         confirm = self.repo_get(self.repo.CONFIRMATION, {})
 
         hosts = self.get_host_list()
-        models['headnode_index'] = request.POST.get("headnode", 1)
-        formset = self.create_hostformset(hosts, data=request.POST)
+        models['headnode_index'] = post_data.get("headnode", 1)
+        formset = self.create_hostformset(hosts, data=post_data)
         has_headnode = False
         if formset.is_valid():
             models['host_configs'] = []
@@ -140,7 +140,7 @@ class Define_Software(WorkflowStep):
 
             if not has_headnode:
                 self.set_invalid('Must have one "Headnode" per POD')
-                return self.render(request)
+                return
 
             self.repo_put(self.repo.CONFIG_MODELS, models)
             if "configuration" not in confirm:
@@ -150,8 +150,6 @@ class Define_Software(WorkflowStep):
             self.set_valid("Completed")
         else:
             self.set_invalid("Please complete all fields")
-
-        return self.render(request)
 
 
 class Config_Software(WorkflowStep):
@@ -172,7 +170,7 @@ class Config_Software(WorkflowStep):
         context["form"] = BasicMetaForm(initial=initial)
         return context
 
-    def post_render(self, request):
+    def post(self, post_data, user):
         models = self.repo_get(self.repo.CONFIG_MODELS, {})
         if "bundle" not in models:
             models['bundle'] = ConfigBundle(owner=self.repo_get(self.repo.SESSION_USER))
@@ -181,7 +179,7 @@ class Config_Software(WorkflowStep):
         if "configuration" not in confirm:
             confirm['configuration'] = {}
 
-        form = BasicMetaForm(request.POST)
+        form = BasicMetaForm(post_data)
         if form.is_valid():
             models['bundle'].name = form.cleaned_data['name']
             models['bundle'].description = form.cleaned_data['description']
@@ -194,5 +192,3 @@ class Config_Software(WorkflowStep):
 
         self.repo_put(self.repo.CONFIG_MODELS, models)
         self.repo_put(self.repo.CONFIRMATION, confirm)
-
-        return self.render(request)

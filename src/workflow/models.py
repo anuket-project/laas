@@ -8,8 +8,7 @@
 ##############################################################################
 
 
-from django.shortcuts import render
-from django.contrib import messages
+from django.template.loader import get_template
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -219,11 +218,18 @@ class WorkflowStep(object):
         return context
 
     def render(self, request):
-        self.context = self.get_context()
-        return render(request, self.template, self.context)
+        return HttpResponse(self.render_to_string(request))
+
+    def render_to_string(self, request):
+        template = get_template(self.template)
+        return template.render(self.get_context(), request)
 
     def post_render(self, request):
+        self.post(request.POST, request.user)
         return self.render(request)
+
+    def post(self, post_content, user):
+        raise Exception("WorkflowStep subclass of type " + str(type(self)) + " has no concrete post() method")
 
     def test_render(self, request):
         if request.method == "POST":
@@ -263,22 +269,18 @@ class AbstractSelectOrCreate(WorkflowStep):
     def alert_bundle_missing(self):  # override in subclasses to change message if field isn't filled out
         self.set_invalid("Please select a valid bundle")
 
-    def post_render(self, request):
-        context = self.get_context()
-        form = self.form(request.POST, queryset=self.get_form_queryset())
+    def post(self, post_data, user):
+        form = self.form(post_data, queryset=self.get_form_queryset())
         if form.is_valid():
             bundle = form.get_validated_bundle()
             if not bundle:
                 self.alert_bundle_missing()
-                return render(request, self.template, context)
+                return
             self.repo_put(self.select_repo_key, bundle)
             self.put_confirm_info(bundle)
             self.set_valid("Step Completed")
         else:
             self.alert_bundle_missing()
-            messages.add_message(request, messages.ERROR, "Form Didn't Validate", fail_silently=True)
-
-        return self.render(request)
 
     def get_context(self):
         default = []
@@ -323,8 +325,8 @@ class Confirmation_Step(WorkflowStep):
         if errors:
             return errors
 
-    def post_render(self, request):
-        form = ConfirmationForm(request.POST)
+    def post(self, post_data, user):
+        form = ConfirmationForm(post_data)
         if form.is_valid():
             data = form.cleaned_data['confirm']
             context = self.get_context()
@@ -332,20 +334,18 @@ class Confirmation_Step(WorkflowStep):
                 context["bypassed"] = "true"
                 errors = self.flush_to_db()
                 if errors:
-                    messages.add_message(request, messages.ERROR, "ERROR OCCURRED: " + errors)
+                    self.set_invalid("ERROR OCCURRED: " + errors)
                 else:
-                    messages.add_message(request, messages.SUCCESS, "Confirmed")
+                    self.set_valid("Confirmed")
 
-                return HttpResponse('')
             elif data == "False":
                 context["bypassed"] = "true"
-                messages.add_message(request, messages.SUCCESS, "Canceled")
-                return render(request, self.template, context)
+                self.set_valid("Canceled")
             else:
-                pass
+                self.set_invalid("Bad Form Contents")
 
         else:
-            pass
+            self.set_invalid("Bad Form Contents")
 
 
 class Repository():

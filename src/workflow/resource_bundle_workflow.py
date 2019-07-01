@@ -8,8 +8,6 @@
 ##############################################################################
 
 
-from django.shortcuts import render
-from django.forms import formset_factory
 from django.conf import settings
 
 import json
@@ -22,7 +20,6 @@ from workflow.forms import (
     HardwareDefinitionForm,
     NetworkDefinitionForm,
     ResourceMetaForm,
-    GenericHostMetaForm
 )
 from resource_inventory.models import (
     GenericResourceBundle,
@@ -111,9 +108,9 @@ class Define_Hardware(WorkflowStep):
             confirm['resource']['lab'] = models['lab'].lab_user.username
         self.repo_put(self.repo.CONFIRMATION, confirm)
 
-    def post_render(self, request):
+    def post(self, post_data, user):
         try:
-            self.form = HardwareDefinitionForm(request.POST)
+            self.form = HardwareDefinitionForm(post_data)
             if self.form.is_valid():
                 self.update_models(self.form.cleaned_data)
                 self.update_confirmation()
@@ -122,8 +119,6 @@ class Define_Hardware(WorkflowStep):
                 self.set_invalid("Please complete the fields highlighted in red to continue")
         except Exception as e:
             self.set_invalid(str(e))
-        self.context = self.get_context()
-        return render(request, self.template, self.context)
 
 
 class Define_Nets(WorkflowStep):
@@ -206,13 +201,13 @@ class Define_Nets(WorkflowStep):
 
         return context
 
-    def post_render(self, request):
+    def post(self, post_data, user):
         models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
         if 'hosts' in models:
             host_set = set([h.resource.name + "*" + h.profile.name for h in models['hosts']])
             self.repo_put(self.repo.GRB_LAST_HOSTLIST, host_set)
         try:
-            xmlData = request.POST.get("xml")
+            xmlData = post_data.get("xml")
             self.updateModels(xmlData)
             # update model with xml
             self.set_valid("Networks applied successfully")
@@ -220,7 +215,6 @@ class Define_Nets(WorkflowStep):
             self.set_invalid("Public network not availble")
         except Exception as e:
             self.set_invalid("An error occurred when applying networks: " + str(e))
-        return self.render(request)
 
     def updateModels(self, xmlData):
         models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
@@ -380,8 +374,8 @@ class Resource_Meta_Info(WorkflowStep):
         context['form'] = ResourceMetaForm(initial={"bundle_name": name, "bundle_description": desc})
         return context
 
-    def post_render(self, request):
-        form = ResourceMetaForm(request.POST)
+    def post(self, post_data, user):
+        form = ResourceMetaForm(post_data)
         if form.is_valid():
             models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
             name = form.cleaned_data['bundle_name']
@@ -402,62 +396,5 @@ class Resource_Meta_Info(WorkflowStep):
             confirm_info["description"] = tmp
             self.repo_put(self.repo.CONFIRMATION, confirm)
             self.set_valid("Step Completed")
-
         else:
             self.set_invalid("Please correct the fields highlighted in red to continue")
-            pass
-        return self.render(request)
-
-
-class Host_Meta_Info(WorkflowStep):
-    template = "resource/steps/host_info.html"
-    title = "Host Info"
-    description = "We need a little bit of information about your chosen machines"
-    short_title = "host info"
-
-    def __init__(self, *args, **kwargs):
-        super(Host_Meta_Info, self).__init__(*args, **kwargs)
-        self.formset = formset_factory(GenericHostMetaForm, extra=0)
-
-    def get_context(self):
-        context = super(Host_Meta_Info, self).get_context()
-        GenericHostFormset = self.formset
-        models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
-        initial_data = []
-        if "hosts" not in models:
-            context['error'] = "Please go back and select your hosts"
-        else:
-            for host in models['hosts']:
-                profile = host.profile.name
-                name = host.resource.name
-                if not name:
-                    name = ""
-                initial_data.append({"host_profile": profile, "host_name": name})
-        context['formset'] = GenericHostFormset(initial=initial_data)
-        return context
-
-    def post_render(self, request):
-        models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
-        if 'hosts' not in models:
-            models['hosts'] = []
-        hosts = models['hosts']
-        i = 0
-        confirm_hosts = []
-        GenericHostFormset = self.formset
-        formset = GenericHostFormset(request.POST)
-        if formset.is_valid():
-            for form in formset:
-                host = hosts[i]
-                host.resource.name = form.cleaned_data['host_name']
-                i += 1
-                confirm_hosts.append({"name": host.resource.name, "profile": host.profile.name})
-            models['hosts'] = hosts
-            self.repo_put(self.repo.GRESOURCE_BUNDLE_MODELS, models)
-            confirm = self.repo_get(self.repo.CONFIRMATION, {})
-            if "resource" not in confirm:
-                confirm['resource'] = {}
-            confirm['resource']['hosts'] = confirm_hosts
-            self.repo_put(self.repo.CONFIRMATION, confirm)
-        else:
-            pass
-        return self.render(request)

@@ -12,7 +12,7 @@ from dashboard.populate_db import Populator
 from workflow.tests import constants
 from workflow.workflow_factory import WorkflowFactory
 from workflow.models import Repository
-from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info, Host_Meta_Info
+from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
 from workflow.sw_bundle_workflow import SWConf_Resource_Select, Define_Software, Config_Software
 from workflow.booking_workflow import Booking_Resource_Select, SWConfig_Select, Booking_Meta
 from django.http import QueryDict, HttpRequest
@@ -23,9 +23,6 @@ from resource_inventory.models import (
     OPNFVRole,
     Image,
     GenericResourceBundle,
-    GenericHost,
-    HostProfile,
-    GenericResource,
     ConfigBundle
 )
 
@@ -127,49 +124,6 @@ class DefineHardwareTestCase(BaseStepTestCase):
     def test_step_with_empty_data(self):
         data = {}
         response, context = self.step_test(Define_Hardware, data)
-
-
-class HostMetaInfoTestCase(BaseStepTestCase):
-
-    def makeRepo(self):
-        """
-        override to provide step with needed host info
-        """
-        repo = super(HostMetaInfoTestCase, self).makeRepo()
-        # get models
-        models = {}
-        models['bundle'] = GenericResourceBundle()
-        # make generic hosts
-        gres1 = GenericResource(bundle=models['bundle'])
-        prof1 = HostProfile.objects.get(name="Test profile 0")
-        ghost1 = GenericHost(profile=prof1, resource=gres1)
-
-        gres2 = GenericResource(bundle=models['bundle'])
-        prof2 = HostProfile.objects.get(name="Test profile 3")
-        ghost2 = GenericHost(profile=prof2, resource=gres2)
-        models['hosts'] = [ghost1, ghost2]
-        repo.el[repo.GRESOURCE_BUNDLE_MODELS] = models
-        return repo
-
-    def test_step_with_good_data(self):
-        data = {"form-INITIAL_FORMS": 2, "form-MAX_NUM_FORMS": 1000}
-        data["form-MIN_NUM_FORMS"] = 0
-        data["form-TOTAL_FORMS"] = 2
-        data['form-0-host_name'] = "first host"
-        data['form-1-host_name'] = "second host"
-        response, context = self.step_test(Host_Meta_Info, data)
-
-    def test_step_with_bad_data(self):  # TODO
-        data = {"form-INITIAL_FORMS": 0, "form-MAX_NUM_FORMS": 1000}
-        data["form-MIN_NUM_FORMS"] = 0
-        data["form-TOTAL_FORMS"] = 0
-        response, context = self.step_test(Host_Meta_Info, data)
-
-    def test_step_with_empty_data(self):
-        data = {"form-INITIAL_FORMS": 0, "form-MAX_NUM_FORMS": 1000}
-        data["form-MIN_NUM_FORMS"] = 0
-        data["form-TOTAL_FORMS"] = 0
-        response, context = self.step_test(Host_Meta_Info, data)
 
 
 class DefineNetsTestCase(BaseStepTestCase):

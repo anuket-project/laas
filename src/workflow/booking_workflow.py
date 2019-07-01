@@ -7,7 +7,6 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-from django.contrib import messages
 from django.utils import timezone
 
 from datetime import timedelta
@@ -171,8 +170,8 @@ class Booking_Meta(WorkflowStep):
         context['form'] = BookingMetaForm(initial=initial, user_initial=default, owner=owner)
         return context
 
-    def post_render(self, request):
-        form = BookingMetaForm(data=request.POST, owner=request.user)
+    def post(self, post_data, user):
+        form = BookingMetaForm(data=post_data, owner=user)
 
         forms = self.repo_get(self.repo.BOOKING_FORMS, {})
 
@@ -212,9 +211,6 @@ class Booking_Meta(WorkflowStep):
 
             self.repo_put(self.repo.BOOKING_MODELS, models)
             self.repo_put(self.repo.CONFIRMATION, confirm)
-            messages.add_message(request, messages.SUCCESS, 'Form Validated', fail_silently=True)
             self.set_valid("Step Completed")
         else:
-            messages.add_message(request, messages.ERROR, "Form didn't validate", fail_silently=True)
             self.set_invalid("Please complete the fields highlighted in red to continue")
-        return self.render(request)
