@@ -15,6 +15,7 @@ from django.template.loader import render_to_string
 from django.forms.widgets import NumberInput
 
 import json
+import urllib
 
 from account.models import Lab
 from account.models import UserProfile
@@ -426,6 +427,24 @@ class ConfirmationForm(forms.Form):
             (False, "Cancel")
         )
     )
+
+
+def validate_step(value):
+    if value not in ["prev", "next", "current"]:
+        raise ValidationError(str(value) + " is not allowed")
+
+
+def validate_step_form(value):
+    try:
+        urllib.parse.unquote_plus(value)
+    except Exception:
+        raise ValidationError("Value is not url encoded data")
+
+
+class ManagerForm(forms.Form):
+    step = forms.CharField(widget=forms.widgets.HiddenInput, validators=[validate_step])
+    step_form = forms.CharField(widget=forms.widgets.HiddenInput, validators=[validate_step_form])
+    # other fields?
 
 
 class OPNFVSelectionForm(forms.Form):

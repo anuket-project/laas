@@ -32,7 +32,7 @@ from django.contrib import admin
 
 urlpatterns = [
 
-    url(r'^wf/', include('workflow.urls', namespace='workflow')),
+    url(r'^workflow/', include('workflow.urls', namespace='workflow')),
     url(r'^', include('dashboard.urls', namespace='dashboard')),
     url(r'^booking/', include('booking.urls', namespace='booking')),
     url(r'^accounts/', include('account.urls', namespace='account')),

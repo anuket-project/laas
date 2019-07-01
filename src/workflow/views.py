@@ -8,7 +8,7 @@
 ##############################################################################
 
 
-from django.http import HttpResponseGone, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -49,7 +49,7 @@ def delete_session(request):
     manager = attempt_auth(request)
 
     if not manager:
-        return HttpResponseGone("No session found that relates to current request")
+        return no_workflow(request)
 
     not_last_workflow, result = manager.pop_workflow()
 
@@ -60,48 +60,34 @@ def delete_session(request):
         return JsonResponse(get_redirect_response(result))
 
 
-def step_view(request):
+def add_workflow(request):
     manager = attempt_auth(request)
     if not manager:
-        # no manager found, redirect to "lost" page
         return no_workflow(request)
-    if request.GET.get('step') is not None:
-        if request.GET.get('step') == 'next':
-            manager.go_next()
-        elif request.GET.get('step') == 'prev':
-            manager.go_prev()
-        else:
-            raise Exception("requested action for new step had malformed contents: " + request.GET.get('step'))
-    return manager.render(request)
+    try:
+        workflow_type = int(request.POST.get('workflow_type'))
+    except ValueError:
+        return HttpResponse(status=400)
+
+    manager.add_workflow(workflow_type=workflow_type)
+    return manager.render(request)  # do we want this?
+
+
+def cancel_workflow(request):
+    manager = attempt_auth(request)
+    if not manager:
+        return no_workflow(request)
+
+    if not manager.pop_workflow():
+        del ManagerTracker.managers[request.session['manager_session']]
 
 
 def manager_view(request):
     manager = attempt_auth(request)
-
     if not manager:
-        return HttpResponseGone("No session found that relates to current request")
+        return no_workflow(request)
 
-    if request.method == 'GET':
-        # no need for this statement if only intercepting post requests
-
-        # return general context for viewport page
-        return manager.status(request)
-
-    if request.method == 'POST':
-        if request.POST.get('add') is not None:
-            logger.debug("add found")
-            target_id = None
-            if 'target' in request.POST:
-                target_id = int(request.POST.get('target'))
-            manager.add_workflow(workflow_type=int(request.POST.get('add')), target_id=target_id)
-        elif request.POST.get('edit') is not None and request.POST.get('edit_id') is not None:
-            logger.debug("edit found")
-            manager.add_workflow(workflow_type=request.POST.get('edit'), edit_object=int(request.POST.get('edit_id')))
-        elif request.POST.get('cancel') is not None:
-            if not manager.pop_workflow():
-                del ManagerTracker.managers[request.session['manager_session']]
-
-    return manager.status(request)
+    return manager.handle_request(request)
 
 
 def viewport_view(request):
@@ -129,10 +115,7 @@ def create_session(wf_type, request):
 
 
 def no_workflow(request):
-
-    logger.debug("There is no active workflow")
-
-    return render(request, 'workflow/no_workflow.html', {'title': "Not Found"})
+    return render(request, 'workflow/no_workflow.html', {'title': "Not Found"}, status=404)
 
 
 def login(request):

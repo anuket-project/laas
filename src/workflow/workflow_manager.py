@@ -9,6 +9,7 @@
 
 
 from django.http import JsonResponse
+from django.http.request import QueryDict
 
 from booking.models import Booking
 from workflow.workflow_factory import WorkflowFactory
@@ -19,6 +20,7 @@ from resource_inventory.models import (
     HostConfiguration,
     OPNFVConfig
 )
+from workflow.forms import ManagerForm
 
 import logging
 logger = logging.getLogger(__name__)
@@ -45,10 +47,7 @@ class SessionManager():
                 else:
                     step.disable()
 
-    def add_workflow(self, workflow_type=None, target_id=None, **kwargs):
-        if target_id is not None:
-            self.prefill_repo(target_id, workflow_type)
-
+    def add_workflow(self, workflow_type=None, **kwargs):
         repo = Repository()
         if(len(self.workflows) >= 1):
             defaults = self.workflows[-1].repository.get_child_defaults()
@@ -75,24 +74,37 @@ class SessionManager():
         return (multiple_wfs, current_repo.el[current_repo.RESULT])
 
     def status(self, request):
-        try:
-            meta_json = []
-            for step in self.active_workflow().steps:
-                meta_json.append(step.to_json())
-            responsejson = {}
-            responsejson["steps"] = meta_json
-            responsejson["active"] = self.active_workflow().repository.el['active_step']
-            responsejson["workflow_count"] = len(self.workflows)
-            return JsonResponse(responsejson, safe=False)
-        except Exception:
-            pass
+        return {
+            "steps": [step.to_json() for step in self.active_workflow().steps],
+            "active": self.active_workflow().repository.el['active_step'],
+            "workflow_count": len(self.workflows)
+        }
+
+    def handle_post(self, request):
+        form = ManagerForm(request.POST)
+        if form.is_valid:
+            self.get_active_step().post(
+                QueryDict(form.cleaned_data['step_form']),
+                user=request.user
+            )
+            # change step
+            if form.cleaned_data['step'] == 'prev':
+                self.go_prev()
+            if form.cleaned_data['step'] == 'next':
+                self.go_next()
+        else:
+            pass  # Exception?
+
+    def handle_request(self, request):
+        if request.method == 'POST':
+            self.handle_post(request)
+        return self.render()
 
     def render(self, request, **kwargs):
-        # filter out when a step needs to handle post/form data
-        # if 'workflow' in post data, this post request was meant for me, not step
-        if request.method == 'POST' and request.POST.get('workflow', None) is None:
-            return self.active_workflow().steps[self.active_workflow().active_index].post_render(request)
-        return self.active_workflow().steps[self.active_workflow().active_index].render(request)
+        return JsonResponse({
+            "meta": self.status(),
+            "content": self.get_active_step().render_to_string(request)
+        })
 
     def post_render(self, request):
         return self.active_workflow().steps[self.active_workflow().active_index].post_render(request)
