@@ -39,8 +39,9 @@ function multipleSelectFilterWidgetEntry() {
     const filter_items = {{ filter_items|safe }};
     const initial_value = {{ initial_value|default_if_none:"{}"|safe }};
 
-    //global variable
+    //global variables
     multi_filter_widget = new MultipleSelectFilterWidget(graph_neighbors, filter_items, initial_value);
+    form_submission_callbacks.push(() => multi_filter_widget.finish());
 }
 
 multipleSelectFilterWidgetEntry();
