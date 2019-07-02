@@ -9,7 +9,7 @@
 <h1>Please choose a config bundle first</h1>
 {% else %}
 
-<form id="installer_form" action="/wf/workflow/" method="POST" id="installer_config_form" class="form">
+<form id="step_form" method="POST" class="form">
     {% csrf_token %}
     <p>Choose your installer:</p>
     {% bootstrap_field form.installer %}
@@ -20,13 +20,3 @@
 {% endif %}
 
 {% endblock content %}
-
-{% block onleave %}
-var form = $("#installer_form");
-var formData = form.serialize();
-var req = new XMLHttpRequest();
-req.open("POST", "/wf/workflow/", false);
-req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-req.onerror = function() { alert("problem with form submission"); }
-req.send(formData);
-{% endblock %}

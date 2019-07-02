@@ -44,12 +44,3 @@ for(var i=0; i<parents.length; i++){
         checkbox.value = "True";
     }
 }
-
-var form = $("#table_formset");
-var formData = form.serialize();
-var req = new XMLHttpRequest();
-req.open("POST", "/wf/workflow/", false);
-req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-req.onerror = function() { alert("problem with form submission"); }
-req.send(formData);
-{% endblock onleave %}

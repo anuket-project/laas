@@ -6,7 +6,7 @@
 {% block content %}
 {% bootstrap_form_errors form type='non_fields' %}
 <div class="p-4">
-    <form id="meta_form" action="/wf/workflow/" method="POST" class="form">
+    <form id="step_form" method="POST" class="form">
     {% csrf_token %}
     <div class="form-group">
     {% bootstrap_field form.name %}
@@ -15,13 +15,3 @@
     </form>
 </div>
 {% endblock content %}
-
-{% block onleave %}
-var ajaxForm = $("#meta_form");
-var formData = ajaxForm.serialize();
-req = new XMLHttpRequest();
-req.open("POST", "/wf/workflow/", false);
-req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-req.onerror = function() { alert("problem submitting form"); }
-req.send(formData);
-{% endblock %}

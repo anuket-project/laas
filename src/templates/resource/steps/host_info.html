@@ -10,7 +10,7 @@
 {% else %}
 
 
-<form id="host_meta_form" method="post" action="/wf/workflow/">
+<form id="step_form" method="post">
     {% csrf_token %}
     <table>
         <thead>
@@ -32,12 +32,3 @@
 </form>
 {% endif %}
 {% endblock content %}
-
-{% block onleave %}
-var formData = $("#host_meta_form").serialize();
-var req = new XMLHttpRequest();
-req.open("POST", "/wf/workflow/", false);
-req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-req.onerror = function() { alert("There was a problem submitting the form"); }
-req.send(formData);
-{% endblock %}
