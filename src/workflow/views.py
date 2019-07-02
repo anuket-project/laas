@@ -8,9 +8,8 @@
 ##############################################################################
 
 
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
-from django.urls import reverse
 
 import uuid
 
@@ -31,33 +30,17 @@ def attempt_auth(request):
         return None
 
 
-def get_redirect_response(result):
-    if not result:
-        return {}
-
-    # need to get type of result, and switch on the type
-    # since has_result, result must be populated with a valid object
-    if isinstance(result, Booking):
-        return {
-            'redir_url': reverse('booking:booking_detail', kwargs={'booking_id': result.id})
-        }
-    else:
-        return {}
-
-
-def delete_session(request):
+def remove_workflow(request):
     manager = attempt_auth(request)
 
     if not manager:
         return no_workflow(request)
 
-    not_last_workflow, result = manager.pop_workflow()
+    has_more_workflows, result = manager.pop_workflow()
 
-    if not_last_workflow:  # this was not the last workflow, so don't redirect away
-        return JsonResponse({})
-    else:
+    if not has_more_workflows:  # this was the last workflow, so delete the reference to it in the tracker
         del ManagerTracker.managers[request.session['manager_session']]
-        return JsonResponse(get_redirect_response(result))
+    return manager.render(request)
 
 
 def add_workflow(request):
@@ -71,15 +54,6 @@ def add_workflow(request):
 
     manager.add_workflow(workflow_type=workflow_type)
     return manager.render(request)  # do we want this?
-
-
-def cancel_workflow(request):
-    manager = attempt_auth(request)
-    if not manager:
-        return no_workflow(request)
-
-    if not manager.pop_workflow():
-        del ManagerTracker.managers[request.session['manager_session']]
 
 
 def manager_view(request):
@@ -98,16 +72,27 @@ def viewport_view(request):
     if manager is None:
         return no_workflow(request)
 
-    if request.method == 'GET':
-        return render(request, 'workflow/viewport-base.html')
-    else:
-        pass
+    if request.method != 'GET':
+        return HttpResponse(status=405)
+    return render(request, 'workflow/viewport-base.html')
+
+
+def create_workflow(request):
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+    workflow_type = request.POST.get('workflow_type')
+    try:
+        workflow_type = int(workflow_type)
+    except Exception:
+        return HttpResponse(status=400)
+    mgr_uuid = create_session(workflow_type, request=request,)
+    request.session['manager_session'] = mgr_uuid
+    return HttpResponse()
 
 
 def create_session(wf_type, request):
-    wf = int(wf_type)
     smgr = SessionManager(request=request)
-    smgr.add_workflow(workflow_type=wf, target_id=request.POST.get("target"))
+    smgr.add_workflow(workflow_type=wf_type, target_id=request.POST.get("target"))
     manager_uuid = uuid.uuid4().hex
     ManagerTracker.getInstance().managers[manager_uuid] = smgr
 

@@ -5,42 +5,6 @@
 
     {% block content %}
     {% endblock content %}
-    {% block vport_comm %}
-             <script type="text/javascript">
-                var step_count = {{ step_number|default:0 }};
-                var active_step = {{ active_step|default:0 }};
-                var render_correct = {{ render_correct|default:"false" }};
-                var title = "{{ step_title|default:"Workflow Step" }}";
-                var description = "{{ description|default:"Contact the admins, because this field should have something else filled in here" }}";
-                if(render_correct){
-                    parent.update_context();
-                }
-                parent.update_description(title, description);
-            </script>
-
-    {% endblock vport_comm %}
-    {% block validate_step %}
-        <script>
-
-            function step_is_valid()
-            {
-                valid = confirm("Is this form valid?");
-                if( valid )
-                {
-                    return true;
-                }
-                else{
-                    return false;
-                }
-            }
-
-            function onError()
-            {
-                alert("Error: something!");
-            }
-        </script>
-
-    {% endblock validate_step %}
 
     <div class="messages">
         {% block element_messages %}

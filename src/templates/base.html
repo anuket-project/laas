@@ -6,30 +6,7 @@
 
 <!-- Custom CSS -->
 <link href="{% static "css/base.css" %}" rel="stylesheet">
-<script type="text/javascript">
-    function cwf(type) {
-        $.ajax({
-            type: "POST",
-            url: "/",
-            data: {
-                "create": type
-            },
-            beforeSend: function (request) {
-                request.setRequestHeader("X-CSRFToken",
-                    $('input[name="csrfmiddlewaretoken"]').val()
-                );
-            }
-        }).done(function (data) {
-            window.location.replace("/wf/");
-        }).fail(function (jqxHR, textstatus) {
-            alert("Something went wrong...");
-        });
-    }
-
-    function continue_wf() {
-        window.location.replace("/wf/");
-    }
-</script>
+<script src="/static/js/dashboard.js"></script>
 
 {% endblock %}
 {% block basecontent %}
@@ -107,19 +84,19 @@
                                 <a href="/booking/quick/" class="list-group-item list-group-item-action list-group-item-secondary">
                                     Express Booking
                                 </a>
-                                <a href="#" onclick="cwf(0)" class="list-group-item list-group-item-action list-group-item-secondary">
+                                <a href="#" onclick="create_workflow(0)" class="list-group-item list-group-item-action list-group-item-secondary">
                                     Book a Pod
                                 </a>
-                                <a href="#" onclick="cwf(1)" class="list-group-item list-group-item-action list-group-item-secondary">
+                                <a href="#" onclick="create_workflow(1)" class="list-group-item list-group-item-action list-group-item-secondary">
                                     Design a Pod
                                 </a>
-                                <a href="#" onclick="cwf(2)" class="list-group-item list-group-item-action list-group-item-secondary">
+                                <a href="#" onclick="create_workflow(2)" class="list-group-item list-group-item-action list-group-item-secondary">
                                     Configure a Pod
                                 </a>
-                                <a href="#" onclick="cwf(3)" class="list-group-item list-group-item-action list-group-item-secondary">
+                                <a href="#" onclick="create_workflow(3)" class="list-group-item list-group-item-action list-group-item-secondary">
                                     Create a Snapshot
                                 </a>
-                                <a href="#" onclick="cwf(4)" class="list-group-item list-group-item-action list-group-item-secondary">
+                                <a href="#" onclick="create_workflow(4)" class="list-group-item list-group-item-action list-group-item-secondary">
                                     Configure OPNFV
                                 </a>
                             </div>

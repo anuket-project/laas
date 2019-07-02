@@ -11,7 +11,7 @@
 from django.conf.urls import url
 from django.conf import settings
 
-from workflow.views import delete_session, manager_view, viewport_view, add_workflow, cancel_workflow
+from workflow.views import manager_view, viewport_view, add_workflow, remove_workflow, create_workflow
 from workflow.models import Repository
 from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
 from workflow.booking_workflow import SWConfig_Select, Booking_Resource_Select, Booking_Meta
@@ -19,10 +19,10 @@ from workflow.booking_workflow import SWConfig_Select, Booking_Resource_Select, 
 app_name = 'workflow'
 urlpatterns = [
 
-    url(r'^finish/$', delete_session, name='delete_session'),
     url(r'^manager/$', manager_view, name='manager'),
     url(r'^add/$', add_workflow, name='add_workflow'),
-    url(r'^cancel/$', cancel_workflow, name='cancel_workflow'),
+    url(r'^create/$', create_workflow, name='create_workflow'),
+    url(r'^pop/$', remove_workflow, name='remove_workflow'),
     url(r'^$', viewport_view, name='viewport')
 ]
 
