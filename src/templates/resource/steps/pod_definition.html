@@ -41,43 +41,43 @@
         {% csrf_token %}
         <input type="hidden" id="hidden_xml_input" name="xml" />
     </form>
+    <script type="text/javascript" src="/static/js/mxClient.min.js" ></script>
+    <script>
+        //gather context data
+        let debug = false;
+        {% if debug %}
+        debug = true;
+        {% endif %}
 
-<script>
-    //gather context data
-    let debug = false;
-    {% if debug %}
-    debug = true;
-    {% endif %}
+        let xml = '';
+        {% if xml %}
+        xml = '{{xml|safe}}';
+        {% endif %}
 
-    let xml = '';
-    {% if xml %}
-    xml = '{{xml|safe}}';
-    {% endif %}
+        let hosts = [];
+        {% for host in hosts %}
+        hosts.push({{host|safe}});
+        {% endfor %}
 
-    let hosts = [];
-    {% for host in hosts %}
-    hosts.push({{host|safe}});
-    {% endfor %}
+        let added_hosts = [];
+        {% for host in added_hosts %}
+        added_hosts.push({{host|safe}});
+        {% endfor %}
 
-    let added_hosts = [];
-    {% for host in added_hosts %}
-    added_hosts.push({{host|safe}});
-    {% endfor %}
+        let removed_host_ids = {{removed_hosts|safe}};
 
-    let removed_host_ids = {{removed_hosts|safe}};
-
-    network_step = new NetworkStep(
-        debug,
-        xml,
-        hosts,
-        added_hosts,
-        removed_host_ids,
-        document.getElementById('graphContainer'),
-        document.getElementById('outlineContainer'),
-        document.getElementById('toolbarContainer'),
-        document.getElementById('sidebarContainer')
-    );
-</script>
+        network_step = new NetworkStep(
+            debug,
+            xml,
+            hosts,
+            added_hosts,
+            removed_host_ids,
+            document.getElementById('graphContainer'),
+            document.getElementById('outlineContainer'),
+            document.getElementById('toolbarContainer'),
+            document.getElementById('sidebarContainer')
+        );
+    </script>
 {% endblock content %}
 {% block onleave %}
 network_step.submitForm();

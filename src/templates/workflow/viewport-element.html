@@ -1,16 +1,10 @@
-{% extends "layout.html" %}
 {% load bootstrap4 %}
 {% load staticfiles %}
 
 {% block basecontent %}
 
-    <div id="wrapper" class="h-100">
-        <!-- Page Content -->
-        <div id="page-wrapper" class="h-100">
-            {% block content %}
-            {% endblock content %}
-        </div>
-    </div>
+    {% block content %}
+    {% endblock content %}
     {% block vport_comm %}
              <script type="text/javascript">
                 var step_count = {{ step_number|default:0 }};
@@ -49,7 +43,7 @@
     {% endblock validate_step %}
 
     <script>
-    function step_on_leave() {
+    step_on_leave = function() {
         {% block onleave %}
             alert("override onleave");
         {% endblock %}

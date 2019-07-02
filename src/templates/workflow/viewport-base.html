@@ -80,14 +80,13 @@
     <div class="container-fluid d-flex flex-column h-100">
         <div class="row d-flex flex-grow-1 p-4">
             <div class="col-12 d-flex border flex-grow-1 px-0">
-                <iframe src="/wf/workflow" class="w-100 h-100" scrolling="yes" id="viewport-iframe"
-                    frameBorder="0"></iframe>
+                <div id="formContainer" class="h-100 w-100"></div>
             </div>
         </div>
     </div>
 </div>
 {% csrf_token %}
-
+<script src="{% static "js/dashboard.js" %}"></script>
 <script type="text/javascript">
     update_context();
     var step = 0;
@@ -131,7 +130,7 @@
         req.onload = function (e) {
             if (req.readyState === 4) {
                 if (req.status < 300) {
-                    document.getElementById("viewport-iframe").srcdoc = this.responseText;
+                    write_iframe(this.responseText);
                 } else {
                     problem();
                 }
@@ -141,10 +140,6 @@
         }
         req.onerror = problem;
         req.send();
-    }
-
-    function step_on_leave() {
-        document.getElementById("viewport-iframe").contentWindow.step_on_leave();
     }
 
     function errors_exist(data) {
@@ -272,16 +267,13 @@
         url = "/wf/workflow/";
         req.open("GET", url, true);
         req.onload = function (e) {
-            var doc = document.getElementById("viewport-iframe").contentWindow.document;
-            doc.open();
-            doc.write(this.responseText);
-            doc.close();
+            write_iframe(this.responseText);
         }
         req.send();
     }
 
     function write_iframe(contents) {
-        document.getElementById("viewport-iframe").contentWindow.document.innerHTML = contents;
+        $("#formContainer").html(contents);
     }
 
     function redirect_root() {
@@ -319,6 +311,15 @@
     function refresh_wf_iframe() {
         window.location = window.location;
     }
+
+    // Load the actual first page
+    $(document).ready(function(){
+        $.ajax("/wf/workflow", {
+            success: function(data) {
+                write_iframe(data);
+            }
+        });
+    });
 </script>
 <div class="d-none" id="workflow_pop_form_div">
     <form id="workflow_pop_form" action="/wf/workflow/finish/" method="post">
