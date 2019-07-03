@@ -5,7 +5,7 @@
 
 {% block content %}
 
-<form action="/wf/workflow/" method="POST" id="software_config_form" class="form">
+<form method="POST" id="step_form" class="form">
     {% csrf_token %}
     <p>Give it a name:</p>
     {% bootstrap_field form.name %}
@@ -16,13 +16,3 @@
 
 
 {% endblock content %}
-
-{% block onleave %}
-var ajaxForm = $("#software_config_form");
-var formData = ajaxForm.serialize();
-req = new XMLHttpRequest();
-req.open("POST", "/wf/workflow/", false);
-req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-req.onerror = function() { alert("problem submitting form"); }
-req.send(formData);
-{% endblock %}

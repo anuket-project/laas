@@ -37,7 +37,7 @@
             <button type="button" class="d-none" onclick="network_step.submitForm();">Submit</button>
         </div>
     </div>
-    <form id="xml_form" method="post" action="/wf/workflow/">
+    <form id="step_form" method="post">
         {% csrf_token %}
         <input type="hidden" id="hidden_xml_input" name="xml" />
     </form>
