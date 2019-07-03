@@ -77,6 +77,7 @@
             document.getElementById('toolbarContainer'),
             document.getElementById('sidebarContainer')
         );
+        form_submission_callbacks.push(() => network_step.prepareForm());
     </script>
 {% endblock content %}
 {% block onleave %}

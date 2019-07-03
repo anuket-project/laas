@@ -55,10 +55,7 @@
 <script type="text/javascript">
     function submit_form()
     {
-        //formats data for form submission
-        multi_filter_widget.finish();
-        // Submit the form manually since confirm button is type="button" now
-        // due to the form submitting before the data was even created by finish()
+        run_form_callbacks();
         document.getElementById("quick_booking_form").submit();
     }
 

@@ -42,14 +42,6 @@
 
     {% endblock validate_step %}
 
-    <script>
-    step_on_leave = function() {
-        {% block onleave %}
-            alert("override onleave");
-        {% endblock %}
-    }
-    </script>
-
     <div class="messages">
         {% block element_messages %}
         {% bootstrap_messages %}

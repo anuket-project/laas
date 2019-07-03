@@ -11,7 +11,7 @@
         <nav>
             <ul class="pagination d-flex flex-row" id="topPagination">
                 <li class="page-item flex-shrink-1 page-control">
-                    <a class="page-link" href="#" id="gob" onclick="go('prev')">
+                    <a class="page-link" href="#" id="gob" onclick="submit_and_go('prev')">
                         <i class="fas fa-backward"></i> Back
                     </a>
                 </li>
@@ -41,7 +41,7 @@
                     </a>
                 </li>
                 <li class="page-item flex-shrink-1 page-control">
-                    <a class="page-link text-right" href="#" id="gof" onclick="go('next')">
+                    <a class="page-link text-right" href="#" id="gof" onclick="submit_and_go('next')">
                         Next <i class="fas fa-forward"></i>
                     </a>
                 </li>
@@ -91,11 +91,9 @@
     update_context();
     var step = 0;
     var page_count = 0;
-    var context_data = false;
 
-    function go(to) {
-        step_on_leave();
-        request_leave(to);
+    function submit_and_go(to) {
+        submitStepForm(to);
     }
 
     function request_leave(to) {
@@ -165,8 +163,7 @@
         });
     }
 
-    function update_page(data) {
-        context_data = data;
+    function updateBreadcrumbs(data) {
         update_breadcrumbs(data);
         if (data["workflow_count"] == 1) {
             document.getElementById("cancel_btn").innerText = "Exit Workflow";
