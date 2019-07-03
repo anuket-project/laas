@@ -7,13 +7,13 @@
 <form id="quick_booking_form" action="/booking/quick/" method="POST" class="form">
     {% csrf_token %}
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-12 px-1 my-2">
-                <div class="col py-2 rounded border">
-                    <p>Please select a host type you wish to book. Only available types are shown.</p>
-                    {% bootstrap_field form.filter_field show_label=False %}
-                </div>
+        <div class="row mx-0 px-0">
+            <div class="col-12 mx-0 px-0 mt-2">
+                <p class="my-0">Please select a host type you wish to book. Only available types are shown.</p>
+                {% bootstrap_field form.filter_field show_label=False %}
             </div>
+        </div>
+        <div class="row">
             <div class="col-12 col-lg-3 px-1 my-2">
                 <div class="col border rounded py-2 h-100">
                     {% bootstrap_field form.purpose %}
@@ -80,11 +80,8 @@
     var sup_installer_dict = {{installer_filter | safe}};
     var sup_scenario_dict = {{scenario_filter | safe}};
 
-    function imageHider() {
+    function imageFilter() {
         var drop = document.getElementById("id_image");
-
-        hide_dropdown("id_image");
-
         var lab_pk = get_selected_value("lab");
         var host_pk = get_selected_value("host");
 
@@ -92,21 +89,18 @@
             var image_object = sup_image_dict[childNode.value];
             if (image_object) //weed out empty option
             {
-                if (image_object.host_profile == host_pk && image_object.lab == lab_pk) {
-                    childNode.style.display = "inherit";
-                    childNode.disabled = false;
-                }
+                childNode.disabled = !(image_object.host_profile == host_pk && image_object.lab == lab_pk);
             }
         }
     }
 
-    imageHider();
+    imageFilter();
     $('#id_installer').children().hide();
     $('#id_scenario').children().hide();
 
 
     Array.from(document.getElementsByClassName("grid-item-select-btn")).forEach(function (element) {
-        element.addEventListener('click', imageHider);
+        element.addEventListener('click', imageFilter);
     });
 
     function installerHider() {

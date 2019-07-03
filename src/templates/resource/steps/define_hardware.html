@@ -9,7 +9,7 @@ As you make your selections, labs and hosts that are not compatible
 with your current configuration will become unavailable.</p>
 <h4>NOTE: Only PTL's are able to create multi-node PODs. See <a href="https://google.com">here</a>
     for more details</h4>
-<form id="step_form" method="post">
+<form id="step_form" method="post" class="px-3">
     {% csrf_token %}
     {{form.filter_field|default:"<p>No Form</p>"}}
 </form>
