@@ -10,6 +10,7 @@
 
 from django.http import JsonResponse
 from django.http.request import QueryDict
+from django.urls import reverse
 
 from booking.models import Booking
 from workflow.workflow_factory import WorkflowFactory
@@ -32,10 +33,9 @@ class SessionManager():
 
     def __init__(self, request=None):
         self.workflows = []
-
         self.owner = request.user
-
         self.factory = WorkflowFactory()
+        self.result = None
 
     def set_step_statuses(self, superclass_type, desired_enabled=True):
         workflow = self.active_workflow()
@@ -62,6 +62,11 @@ class SessionManager():
             )
         )
 
+    def get_redirect(self):
+        if isinstance(self.result, Booking):
+            return reverse('booking:booking_detail', kwargs={'booking_id': self.result.id})
+        return "/"
+
     def pop_workflow(self):
         multiple_wfs = len(self.workflows) > 1
         if multiple_wfs:
@@ -69,9 +74,13 @@ class SessionManager():
                 key = self.workflows[-1].repository.el[Repository.RESULT_KEY]
                 result = self.workflows[-1].repository.el[Repository.RESULT]
                 self.workflows[-2].repository.el[key] = result
-            self.workflows.pop()
-        current_repo = self.workflows[-1].repository
-        return (multiple_wfs, current_repo.el[current_repo.RESULT])
+        prev_workflow = self.workflows.pop()
+        if self.workflows:
+            current_repo = self.workflows[-1].repository
+        else:
+            current_repo = prev_workflow.repository
+        self.result = current_repo.el[current_repo.RESULT]
+        return multiple_wfs, self.result
 
     def status(self, request):
         return {
@@ -82,7 +91,7 @@ class SessionManager():
 
     def handle_post(self, request):
         form = ManagerForm(request.POST)
-        if form.is_valid:
+        if form.is_valid():
             self.get_active_step().post(
                 QueryDict(form.cleaned_data['step_form']),
                 user=request.user
@@ -98,13 +107,18 @@ class SessionManager():
     def handle_request(self, request):
         if request.method == 'POST':
             self.handle_post(request)
-        return self.render()
+        return self.render(request)
 
     def render(self, request, **kwargs):
-        return JsonResponse({
-            "meta": self.status(),
-            "content": self.get_active_step().render_to_string(request)
-        })
+        if self.workflows:
+            return JsonResponse({
+                "meta": self.status(request),
+                "content": self.get_active_step().render_to_string(request),
+            })
+        else:
+            return JsonResponse({
+                "redirect": self.get_redirect()
+            })
 
     def post_render(self, request):
         return self.active_workflow().steps[self.active_workflow().active_index].post_render(request)

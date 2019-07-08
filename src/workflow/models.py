@@ -318,6 +318,9 @@ class Confirmation_Step(WorkflowStep):
             default_flow_style=False
         ).strip()
 
+        if self.valid == WorkflowStepStatus.VALID:
+            context["confirm_succeeded"] = "true"
+
         return context
 
     def flush_to_db(self):
@@ -329,9 +332,7 @@ class Confirmation_Step(WorkflowStep):
         form = ConfirmationForm(post_data)
         if form.is_valid():
             data = form.cleaned_data['confirm']
-            context = self.get_context()
             if data == "True":
-                context["bypassed"] = "true"
                 errors = self.flush_to_db()
                 if errors:
                     self.set_invalid("ERROR OCCURRED: " + errors)
@@ -339,7 +340,6 @@ class Confirmation_Step(WorkflowStep):
                     self.set_valid("Confirmed")
 
             elif data == "False":
-                context["bypassed"] = "true"
                 self.set_valid("Canceled")
             else:
                 self.set_invalid("Bad Form Contents")

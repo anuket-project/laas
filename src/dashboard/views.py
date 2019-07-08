@@ -63,36 +63,15 @@ def host_profile_detail_view(request):
 
 
 def landing_view(request):
-    manager = None
-    manager_detected = False
-    if 'manager_session' in request.session:
-
-        try:
-            manager = ManagerTracker.managers[request.session['manager_session']]
-
-        except KeyError:
-            pass
-
-    if manager is not None:
-        # no manager detected, don't display continue button
-        manager_detected = True
-
-    if request.method == 'GET':
-        return render(request, 'dashboard/landing.html', {'manager': manager_detected, 'title': "Welcome to the Lab as a Service Dashboard"})
-
-    if request.method == 'POST':
-        try:
-            create = request.POST['create']
-
-            if manager is not None:
-                del manager
-
-            mgr_uuid = create_session(create, request=request,)
-            request.session['manager_session'] = mgr_uuid
-            return HttpResponseRedirect('/wf/')
-
-        except KeyError:
-            pass
+    manager = ManagerTracker.managers.get(request.session.get('manager_session'))
+    return render(
+        request,
+        'dashboard/landing.html',
+        {
+            'manager': manager is not None,
+            'title': "Welcome to the Lab as a Service Dashboard"
+        }
+    )
 
 
 class LandingView(TemplateView):

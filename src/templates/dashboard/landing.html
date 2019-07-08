@@ -47,13 +47,13 @@
             </p>
             <div class="row">
                 <div class="col-12 col-xl-4">
-                    <button class="btn btn-primary w-100" onclick="cwf(0)">Book a Pod</button>
+                    <button class="btn btn-primary w-100" onclick="create_workflow(0)">Book a Pod</button>
                 </div>
                 <div class="col-12 col-xl-4">
-                    <button class="btn btn-primary w-100" onclick="cwf(1)">Design a Pod</button>
+                    <button class="btn btn-primary w-100" onclick="create_workflow(1)">Design a Pod</button>
                 </div>
                 <div class="col-12 col-xl-4">
-                    <button class="btn btn-primary w-100" onclick="cwf(2)">Configure a Pod</button>
+                    <button class="btn btn-primary w-100" onclick="create_workflow(2)">Configure a Pod</button>
                 </div>
             </div>
             {% endif %}
@@ -65,7 +65,7 @@
             <p>If you're a returning user, some of the following options may be of interest:</p>
             <div class="row">
                 <div class="col-12 col-xl-4">
-                    <button class="btn btn-primary w-100" onclick="cwf(3)">Snapshot a Host</button>
+                    <button class="btn btn-primary w-100" onclick="create_workflow(3)">Snapshot a Host</button>
                 </div>
                 <div class="col-12 col-xl-4">
                     <a class="btn btn-primary w-100" href="{% url 'account:my-bookings' %}">
@@ -74,7 +74,7 @@
                 </div>
                 {% if manager == True %}
                     <div class="col-12 col-xl-4">
-                        <button class="btn btn-primary w-100" onclick="continue_wf()">
+                        <button class="btn btn-primary w-100" onclick="continue_workflow()">
                             Resume Workflow
                         </button>
                     </div>
@@ -85,44 +85,10 @@
     </div>
 </div>
 
-<script type="text/javascript">
-    function cwf(type) {
-        $.ajax({
-            type: "POST",
-            url: "/",
-            data: {
-                "create": type
-            },
-            beforeSend: function (request) {
-                request.setRequestHeader("X-CSRFToken",
-                    $('input[name="csrfmiddlewaretoken"]').val()
-                );
-            }
-
-        }).done(function (data) {
-            window.location.replace("/wf/");
-        }).fail(function (jqxHR, textstatus) {
-            alert("Something went wrong...");
-        });
-    }
-
-    function continue_wf() {
-        window.location.replace("/wf/");
-    }
-</script>
-
 <div class="hidden_form d-none" id="form_div">
     <form method="post" action="" class="form" id="wf_selection_form">
         {% csrf_token %}
-
-        <input type="hidden" id="landing_action">
-
-        <button type="submit" class="btn btn btn-success">
-            Confirm Edit
-        </button>
     </form>
 </div>
 
-{% block vport_comm %}
-{% endblock %}
 {% endblock content %}

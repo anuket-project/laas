@@ -7,8 +7,6 @@
 <script>
     var mxLoadStylesheets = false;
 </script>
-<script type="text/javascript" src="/static/js/mxClient.min.js" ></script>
-<script type="text/javascript" src="/static/js/dashboard.js" ></script>
 {% endblock extrahead %}
 
 <!-- Calls the main function after the page has loaded. Container is dynamically created. -->
@@ -41,7 +39,6 @@
         {% csrf_token %}
         <input type="hidden" id="hidden_xml_input" name="xml" />
     </form>
-    <script type="text/javascript" src="/static/js/mxClient.min.js" ></script>
     <script>
         //gather context data
         let debug = false;

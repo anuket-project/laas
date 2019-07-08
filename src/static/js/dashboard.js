@@ -4,14 +4,107 @@
 
 form_submission_callbacks = [];  //all runnables will be executed before form submission
 
-
 ///////////////////
 // Global Functions
 ///////////////////
+function update_page(response) {
+    if( response.redirect )
+    {
+        window.location.replace(response.redirect);
+        return;
+    }
+    draw_breadcrumbs(response.meta);
+    update_exit_button(response.meta);
+    update_side_buttons(response.meta);
+    $("#formContainer").html(response.content);
+}
 
-function updatePage(data){
-    updateBreadcrumbs(data['meta']);
-    $("formContainer").html(data['content']);
+function update_side_buttons(meta) {
+    const step = meta.active;
+    const page_count = meta.steps.length;
+
+    const back_button = document.getElementById("gob");
+    if (step == 0) {
+        back_button.classList.add("disabled");
+        back_button.disabled = true;
+    } else {
+        back_button.classList.remove("disabled");
+        back_button.disabled = false;
+    }
+
+    const forward_btn = document.getElementById("gof");
+    if (step == page_count - 1) {
+        forward_btn.classList.add("disabled");
+        forward_btn.disabled = true;
+    } else {
+        forward_btn.classList.remove("disabled");
+        forward_btn.disabled = false;
+    }
+}
+
+function update_exit_button(meta) {
+    if (meta.workflow_count == 1) {
+        document.getElementById("cancel_btn").innerText = "Exit Workflow";
+    } else {
+        document.getElementById("cancel_btn").innerText = "Return to Parent";
+    }
+}
+
+function draw_breadcrumbs(meta) {
+    $("#topPagination").children().not(".page-control").remove();
+
+    for (const i in meta.steps) {
+        const step_btn = create_step(meta.steps[i], i == meta["active"]);
+        $("#topPagination li:last-child").before(step_btn);
+    }
+}
+
+function create_step(step_json, active) {
+    const step_dom = document.createElement("li");
+    // First create the dom object depending on active or not
+    step_dom.className = "topcrumb";
+    if (active) {
+        step_dom.classList.add("active");
+    }
+    $(step_dom).html(`<span class="d-flex align-items-center justify-content-center text-capitalize w-100">${step_json['title']}</span>`)
+
+    const code = step_json.valid;
+
+    let stat = "";
+    let msg = "";
+    if (code < 100) {
+        $(step_dom).children().first().append("<i class='ml-2 far fa-square'></i>")
+        stat = "";
+        msg = "";
+    } else if (code < 200) {
+        $(step_dom).children().first().append("<i class='ml-2 fas fa-minus-square'></i>")
+        stat = "invalid";
+        msg = step_json.message;
+    } else if (code < 300) {
+        $(step_dom).children().first().append("<i class='ml-2 far fa-check-square'></i>")
+        stat = "valid";
+        msg = step_json.message;
+    }
+
+    if (step_json.enabled == false) {
+        step_dom.classList.add("disabled");
+    }
+    if (active) {
+        update_message(msg, stat);
+    }
+
+    return step_dom;
+}
+
+function update_description(title, desc) {
+    document.getElementById("view_title").innerText = title;
+    document.getElementById("view_desc").innerText = desc;
+}
+
+function update_message(message, stepstatus) {
+    document.getElementById("view_message").innerText = message;
+    document.getElementById("view_message").className = "step_message";
+    document.getElementById("view_message").classList.add("message_" + stepstatus);
 }
 
 function submitStepForm(next_step = "current"){
@@ -22,11 +115,10 @@ function submitStepForm(next_step = "current"){
         "step_form": step_form_data,
         "csrfmiddlewaretoken": $("[name=csrfmiddlewaretoken]").val()
     });
-    console.log(form_data);
     $.post(
         '/workflow/manager/',
         form_data,
-        (data) => updatePage(data),
+        (data) => update_page(data),
         'json'
     ).fail(() => alert("failure"));
 }
@@ -35,6 +127,58 @@ function run_form_callbacks(){
     for(f of form_submission_callbacks)
         f();
     form_submission_callbacks = [];
+}
+
+function create_workflow(type) {
+    $.ajax({
+        type: "POST",
+        url: "/workflow/create/",
+        data: {
+            "workflow_type": type
+        },
+        headers: {
+            "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val()
+        }
+    }).done(function (data, textStatus, jqXHR) {
+        window.location = "/workflow/";
+    }).fail(function (jqxHR, textstatus) {
+        alert("Something went wrong...");
+    });
+}
+
+function add_workflow(type) {
+    data = $.ajax({
+        type: "POST",
+        url: "/workflow/add/",
+        data: {
+            "workflow_type": type
+        },
+        headers: {
+            "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val()
+        }
+    }).done(function (data, textStatus, jqXHR) {
+        update_page(data);
+    }).fail(function (jqxHR, textstatus) {
+        alert("Something went wrong...");
+    });
+}
+
+function pop_workflow() {
+    data = $.ajax({
+        type: "POST",
+        url: "/workflow/pop/",
+        headers: {
+            "X-CSRFToken": $('input[name="csrfmiddlewaretoken"]').val()
+        }
+    }).done(function (data, textStatus, jqXHR) {
+        update_page(data);
+    }).fail(function (jqxHR, textstatus) {
+        alert("Something went wrong...");
+    });
+}
+
+function continue_workflow() {
+    window.location.replace("/workflow/");
 }
 
 ///////////////////

@@ -1,27 +1,22 @@
 {% extends "workflow/viewport-element.html" %}
-{% load staticfiles %}
 
 {% load bootstrap4 %}
 
 {% block content %}
 
-<div id="{{select_type}}_form_div" class="h-100 border d-flex flex-column p-4">
+<div id="select_form_div" class="h-100 border d-flex flex-column p-4">
     <h3 id="create_section">Create a Resource
         <button class="btn btn-primary {% if disabled %} disabled {% endif %}"
-            {% if not disabled %}onclick="parent.add_wf({{addable_type_num}})"
+            {% if not disabled %}onclick="add_workflow({{addable_type_num}})"
             {% endif %}>Here
         </button>
     </h3>
     <div class="border-top"></div>
     <h3 id="select_header_section">Or select from the list below:</h3>
     <div id="select_section" class="d-flex flex-column">
-        <form id="{{select_type}}_select_form" method="post" action=""
-            class="form d-flex flex-column" id="{{select_type}}selectorform">
+        <form id="step_form" method="post" action="" class="form d-flex flex-column">
         {% csrf_token %}
         {{ form|default:"<p>no form loaded</p>" }}
-        {% buttons %}
-
-        {% endbuttons %}
         </form>
     </div>
 </div>
@@ -33,13 +28,3 @@
 </script>
 
 {% endblock content %}
-{% block onleave %}
-var form = $("#{{select_type}}_select_form");
-var formData = form.serialize();
-var req = new XMLHttpRequest();
-req.open("POST", "/wf/workflow/", false);
-req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-req.onerror = function() { alert("problem with form submission"); }
-req.send(formData);
-{% endblock %}
-
