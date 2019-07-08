@@ -24,13 +24,10 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url, include
+from django.conf.urls import url
 from django.urls import path
-from rest_framework import routers
 
 from api.views import (
-    BookingViewSet,
-    UserViewSet,
     lab_profile,
     lab_status,
     lab_inventory,
@@ -46,12 +43,7 @@ from api.views import (
     GenerateTokenView
 )
 
-router = routers.DefaultRouter()
-router.register(r'bookings', BookingViewSet)
-router.register(r'user', UserViewSet)
-
 urlpatterns = [
-    url(r'^', include(router.urls)),
     path('labs/<slug:lab_name>/profile', lab_profile),
     path('labs/<slug:lab_name>/status', lab_status),
     path('labs/<slug:lab_name>/inventory', lab_inventory),
