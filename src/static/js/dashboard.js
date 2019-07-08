@@ -1092,12 +1092,13 @@ class SearchableSelectMultipleWidget {
 
         for( const id in ids )
         {
-            const result_entry = document.createElement("li");
-            const result_button = document.createElement("a");
             const obj = this.items[id];
             const result_text = this.generate_element_text(obj);
-            result_entry.classList.add("list-group-item", "list-group-item-action");
+            const result_entry = document.createElement("a");
+            result_entry.href = "#";
             result_entry.innerText = result_text;
+            result_entry.title = result_text;
+            result_entry.classList.add("list-group-item", "list-group-item-action", "overflow-ellipsis", "flex-shrink-0");
             result_entry.onclick = function() { searchable_select_multiple_widget.select_item(obj.id); };
             const tooltip = document.createElement("span");
             const tooltiptext = document.createTextNode(result_text);
@@ -1156,21 +1157,39 @@ class SearchableSelectMultipleWidget {
             added_list.removeChild(added_list.firstChild);
         }
 
-        let list_html = "";
+        const list_html = document.createElement("div");
+        list_html.classList.add("list-group");
 
         for( const item_id of this.added_items )
         {
+            const times = document.createElement("li");
+            times.classList.add("fas", "fa-times");
+
+            const deleteButton = document.createElement("a");
+            deleteButton.href = "#";
+            deleteButton.innerHTML = "<i class='fas fa-times'></i>"
+            // Setting .onclick/.addEventListener does not work,
+            // which is why I took the setAttribute approach
+            // If anyone knows why, please let me know :]
+            deleteButton.setAttribute("onclick", `searchable_select_multiple_widget.remove_item(${item_id});`);
+            deleteButton.classList.add("btn");
+            const deleteColumn = document.createElement("div");
+            deleteColumn.classList.add("col-auto");
+            deleteColumn.append(deleteButton);
+
             const item = this.items[item_id];
-
             const element_entry_text = this.generate_element_text(item);
+            const textColumn = document.createElement("div");
+            textColumn.classList.add("col", "overflow-ellipsis");
+            textColumn.innerText = element_entry_text;
+            textColumn.title = element_entry_text;
 
-            list_html += '<div class="border rounded mt-2 w-100 d-flex align-items-center pl-2">'
-                + element_entry_text
-                + '<button onclick="searchable_select_multiple_widget.remove_item('
-                + item_id
-                + ')" class="btn btn-danger ml-auto">Remove</button>';
-            list_html += '</div>';
+            const itemRow = document.createElement("div");
+            itemRow.classList.add("list-group-item", "d-flex", "p-0", "align-items-center");
+            itemRow.append(textColumn, deleteColumn);
+
+            list_html.append(itemRow);
         }
-        added_list.innerHTML = list_html;
+        added_list.innerHTML = list_html.innerHTML;
     }
 }

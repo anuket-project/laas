@@ -78,14 +78,18 @@ a[aria-expanded="true"] > i.rotate {
     top: 0;
 }
 
-/* Dropdown for collaborators */
-#drop_results {
-    max-height: 10rem;
+.z-2 {
     z-index: 2;
 }
 
-#drop_results > li {
-    word-wrap: anywhere;
+.mh-30vh {
+    max-height: 30vh;
+}
+
+.overflow-ellipsis {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 /* Graphing for networks */
