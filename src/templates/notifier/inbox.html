@@ -18,6 +18,7 @@
     <div class="row flex-grow-1" id="fixHeight">
         <!-- Notification list && Controls -->
         <div class="mb-2 mb-lg-0 col-lg-2 px-0 mh-100">
+            <span class="text-muted d-none" id="noMessages">No messages available</span>
             <div class="list-group rounded-0 rounded-left overflow-auto mh-100 notifications" id="unreadNotifications" data-read="0">
                 {% for notification in unread_notifications %}
                     <a
@@ -56,18 +57,31 @@
         $(obj).addClass("active");
     }
 
+    // Shows messages in the given notification list.
+    // Shows/hides the 'no messages' span after checking children amount
+    // given the .notification classed element
+    function showMessages(notificationList) {
+        $(".notifications").addClass("d-none");
+        if (notificationList.children().length < 1) {
+            $("#noMessages").removeClass("d-none");
+        } else {
+            $("#noMessages").addClass("d-none");
+            notificationList.removeClass("d-none");
+        }
+    }
+
     $(document).ready(function(){
         // For all / unread / read
         $("#filterGroup button").click(function(){
             let read = $(this).attr("data-read");
             $(this).siblings().removeClass("active");
-            $(".notifications").addClass("d-none");
             $(this).addClass("active");
             if (read === "-1") {
-                return $(".notifications").removeClass("d-none");
+                return showMessages($(".notifications"));
             }
-            $(`.notifications[data-read="${read}"]`).removeClass("d-none");
+            return showMessages($(`.notifications[data-read="${read}"]`));
         });
+        showMessages($(".notifications"));
     });
 </script>
 {% endblock %}
