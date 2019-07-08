@@ -1,3 +1,5 @@
+.PHONY: build dev-up dev-start dev-stop up start stop data shell-nginx shell-web shell-db log-nginx log-web log-ps log-rmq log-worker
+
 build:
 	docker-compose -f docker-compose.yml -f docker-compose.override-dev.yml build
 
