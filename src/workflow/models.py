@@ -224,17 +224,8 @@ class WorkflowStep(object):
         template = get_template(self.template)
         return template.render(self.get_context(), request)
 
-    def post_render(self, request):
-        self.post(request.POST, request.user)
-        return self.render(request)
-
     def post(self, post_content, user):
         raise Exception("WorkflowStep subclass of type " + str(type(self)) + " has no concrete post() method")
-
-    def test_render(self, request):
-        if request.method == "POST":
-            return self.post_render(request)
-        return self.render(request)
 
     def validate(self, request):
         pass
