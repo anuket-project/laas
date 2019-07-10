@@ -386,13 +386,18 @@ class MultipleSelectFilterWidget {
     add_item_prepopulate(node, prepopulate){
         const div = document.createElement("DIV");
         div.id = "dropdown_" + this.dropdown_count;
-        div.classList.add("list-group-item");
+        div.classList.add("card", "flex-row", "d-flex", "mb-2");
         this.dropdown_count++;
         const label = document.createElement("H5")
         label.appendChild(document.createTextNode(node['name']))
+        label.classList.add("p-1", "m-1");
         div.appendChild(label);
-        div.appendChild(this.make_input(div, node, prepopulate));
-        div.appendChild(this.make_remove_button(div, node));
+        let input = this.make_input(div, node, prepopulate);
+        input.classList.add("flex-grow-1", "p-1", "m-1");
+        div.appendChild(input);
+        let remove_btn = this.make_remove_button(div, node);
+        remove_btn.classList.add("p-1", "m-1");
+        div.appendChild(remove_btn);
         document.getElementById("dropdown_wrapper").appendChild(div);
         return div;
     }
