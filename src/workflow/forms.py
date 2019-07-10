@@ -121,7 +121,12 @@ class SearchableSelectMultipleField(forms.Field):
                 raise ValidationError("Nothing was selected")
             else:
                 return []
-        data_as_list = json.loads(data)
+        try:
+            data_as_list = json.loads(data)
+        except json.decoder.JSONDecodeError:
+            data_as_list = None
+        if not data_as_list:
+            raise ValidationError("Contents Not JSON")
         if self.selectable_limit != -1:
             if len(data_as_list) > self.selectable_limit:
                 raise ValidationError("Too many items were selected")
@@ -271,7 +276,11 @@ class MultipleSelectFilterField(forms.Field):
         super().__init__(**kwargs)
 
     def to_python(self, value):
-        return json.loads(value)
+        try:
+            return json.loads(value)
+        except json.decoder.JSONDecodeError:
+            pass
+        raise ValidationError("content is not valid JSON")
 
 
 class FormUtils:

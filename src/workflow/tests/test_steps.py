@@ -7,229 +7,256 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-from django.test import TestCase
-from dashboard.populate_db import Populator
-from workflow.tests import constants
-from workflow.workflow_factory import WorkflowFactory
+"""
+This file tests basic functionality of each step class
+More in depth case coverage of WorkflowStep.post() must happen elsewhere.
+"""
+
+import json
+from unittest import SkipTest, mock
+
+from django.test import TestCase, RequestFactory
+from dashboard.testing_utils import make_lab, make_user, make_os,\
+    make_complete_host_profile, make_opnfv_role, make_image, make_grb,\
+    make_config_bundle, make_host, make_user_profile, make_generic_host
+from workflow import resource_bundle_workflow
+from workflow import booking_workflow
+from workflow import sw_bundle_workflow
 from workflow.models import Repository
-from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
-from workflow.sw_bundle_workflow import SWConf_Resource_Select, Define_Software, Config_Software
-from workflow.booking_workflow import Booking_Resource_Select, SWConfig_Select, Booking_Meta
-from django.http import QueryDict, HttpRequest
-from django.contrib.auth.models import User
-from resource_inventory.models import (
-    Scenario,
-    Installer,
-    OPNFVRole,
-    Image,
-    GenericResourceBundle,
-    ConfigBundle
-)
+from workflow.tests import test_fixtures
 
 
-class BaseStepTestCase(TestCase):
+class TestConfig:
+    """
+    Basic class to instantiate and hold reference
+    to models we will need often
+    """
+    def __init__(self, usr=None):
+        self.lab = make_lab()
+        self.user = usr or make_user()
+        self.os = make_os()
+        self.host_prof = make_complete_host_profile(self.lab)
+        self.host = make_host(self.host_prof, self.lab, name="host1")
+
+        # pod description as required by testing lib
+        self.topology = {
+            "host1": {
+                "type": self.host_prof,
+                "role": make_opnfv_role(),
+                "image": make_image(self.lab, 3, self.user, self.os, self.host_prof),
+                "nets": [
+                    [{"name": "public", "tagged": True, "public": True}]
+                ]
+            }
+        }
+        self.grb = make_grb(self.topology, self.user, self.lab)[0]
+        self.generic_host = make_generic_host(self.grb, self.host_prof, "host1")
+
+
+class StepTestCase(TestCase):
+
+    # after setUp is called, this should be an instance of a step
+    step = None
+
+    post_data = {}  # subclasses will set this
 
     @classmethod
     def setUpTestData(cls):
-        Populator().populate()
+        super().setUpTestData()
+        cls.factory = RequestFactory()
+        cls.user_prof = make_user_profile()
+        cls.user = cls.user_prof.user
 
-    def makeRepo(self):
+    def setUp(self):
+        super().setUp()
+        if self.step is None:
+            raise SkipTest("Step instance not given")
         repo = Repository()
-        repo.el[repo.SESSION_USER] = User.objects.filter(username="user 1").first()
-        return repo
+        self.add_to_repo(repo)
+        self.step = self.step(1, repo)
 
-    def step_test(self, step_type, data):
-        step = WorkflowFactory().make_step(step_type, self.makeRepo())
-        formData = QueryDict(mutable=True)
-        formData.update(data)
-        request = HttpRequest()
-        request.POST = formData
-        response = step.post_render(request)
-        context = step.get_context()
-        return response, context
-
-
-class BookingResourceSelectTestCase(BaseStepTestCase):
-
-    def test_step_with_good_data(self):
-        grb_model = GenericResourceBundle.objects.filter(owner__username="user 1").first()
-        grb = [{"small_name": grb_model.name, "expanded_name": "user 1", "id": grb_model.id, "string": ""}]
-        grb = str(grb).replace("'", '"')
-        data = {"generic_resource_bundle": grb}
-        response, context = self.step_test(Booking_Resource_Select, data)
-        self.assertTrue(True)
-
-    def test_step_with_bad_data(self):  # TODO
-        data = {}
-        response, context = self.step_test(Booking_Resource_Select, data)
-
-    def test_step_with_empty_data(self):
-        data = {}
-        response, context = self.step_test(SWConfig_Select, data)
-
-
-class SoftwareConfigSelectTestCase(BaseStepTestCase):
-
-    def test_step_with_good_data(self):
-        config_model = ConfigBundle.objects.filter(owner__username="user 1").first()
-        config = [{"expanded_name": "user 1", "small_name": config_model.name, "id": config_model.id, "string": ""}]
-        config = str(config).replace("'", '"')
-        data = {"software_bundle": config}
-        response, context = self.step_test(SWConfig_Select, data)
-
-    def test_step_with_bad_data(self):  # TODO
-        data = {}
-        response, context = self.step_test(SWConfig_Select, data)
-
-    def test_step_with_empty_data(self):
-        data = {}
-        response, context = self.step_test(SWConfig_Select, data)
-
-
-class BookingMetaTestCase(BaseStepTestCase):
-
-    def test_step_with_good_data(self):
-        data = {"length": 7, "project": "LaaS", "purpose": "testing"}
-        user2 = User.objects.get(username="user 2")
-        john = User.objects.get(username="johnsmith")
-        users = [
-            {"expanded_name": "", "id": user2.id, "small_name": user2.username, "string": user2.email},
-            {"expanded_name": "", "id": john.id, "small_name": john.username, "string": john.email}
-        ]
-        users = str(users).replace("'", '"')
-        data['users'] = users
-        response, context = self.step_test(Booking_Meta, data)
-
-    def test_step_with_bad_data(self):  # TODO
-        data = {}
-        response, context = self.step_test(Booking_Meta, data)
-
-    def test_step_with_empty_data(self):
-        data = {}
-        response, context = self.step_test(Booking_Meta, data)
-
-
-class DefineHardwareTestCase(BaseStepTestCase):
-
-    def test_step_with_good_data(self):
-        hosts = {"host_4": 1, "host_1": 1}
-        labs = {"lab_1": "true"}
-        data = {"hosts": hosts, "labs": labs}
-        response, context = self.step_test(Define_Hardware, data)
-
-    def test_step_with_bad_data(self):  # TODO
-        data = {}
-        response, context = self.step_test(Define_Hardware, data)
-
-    def test_step_with_empty_data(self):
-        data = {}
-        response, context = self.step_test(Define_Hardware, data)
-
-
-class DefineNetsTestCase(BaseStepTestCase):
-
-    def test_step_with_good_data(self):
-        xml = constants.POD_XML
-        data = {"xml": xml}
-        response, context = self.step_test(Define_Nets, data)
-
-    def test_step_with_bad_data(self):  # TODO
-        data = {}
-        response, context = self.step_test(Define_Nets, data)
-
-    def test_step_with_empty_data(self):
-        data = {}
-        response, context = self.step_test(Define_Nets, data)
-
-
-class ResourceMetaInfoTestCase(BaseStepTestCase):
-
-    def test_step_with_good_data(self):
-        data = {"bundle_description": "description", "bundle_name": "my testing bundle"}
-        response, context = self.step_test(Resource_Meta_Info, data)
-
-    def test_step_with_bad_data(self):  # TODO
-        data = {}
-        response, context = self.step_test(Resource_Meta_Info, data)
-
-    def test_step_with_empty_data(self):
-        data = {}
-        response, context = self.step_test(Resource_Meta_Info, data)
-
-
-class SWConfResourceSelectTestCase(BaseStepTestCase):
-
-    def test_step_with_good_data(self):
-        grb_model = GenericResourceBundle.objects.filter(owner__username="user 1").first()
-        grb = [{"small_name": grb_model.name, "expanded_name": "user 1", "id": grb_model.id, "string": ""}]
-        grb = str(grb).replace("'", '"')
-        data = {"generic_resource_bundle": grb}
-        response, context = self.step_test(SWConf_Resource_Select, data)
-
-    def test_step_with_bad_data(self):  # TODO
-        data = {}
-        response, context = self.step_test(SWConf_Resource_Select, data)
-
-    def test_step_with_empty_data(self):
-        data = {}
-        response, context = self.step_test(SWConf_Resource_Select, data)
-
-
-class DefineSoftwareTestCase(BaseStepTestCase):
-
-    def makeRepo(self):
+    def assertCorrectPostBehavior(self, post_data):
         """
-        put selected grb in repo for step
+        allows subclasses to override and make assertions about
+        the side effects of self.step.post()
+        post_data is the data passed into post()
         """
-        repo = super(DefineSoftwareTestCase, self).makeRepo()
-        grb = GenericResourceBundle.objects.filter(owner__username="user 1").first()
-        repo.el[repo.SWCONF_SELECTED_GRB] = grb
-        return repo
+        return
 
-    def test_step_with_good_data(self):
-        data = {"form-INITIAL_FORMS": 3, "form-MAX_NUM_FORMS": 1000}
-        data["form-MIN_NUM_FORMS"] = 0
-        data["form-TOTAL_FORMS"] = 3
-        an_image_id = Image.objects.get(name="a host image").id
-        another_image_id = Image.objects.get(name="another host image").id
-        control = OPNFVRole.objects.get(name="Controller")
-        compute = OPNFVRole.objects.get(name="Compute")
-        jumphost = OPNFVRole.objects.get(name="Jumphost")
-        data['form-0-image'] = an_image_id
-        data['form-1-image'] = an_image_id
-        data['form-2-image'] = another_image_id
-        data['form-0-role'] = compute.id
-        data['form-1-role'] = control.id
-        data['form-2-role'] = jumphost.id
-        response, context = self.step_test(Define_Software, data)
+    def add_to_repo(self, repo):
+        """
+        This method is a hook that allows subclasses to modify
+        the contents of the repo before the step is created.
+        """
+        return
 
-    def test_step_with_bad_data(self):  # TODO
-        data = {"form-INITIAL_FORMS": 0, "form-MAX_NUM_FORMS": 1000}
-        data["form-MIN_NUM_FORMS"] = 0
-        data["form-TOTAL_FORMS"] = 0
-        response, context = self.step_test(Define_Software, data)
+    def assertValidHtml(self, html_str):
+        """
+        This method should make sure that html_str is a valid
+        html fragment.
+        However, I know of no good way of doing this in python
+        """
+        self.assertTrue(isinstance(html_str, str))
+        self.assertGreater(len(html_str), 0)
 
-    def test_step_with_empty_data(self):
-        data = {"form-INITIAL_FORMS": 0, "form-MAX_NUM_FORMS": 1000}
-        data["form-MIN_NUM_FORMS"] = 0
-        data["form-TOTAL_FORMS"] = 0
-        response, context = self.step_test(Define_Software, data)
+    def test_render_to_string(self):
+        request = self.factory.get("/workflow/manager/")
+        request.user = self.user
+        response_html = self.step.render_to_string(request)
+        self.assertValidHtml(response_html)
+
+    def test_post(self, data=None):
+        post_data = data or self.post_data
+        self.step.post(post_data, self.user)
+        self.assertCorrectPostBehavior(data)
 
 
-class ConfigSoftwareTestCase(BaseStepTestCase):
+class SelectStepTestCase(StepTestCase):
+    # ID of model to be sent to the step's form
+    # can be an int or a list of ints
+    obj_id = -1
 
-    def test_step_with_good_data(self):
-        data = {"description": "description", "name": "namey"}
-        installer = Installer.objects.get(name="Fuel")
-        scenario = Scenario.objects.get(name="os-nosdn-nofeature-noha")
-        data['installer'] = installer.id
-        data['scenario'] = scenario.id
-        response, context = self.step_test(Config_Software, data)
+    def setUp(self):
+        super().setUp()
 
-    def test_step_with_bad_data(self):  # TODO
-        data = {}
-        response, context = self.step_test(Config_Software, data)
+        try:
+            iter(self.obj_id)
+        except TypeError:
+            self.obj_id = [self.obj_id]
 
-    def test_step_with_empty_data(self):
-        data = {}
-        response, context = self.step_test(Config_Software, data)
+        field_data = json.dumps(self.obj_id)
+        self.post_data = {
+            "searchable_select": [field_data]
+        }
+
+
+class DefineHardwareTestCase(StepTestCase):
+    step = resource_bundle_workflow.Define_Hardware
+    post_data = {
+        "filter_field": {
+            "lab": {
+                "lab_35": {"selected": True, "id": 35}},
+            "host": {
+                "host_1": {"selected": True, "id": 1}}
+        }
+    }
+
+
+class DefineNetworkTestCase(StepTestCase):
+    step = resource_bundle_workflow.Define_Nets
+    post_data = {"xml": test_fixtures.MX_GRAPH_MODEL}
+
+
+class ResourceMetaTestCase(StepTestCase):
+    step = resource_bundle_workflow.Resource_Meta_Info
+    post_data = {
+        "bundle_name": "my_bundle",
+        "bundle_description": "My Bundle"
+    }
+
+
+class BookingResourceTestCase(SelectStepTestCase):
+    step = booking_workflow.Booking_Resource_Select
+
+    def add_to_repo(self, repo):
+        repo.el[repo.SESSION_USER] = self.user
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        conf = TestConfig(usr=cls.user)
+        cls.obj_id = conf.grb.id
+
+
+class SoftwareSelectTestCase(SelectStepTestCase):
+    step = booking_workflow.SWConfig_Select
+
+    def add_to_repo(self, repo):
+        repo.el[repo.SESSION_USER] = self.user
+        repo.el[repo.SELECTED_GRESOURCE_BUNDLE] = self.conf.grb
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.conf = TestConfig(usr=cls.user)
+        host_map = {"host1": cls.conf.generic_host}
+        config_bundle = make_config_bundle(cls.conf.grb, cls.conf.user, cls.conf.topology, host_map)[0]
+        cls.obj_id = config_bundle.id
+
+
+class OPNFVSelectTestCase(SelectStepTestCase):
+    step = booking_workflow.OPNFV_Select
+
+    def add_to_repo(self, repo):
+        repo.el[repo.SELECTED_CONFIG_BUNDLE] = self.config_bundle
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        conf = TestConfig(usr=cls.user)
+        host_map = {"host1": conf.generic_host}
+        cls.config_bundle, opnfv_config = make_config_bundle(conf.grb, conf.user, conf.topology, host_map)
+        cls.obj_id = opnfv_config.id
+
+
+class BookingMetaTestCase(StepTestCase):
+    step = booking_workflow.Booking_Meta
+    post_data = {
+        "length": 14,
+        "purpose": "Testing",
+        "project": "Lab as a Service",
+        "users": ["[-1]"]
+    }
+
+    def add_to_repo(self, repo):
+        repo.el[repo.SESSION_MANAGER] = mock.MagicMock()
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        new_user = make_user(username="collaborator", email="different@mail.com")
+        new_user_prof = make_user_profile(user=new_user)
+        data = "[" + str(new_user_prof.id) + "]"  # list of IDs
+        cls.post_data['users'] = [data]
+
+
+class ConfigResourceSelectTestCase(SelectStepTestCase):
+    step = sw_bundle_workflow.SWConf_Resource_Select
+
+    def add_to_repo(self, repo):
+        repo.el[repo.SESSION_USER] = self.user
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        conf = TestConfig(usr=cls.user)
+        cls.obj_id = conf.grb.id
+
+
+class DefineSoftwareTestCase(StepTestCase):
+    step = sw_bundle_workflow.Define_Software
+    post_data = {
+        "form-0-image": 1,
+        "headnode": 1,
+        "form-0-headnode": "",
+        "form-TOTAL_FORMS": 1,
+        "form-INITIAL_FORMS": 1,
+        "form-MIN_NUM_FORMS": 0,
+        "form-MAX_NUM_FORMS": 1000,
+    }
+
+    def add_to_repo(self, repo):
+        repo.el[repo.SELECTED_GRESOURCE_BUNDLE] = self.conf.grb
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.conf = TestConfig(usr=cls.user)
+
+
+class ConfigSoftwareTestCase(StepTestCase):
+    step = sw_bundle_workflow.Config_Software
+    post_data = {
+        "name": "config_bundle",
+        "description": "My Config Bundle"
+    }

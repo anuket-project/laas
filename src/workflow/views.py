@@ -8,13 +8,12 @@
 ##############################################################################
 
 
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import render
 
 import uuid
 
 from workflow.workflow_manager import ManagerTracker, SessionManager
-from booking.models import Booking
 
 import logging
 logger = logging.getLogger(__name__)

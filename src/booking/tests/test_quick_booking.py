@@ -8,6 +8,7 @@
 ##############################################################################
 
 import datetime
+import json
 
 from django.test import TestCase, Client
 
@@ -30,7 +31,9 @@ from dashboard.testing_utils import (
 class QuickBookingValidFormTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = make_user(False, username="newtestuser", password="testpassword")
+        cls.user = make_user(False, username="newtestuser")
+        cls.user.set_password("testpassword")
+        cls.user.save()
         make_user_profile(cls.user, True)
 
         lab_user = make_user(True)
@@ -51,7 +54,20 @@ class QuickBookingValidFormTestCase(TestCase):
     @classmethod
     def build_post_data(cls):
         return {
-            'filter_field': '{"hosts":[{"host_' + str(cls.host_profile.id) + '":"true"}], "labs": [{"lab_' + str(cls.lab.lab_user.id) + '":"true"}]}',
+            'filter_field': json.dumps({
+                "host": {
+                    "host_" + str(cls.host_profile.id): {
+                        "selected": True,
+                        "id": cls.host_profile.id
+                    }
+                },
+                "lab": {
+                    "lab_" + str(cls.lab.lab_user.id): {
+                        "selected": True,
+                        "id": cls.lab.lab_user.id
+                    }
+                }
+            }),
             'purpose': 'my_purpose',
             'project': 'my_project',
             'length': '3',
@@ -70,7 +86,7 @@ class QuickBookingValidFormTestCase(TestCase):
         return response
 
     def setUp(self):
-        self.client.login(username=self.user.username, password="testpassword")
+        self.client.login(username="newtestuser", password="testpassword")
 
     def assertValidBooking(self, booking):
         self.assertEqual(booking.owner, self.user)
@@ -116,13 +132,40 @@ class QuickBookingValidFormTestCase(TestCase):
         self.assertIsNone(Booking.objects.first())
 
     def test_with_invalid_host_id(self):
-        response = self.post({'filter_field': '{"hosts":[{"host_' + str(self.host_profile.id + 100) + '":"true"}], "labs": [{"lab_' + str(self.lab.lab_user.id) + '":"true"}]}'})
+        response = self.post({'filter_field': json.dumps({
+            "host": {
+                "host_" + str(self.host_profile.id + 100): {
+                    "selected": True,
+                    "id": self.host_profile.id + 100
+                }
+            },
+            "lab": {
+                "lab_" + str(self.lab.lab_user.id): {
+                    "selected": True,
+                    "id": self.lab.lab_user.id
+                }
+            }
+        })})
 
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(Booking.objects.first())
 
     def test_with_invalid_lab_id(self):
         response = self.post({'filter_field': '{"hosts":[{"host_' + str(self.host_profile.id) + '":"true"}], "labs": [{"lab_' + str(self.lab.lab_user.id + 100) + '":"true"}]}'})
+        response = self.post({'filter_field': json.dumps({
+            "host": {
+                "host_" + str(self.host_profile.id): {
+                    "selected": True,
+                    "id": self.host_profile.id
+                }
+            },
+            "lab": {
+                "lab_" + str(self.lab.lab_user.id + 100): {
+                    "selected": True,
+                    "id": self.lab.lab_user.id + 100
+                }
+            }
+        })})
 
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(Booking.objects.first())
@@ -134,17 +177,16 @@ class QuickBookingValidFormTestCase(TestCase):
         self.assertIsNone(Booking.objects.first())
 
     def test_with_garbage_users_field(self):  # expected behavior: treat as though field is empty if it has garbage data
-        response = self.post({'users': 'X�]QP�槰DP�+m���h�U�_�yJA:.rDi��QN|.��C��n�P��F!��D�����5ȅj�9�LV��'})  # output from /dev/urandom
+        response = self.post({'users': ['X�]QP�槰DP�+m���h�U�_�yJA:.rDi��QN|.��C��n�P��F!��D�����5ȅj�9�LV��']})  # output from /dev/urandom
 
         self.assertEqual(response.status_code, 200)
         booking = Booking.objects.first()
-        self.assertIsNotNone(booking)
-        self.assertValidBooking(booking)
+        self.assertIsNone(booking)
 
     def test_with_valid_form(self):
         response = self.post()
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)  # success should redirect
         booking = Booking.objects.first()
         self.assertIsNotNone(booking)
         self.assertValidBooking(booking)

@@ -9,12 +9,8 @@
 
 
 from django.conf.urls import url
-from django.conf import settings
 
 from workflow.views import manager_view, viewport_view, add_workflow, remove_workflow, create_workflow
-from workflow.models import Repository
-from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
-from workflow.booking_workflow import SWConfig_Select, Booking_Resource_Select, Booking_Meta
 
 app_name = 'workflow'
 urlpatterns = [
@@ -25,11 +21,3 @@ urlpatterns = [
     url(r'^pop/$', remove_workflow, name='remove_workflow'),
     url(r'^$', viewport_view, name='viewport')
 ]
-
-if settings.TESTING:
-    urlpatterns.append(url(r'^workflow/step/define_hardware$', Define_Hardware("", Repository()).test_render))
-    urlpatterns.append(url(r'^workflow/step/define_net$', Define_Nets("", Repository()).test_render))
-    urlpatterns.append(url(r'^workflow/step/resource_meta$', Resource_Meta_Info("", Repository()).test_render))
-    urlpatterns.append(url(r'^workflow/step/booking_meta$', Booking_Meta("", Repository()).test_render))
-    urlpatterns.append(url(r'^workflow/step/software_select$', SWConfig_Select("", Repository()).test_render))
-    urlpatterns.append(url(r'^workflow/step/resource_select$', Booking_Resource_Select("", Repository()).test_render))

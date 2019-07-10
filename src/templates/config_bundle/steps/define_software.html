@@ -27,20 +27,19 @@
 
 {% block tablejs %}
 <script>
-
     document.getElementById("radio_{{headnode}}").checked = true;
 
+    function radio_pre_submit(){
+        var parents = document.getElementsByClassName("table_hidden_input_parent");
+        for(const node of parents){
+            const radio = node.getElementsByClassName("my_radio")[0];
+            const checkbox = radio.nextElementSibling;
+            if(radio.checked){
+                checkbox.value = "True";
+            }
+        }
+    }
+
+    form_submission_callbacks.push(radio_pre_submit);
 </script>
 {% endblock tablejs %}
-
-
-{% block onleave %}
-var parents = document.getElementsByClassName("table_hidden_input_parent");
-for(var i=0; i<parents.length; i++){
-    var node = parents[i];
-    var radio = node.getElementsByClassName("my_radio")[0];
-    var checkbox = radio.nextElementSibling;
-    if(radio.checked){
-        checkbox.value = "True";
-    }
-}
