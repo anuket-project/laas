@@ -12,14 +12,10 @@ services:
     web:
         image: opnfv/pharos-tools-laas-dashboard:dev
         build:
-           context: .
-           dockerfile: web/Dockerfile
-        volumes:
-            - ./src:/pharos_dashboard
+            context: .
+            dockerfile: web/Dockerfile
     worker:
         image: opnfv/pharos-tools-laas-celery:dev
         build:
-           context: .
-           dockerfile: worker/Dockerfile
-        volumes:
-            - ./src:/pharos_dashboard
+            context: .
+            dockerfile: worker/Dockerfile
