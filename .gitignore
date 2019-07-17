@@ -42,3 +42,6 @@ config.env
 # rsa key files
 src/account/rsa.pem
 src/account/rsa.pub
+
+# javascript unit testing
+tests/node_modules
