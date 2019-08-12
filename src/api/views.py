@@ -12,6 +12,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from django.views import View
 from django.http.response import JsonResponse, HttpResponse
 from rest_framework import viewsets
@@ -20,6 +21,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from api.serializers.booking_serializer import BookingSerializer
 from api.serializers.old_serializers import UserSerializer
+from api.forms import DowntimeForm
 from account.models import UserProfile
 from booking.models import Booking
 from api.models import LabManagerTracker, get_task
@@ -148,6 +150,40 @@ def current_jobs(request, lab_name=""):
     lab_token = request.META.get('HTTP_AUTH_TOKEN')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
     return JsonResponse(lab_manager.get_current_jobs(), safe=False)
+
+
+def lab_downtime(request, lab_name=""):
+    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_manager = LabManagerTracker.get(lab_name, lab_token)
+    if request.method == "GET":
+        return JsonResponse(lab_manager.get_downtime_json())
+    if request.method == "POST":
+        return post_lab_downtime(request, lab_manager)
+    if request.method == "DELETE":
+        return delete_lab_downtime(lab_manager)
+    return HttpResponse(status=405)
+
+
+def post_lab_downtime(request, lab_manager):
+    current_downtime = lab_manager.get_downtime()
+    if current_downtime.exists():
+        return JsonResponse({"error": "Lab is already in downtime"}, status=422)
+    form = DowntimeForm(request.POST)
+    if form.is_valid():
+        return JsonResponse(lab_manager.create_downtime(form))
+    else:
+        return JsonResponse(form.errors.get_json_data(), status=400)
+
+
+def delete_lab_downtime(lab_manager):
+    current_downtime = lab_manager.get_downtime()
+    if current_downtime.exists():
+        dt = current_downtime.first()
+        dt.end = timezone.now()
+        dt.save()
+        return JsonResponse(lab_manager.get_downtime_json(), safe=False)
+    else:
+        return JsonResponse({"error": "Lab is not in downtime"}, status=422)
 
 
 def done_jobs(request, lab_name=""):
