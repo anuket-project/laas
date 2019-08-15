@@ -59,6 +59,7 @@ class ResourceManager:
         for profile in profile_count.keys():
             available = Host.objects.filter(
                 booked=False,
+                working=True,
                 lab=grb.lab,
                 profile=profile
             ).count()
@@ -144,7 +145,7 @@ class ResourceManager:
         host_full_set = Host.objects.filter(lab__name__exact=labName, profile=genericHost.profile)
         if not host_full_set.first():
             raise ResourceExistenceException("No matching servers found")
-        host_set = host_full_set.filter(booked=False)
+        host_set = host_full_set.filter(booked=False, working=True)
         if not host_set.first():
             raise ResourceAvailabilityException("No unbooked hosts match requested hosts")
         host = host_set.first()
