@@ -168,3 +168,23 @@ class PublicNetwork(models.Model):
     in_use = models.BooleanField(default=False)
     cidr = models.CharField(max_length=50, default="0.0.0.0/0")
     gateway = models.CharField(max_length=50, default="0.0.0.0")
+
+
+class Downtime(models.Model):
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
+    description = models.TextField(default="This lab will be down for maintenance")
+
+    def save(self, *args, **kwargs):
+        if self.start >= self.end:
+            raise ValueError('Start date is after end date')
+
+        # check for overlapping downtimes
+        overlap_start = Downtime.objects.filter(lab=self.lab, start__gt=self.start, start__lt=self.end).exists()
+        overlap_end = Downtime.objects.filter(lab=self.lab, end__lt=self.end, end__gt=self.start).exists()
+
+        if overlap_start or overlap_end:
+            raise ValueError('Overlapping Downtime')
+
+        return super(Downtime, self).save(*args, **kwargs)

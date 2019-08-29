@@ -20,7 +20,7 @@ from django.urls import reverse
 
 from resource_inventory.models import ResourceBundle, HostProfile, Image, Host
 from resource_inventory.resource_manager import ResourceManager
-from account.models import Lab
+from account.models import Lab, Downtime
 from booking.models import Booking
 from booking.stats import StatisticsManager
 from booking.forms import HostReImageForm
@@ -79,8 +79,9 @@ class BookingView(TemplateView):
     def get_context_data(self, **kwargs):
         booking = get_object_or_404(Booking, id=self.kwargs['booking_id'])
         title = 'Booking Details'
+        downtime = Downtime.objects.filter(lab=booking.lab, start__lt=timezone.now, end__gt=timezone.now()).first()
         context = super(BookingView, self).get_context_data(**kwargs)
-        context.update({'title': title, 'booking': booking})
+        context.update({'title': title, 'booking': booking, 'downtime': downtime})
         return context
 
 
