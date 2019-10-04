@@ -12,5 +12,5 @@
 from django.contrib import admin
 
 
-admin.site.site_header = "Pharos Dashboard Administration"
-admin.site.site_title = "Pharos Dashboard"
+admin.site.site_header = "Laas Dashboard Administration"
+admin.site.site_title = "Laas Dashboard"

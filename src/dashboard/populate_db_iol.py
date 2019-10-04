@@ -262,7 +262,7 @@ class Populator:
 
     def get_lab_data(self, lab):
         data = {}
-        path = "/pharos_dashboard/data/" + lab.name + "/"
+        path = "/laas_dashboard/data/" + lab.name + "/"
         host_file = open(path + "hostlist.json")
         host_structure = json.loads(host_file.read())
         host_file.close()

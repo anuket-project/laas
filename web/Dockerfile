@@ -19,8 +19,8 @@ ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
 ADD web/init.sh /init.sh
-ADD src/ /pharos_dashboard/
-COPY --from=static /static/ pharos_dashboard/static/
+ADD src/ /laas_dashboard/
+COPY --from=static /static/ laas_dashboard/static/
 
-WORKDIR /pharos_dashboard/
+WORKDIR /laas_dashboard/
 CMD ["/init.sh"]

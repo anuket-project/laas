@@ -7,4 +7,4 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-celery -A pharos_dashboard worker -l info -B --schedule=~/celerybeat-schedule
+celery -A laas_dashboard worker -l info -B --schedule=~/celerybeat-schedule

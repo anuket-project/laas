@@ -9,7 +9,7 @@
 ##############################################################################
 
 
-"""pharos_dashboard URL Configuration
+"""laas_dashboard URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.10/topics/http/urls/
