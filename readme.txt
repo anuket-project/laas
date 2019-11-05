@@ -10,7 +10,7 @@
 
 The dashboard is deployed using docker-compose.
 
-Application / database files are saved in the 'pharos-data' container
+Application / database files are saved in the 'laas-data' container
 which needs to be pre-built before bringing up the dashboard.
 
 Deployment:

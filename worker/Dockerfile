@@ -13,10 +13,10 @@ ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
 ADD worker/init.sh /init.sh
-ADD src/ /pharos_dashboard/
+ADD src/ /laas_dashboard/
 
 RUN useradd -ms /bin/bash celery
 USER celery
 
-WORKDIR /pharos_dashboard/
+WORKDIR /laas_dashboard/
 CMD ["/init.sh"]

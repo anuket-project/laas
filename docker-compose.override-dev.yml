@@ -10,12 +10,12 @@
 version: '3'
 services:
     web:
-        image: opnfv/pharos-tools-laas-dashboard:dev
+        image: opnfv/laas-dashboard:dev
         build:
             context: .
             dockerfile: web/Dockerfile
     worker:
-        image: opnfv/pharos-tools-laas-celery:dev
+        image: opnfv/laas-celery:dev
         build:
             context: .
             dockerfile: worker/Dockerfile

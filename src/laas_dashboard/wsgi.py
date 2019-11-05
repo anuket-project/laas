@@ -9,7 +9,7 @@
 
 
 """
-WSGI config for pharos_dashboard project.
+WSGI config for laas_dashboard project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -21,6 +21,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pharos_dashboard.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "laas_dashboard.settings")
 
 application = get_wsgi_application()

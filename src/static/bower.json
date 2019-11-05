@@ -1,9 +1,9 @@
 {
-  "name": "pharos-dashboard-dependencies",
+  "name": "laas-dashboard-dependencies",
   "authors": [
     "maxbr <maxbr@mi.fu-berlin.de>"
   ],
-  "description": "This package contains all the Js/CSS dependencies needed to run the Pharos Dashboard.",
+  "description": "This package contains all the Js/CSS dependencies needed to run the Laas Dashboard.",
   "main": "",
   "license": "Apache2",
   "homepage": "",

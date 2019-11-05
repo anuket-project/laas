@@ -51,7 +51,7 @@ MIDDLEWARE = [
     'account.middleware.TimezoneMiddleware',
 ]
 
-ROOT_URLCONF = 'pharos_dashboard.urls'
+ROOT_URLCONF = 'laas_dashboard.urls'
 
 TEMPLATES = [
     {
@@ -74,7 +74,7 @@ TEMPLATE_CONTEXT_PROCESSORS = [
     'dashboard.context_processors.debug',
 ]
 
-WSGI_APPLICATION = 'pharos_dashboard.wsgi.application'
+WSGI_APPLICATION = 'laas_dashboard.wsgi.application'
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators

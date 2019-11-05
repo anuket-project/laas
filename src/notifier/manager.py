@@ -93,7 +93,7 @@ class NotificationHandler(object):
             send_mail(
                 "Your Booking is Ready",
                 message,
-                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@pharos-dashboard"),
+                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@laas-dashboard"),
                 [user.userprofile.email_addr],
                 fail_silently=False
             )
@@ -117,7 +117,7 @@ class NotificationHandler(object):
             send_mail(
                 "Your Booking has Expired",
                 message,
-                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@pharos-dashboard"),
+                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@laas-dashboard"),
                 user.userprofile.email_addr,
                 fail_silently=False
             )
