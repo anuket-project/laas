@@ -23,7 +23,7 @@ def booking_poll():
         for hostrelation in qs:
             config = hostrelation.config
             config.clear_delta()
-            config.set_power("off")
+            config.power = "off"
             config.save()
             hostrelation.status = JobStatus.NEW
             hostrelation.save()

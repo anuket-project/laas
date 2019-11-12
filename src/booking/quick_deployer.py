@@ -245,7 +245,7 @@ def configure_networking(grb, config):
     # create network
     net = Network.objects.create(name="public", bundle=grb, is_public=True)
     # connect network to generic host
-    grb.getHosts()[0].generic_interfaces.first().connections.add(
+    grb.getResources()[0].generic_interfaces.first().connections.add(
         NetworkConnection.objects.create(network=net, vlan_is_tagged=False)
     )
     # asign network role

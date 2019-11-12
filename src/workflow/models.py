@@ -146,7 +146,7 @@ class BookingAuthManager():
             return True  # admin override for this user
         if Booking.objects.filter(owner=booking.owner, end__gt=timezone.now()).count() >= 3:
             return False
-        if len(booking.resource.template.getHosts()) < 2:
+        if len(booking.resource.template.getResources()) < 2:
             return True  # if they only have one server, we dont care
         if repo.BOOKING_INFO_FILE not in repo.el:
             return False  # INFO file not provided

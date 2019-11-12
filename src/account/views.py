@@ -33,7 +33,7 @@ from account.forms import AccountSettingsForm
 from account.jira_util import SignatureMethod_RSA_SHA1
 from account.models import UserProfile
 from booking.models import Booking
-from resource_inventory.models import GenericResourceBundle, ConfigBundle, Image, Host
+from resource_inventory.models import GenericResourceBundle, ConfigBundle, Image
 
 
 @method_decorator(login_required, name='dispatch')
@@ -229,7 +229,7 @@ def account_images_view(request):
     public_images = Image.objects.filter(public=True)
     used_images = {}
     for image in my_images:
-        if Host.objects.filter(booked=True, config__image=image).exists():
+        if image.in_use():
             used_images[image.id] = "true"
     context = {
         "title": "Images",
@@ -286,7 +286,7 @@ def image_delete_view(request, image_id=None):
     if image.public or image.owner.id != request.user.id:
         return HttpResponse('no')  # 403?
     # check if used in booking
-    if Host.objects.filter(booked=True, config__image=image).exists():
+    if image.in_use():
         return HttpResponse('no')  # 403?
     image.delete()
     return HttpResponse('')

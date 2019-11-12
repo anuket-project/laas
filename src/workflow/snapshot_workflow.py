@@ -36,7 +36,7 @@ class Select_Host_Step(WorkflowStep):
             booking_hosts[booking.id]['start'] = booking.start.strftime("%Y-%m-%d")
             booking_hosts[booking.id]['end'] = booking.end.strftime("%Y-%m-%d")
             booking_hosts[booking.id]['hosts'] = []
-            for genericHost in booking.resource.template.getHosts():
+            for genericHost in booking.resource.template.getResources():
                 booking_hosts[booking.id]['hosts'].append({"name": genericHost.resource.name})
 
         context['booking_hosts'] = booking_hosts

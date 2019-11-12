@@ -202,7 +202,7 @@ class Assign_Host_Roles(WorkflowStep):  # taken verbatim from Define_Software in
         if config is None:
             context['error'] = "Please select a Configuration on the first step"
 
-        formset = self.create_host_role_formset(hostlist=config.bundle.getHosts())
+        formset = self.create_host_role_formset(hostlist=config.bundle.getResources())
         context['formset'] = formset
 
         return context

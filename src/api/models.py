@@ -27,7 +27,8 @@ from resource_inventory.models import (
     Interface,
     HostOPNFVConfig,
     RemoteInfo,
-    OPNFVConfig
+    OPNFVConfig,
+    ConfigState
 )
 from resource_inventory.idf_templater import IDFTemplater
 from resource_inventory.pdf_templater import PDFTemplater
@@ -294,32 +295,12 @@ class Job(models.Model):
 
     def to_dict(self):
         d = {}
-        j = {}
-        j['id'] = self.id
-        for relation in AccessRelation.objects.filter(job=self):
-            if 'access' not in d:
-                d['access'] = {}
-            d['access'][relation.task_id] = relation.config.to_dict()
-        for relation in SoftwareRelation.objects.filter(job=self):
-            if 'software' not in d:
-                d['software'] = {}
-            d['software'][relation.task_id] = relation.config.to_dict()
-        for relation in HostHardwareRelation.objects.filter(job=self):
-            if 'hardware' not in d:
-                d['hardware'] = {}
-            d['hardware'][relation.task_id] = relation.config.to_dict()
-        for relation in HostNetworkRelation.objects.filter(job=self):
-            if 'network' not in d:
-                d['network'] = {}
-            d['network'][relation.task_id] = relation.config.to_dict()
-        for relation in SnapshotRelation.objects.filter(job=self):
-            if 'snapshot' not in d:
-                d['snapshot'] = {}
-            d['snapshot'][relation.task_id] = relation.config.to_dict()
+        for relation in self.get_tasklist():
+            if relation.job_key not in d:
+                d[relation.job_key] = {}
+            d[relation.job_key][relation.task_id] = relation.config.to_dict()
 
-        j['payload'] = d
-
-        return j
+        return {"id": self.id, "payload": d}
 
     def get_tasklist(self, status="all"):
         tasklist = []
@@ -351,48 +332,54 @@ class Job(models.Model):
 
     def get_delta(self, status):
         d = {}
-        j = {}
-        j['id'] = self.id
-        for relation in AccessRelation.objects.filter(job=self).filter(status=status):
-            if 'access' not in d:
-                d['access'] = {}
-            d['access'][relation.task_id] = relation.config.get_delta()
-        for relation in SoftwareRelation.objects.filter(job=self).filter(status=status):
-            if 'software' not in d:
-                d['software'] = {}
-            d['software'][relation.task_id] = relation.config.get_delta()
-        for relation in HostHardwareRelation.objects.filter(job=self).filter(status=status):
-            if 'hardware' not in d:
-                d['hardware'] = {}
-            d['hardware'][relation.task_id] = relation.config.get_delta()
-        for relation in HostNetworkRelation.objects.filter(job=self).filter(status=status):
-            if 'network' not in d:
-                d['network'] = {}
-            d['network'][relation.task_id] = relation.config.get_delta()
-        for relation in SnapshotRelation.objects.filter(job=self).filter(status=status):
-            if 'snapshot' not in d:
-                d['snapshot'] = {}
-            d['snapshot'][relation.task_id] = relation.config.get_delta()
+        for relation in self.get_tasklist(status=status):
+            if relation.job_key not in d:
+                d[relation.job_key] = {}
+            d[relation.job_key][relation.task_id] = relation.config.get_delta()
 
-        j['payload'] = d
-        return j
+        return {"id": self.id, "payload": d}
 
     def to_json(self):
         return json.dumps(self.to_dict())
 
 
 class TaskConfig(models.Model):
+    state = models.IntegerField(default=ConfigState.CLEAN)
+
+    keys = set()  # TODO: This needs to be an instance variable, not a class variable
+    delta_keys_list = models.CharField(max_length=200, default="[]")
+
+    @property
+    def delta_keys(self):
+        return list(set(json.loads(self.delta_keys_list)))
+
+    @delta_keys.setter
+    def delta_keys(self, keylist):
+        self.delta_keys_list = json.dumps(keylist)
+
     def to_dict(self):
-        pass
+        raise NotImplementedError
 
     def get_delta(self):
-        pass
+        raise NotImplementedError
+
+    def format_delta(self, config, token):
+        delta = {k: config[k] for k in self.delta_keys}
+        delta['lab_token'] = token
+        return delta
 
     def to_json(self):
         return json.dumps(self.to_dict())
 
     def clear_delta(self):
-        self.delta = '{}'
+        self.delta_keys = []
+
+    def set(self, *args):
+        dkeys = self.delta_keys
+        for arg in args:
+            if arg in self.keys:
+                dkeys.append(arg)
+        self.delta_keys = dkeys
 
 
 class BridgeConfig(models.Model):
@@ -606,55 +593,12 @@ class HardwareConfig(TaskConfig):
     ipmi_create = models.BooleanField(default=False)
     delta = models.TextField()
 
-    def to_dict(self):
-        d = {}
-        d['image'] = self.image
-        d['power'] = self.power
-        d['hostname'] = self.hostname
-        d['ipmi_create'] = str(self.ipmi_create)
-        d['id'] = self.hosthardwarerelation.host.labid
-        return d
-
-    def to_json(self):
-        return json.dumps(self.to_dict())
+    keys = set(["id", "image", "power", "hostname", "ipmi_create"])
 
     def get_delta(self):
-        if not self.delta:
-            self.delta = self.to_json()
-            self.save()
-        d = json.loads(self.delta)
-        d['lab_token'] = self.hosthardwarerelation.lab_token
-        return d
-
-    def clear_delta(self):
-        d = {}
-        d["id"] = self.hosthardwarerelation.host.labid
-        d["lab_token"] = self.hosthardwarerelation.lab_token
-        self.delta = json.dumps(d)
-
-    def set_image(self, image):
-        self.image = image
-        d = json.loads(self.delta)
-        d['image'] = self.image
-        self.delta = json.dumps(d)
-
-    def set_power(self, power):
-        self.power = power
-        d = json.loads(self.delta)
-        d['power'] = power
-        self.delta = json.dumps(d)
-
-    def set_hostname(self, hostname):
-        self.hostname = hostname
-        d = json.loads(self.delta)
-        d['hostname'] = hostname
-        self.delta = json.dumps(d)
-
-    def set_ipmi_create(self, ipmi_create):
-        self.ipmi_create = ipmi_create
-        d = json.loads(self.delta)
-        d['ipmi_create'] = ipmi_create
-        self.delta = json.dumps(d)
+        return self.format_delta(
+            self.hosthardwarerelation.host.get_configuration(self.state),
+            self.hosthardwarerelation.lab_token)
 
 
 class NetworkConfig(TaskConfig):
@@ -781,6 +725,8 @@ class TaskRelation(models.Model):
     lab_token = models.CharField(default="null", max_length=50)
     message = models.TextField(default="")
 
+    job_key = None
+
     def delete(self, *args, **kwargs):
         self.config.delete()
         return super(self.__class__, self).delete(*args, **kwargs)
@@ -794,6 +740,7 @@ class TaskRelation(models.Model):
 
 class AccessRelation(TaskRelation):
     config = models.OneToOneField(AccessConfig, on_delete=models.CASCADE)
+    job_key = "access"
 
     def type_str(self):
         return "Access Task"
@@ -805,6 +752,7 @@ class AccessRelation(TaskRelation):
 
 class SoftwareRelation(TaskRelation):
     config = models.OneToOneField(SoftwareConfig, on_delete=models.CASCADE)
+    job_key = "software"
 
     def type_str(self):
         return "Software Configuration Task"
@@ -817,6 +765,7 @@ class SoftwareRelation(TaskRelation):
 class HostHardwareRelation(TaskRelation):
     host = models.ForeignKey(Host, on_delete=models.CASCADE)
     config = models.OneToOneField(HardwareConfig, on_delete=models.CASCADE)
+    job_key = "hardware"
 
     def type_str(self):
         return "Hardware Configuration Task"
@@ -832,6 +781,7 @@ class HostHardwareRelation(TaskRelation):
 class HostNetworkRelation(TaskRelation):
     host = models.ForeignKey(Host, on_delete=models.CASCADE)
     config = models.OneToOneField(NetworkConfig, on_delete=models.CASCADE)
+    job_key = "network"
 
     def type_str(self):
         return "Network Configuration Task"
@@ -844,6 +794,7 @@ class HostNetworkRelation(TaskRelation):
 class SnapshotRelation(TaskRelation):
     snapshot = models.ForeignKey(Image, on_delete=models.CASCADE)
     config = models.OneToOneField(SnapshotConfig, on_delete=models.CASCADE)
+    job_key = "snapshot"
 
     def type_str(self):
         return "Snapshot Task"
@@ -960,11 +911,7 @@ class JobFactory(object):
             relation.config = relation.config
             relation.save()
 
-            hardware_config.clear_delta()
-            hardware_config.set_image(host.config.image.lab_id)
-            hardware_config.set_hostname(host.template.resource.name)
-            hardware_config.set_power("on")
-            hardware_config.set_ipmi_create(True)
+            hardware_config.set("image", "hostname", "power", "ipmi_create")
             hardware_config.save()
 
     @classmethod

@@ -189,7 +189,7 @@ class SessionManager():
         models['bundle'] = resource
         models['interfaces'] = {}
         models['vlans'] = {}
-        for host in resource.getHosts():
+        for host in resource.getResources():
             models['hosts'].append(host)
             models['interfaces'][host.resource.name] = []
             models['vlans'][host.resource.name] = {}
@@ -205,7 +205,7 @@ class SessionManager():
         confirm['resource'] = {}
         confirm['resource']['hosts'] = []
         confirm['resource']['lab'] = resource.lab.lab_user.username
-        for host in resource.getHosts():
+        for host in resource.getResources():
             confirm['resource']['hosts'].append({"name": host.resource.name, "profile": host.profile.name})
         return confirm
 

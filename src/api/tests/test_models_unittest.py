@@ -1,4 +1,3 @@
-##############################################################################
 # Copyright (c) 2019 Sawyer Bergeron, Parker Berberian, and others.
 #
 # All rights reserved. This program and the accompanying materials
@@ -21,6 +20,7 @@ from api.models import (
 from resource_inventory.models import (
     OPNFVRole,
     HostProfile,
+    ConfigState,
 )
 
 from django.test import TestCase, Client
@@ -201,7 +201,7 @@ class ValidBookingCreatesValidJob(TestCase):
             self.assertEqual(relation.status, JobStatus.NEW)
             config = relation.config
             host = relation.host
-            self.assertEqual(config.hostname, host.template.resource.name)
+            self.assertEqual(config.get_delta()["hostname"], host.template.resource.name)
 
     def test_complete_job_makes_software_configs(self):
         JobFactory.makeCompleteJob(self.booking)
@@ -261,9 +261,10 @@ class ValidBookingCreatesValidJob(TestCase):
                 host_set.remove(relation.host.id)
             except KeyError:
                 self.fail("Hardware Relation/Config not created for host " + str(relation.host))
-
-            self.assertEqual(relation.config.power, "on")
-            self.assertTrue(relation.config.ipmi_create)
+            # TODO: ConfigState needs to be fixed in factory methods
+            relation.config.state = ConfigState.NEW
+            self.assertEqual(relation.config.get_delta()["power"], "on")
+            self.assertTrue(relation.config.get_delta()["ipmi_create"])
             # TODO: the rest of hwconf attrs
 
         self.assertEqual(len(host_set), 0)
