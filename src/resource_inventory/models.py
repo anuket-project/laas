@@ -113,6 +113,8 @@ class GenericResourceBundle(models.Model):
     owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     lab = models.ForeignKey(Lab, null=True, on_delete=models.SET_NULL)
     description = models.CharField(max_length=1000, default="")
+    public = models.BooleanField(default=False)
+    hidden = models.BooleanField(default=False)
 
     def getHosts(self):
         return_hosts = []
@@ -241,6 +243,8 @@ class ConfigBundle(models.Model):
     name = models.CharField(max_length=200, unique=True)
     description = models.CharField(max_length=1000, default="")
     bundle = models.ForeignKey(GenericResourceBundle, null=True, on_delete=models.CASCADE)
+    public = models.BooleanField(default=False)
+    hidden = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
