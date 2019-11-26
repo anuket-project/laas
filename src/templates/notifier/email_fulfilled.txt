@@ -1,6 +1,10 @@
 {{user_name|default:"Developer"}},
 
+{% if owner %}
 The booking you requested of the OPNFV Lab as a Service has finished deploying and is ready for you to use.
+{% else %}
+A booking you collaborate on is ready for you to use
+{% endif %}
 
 The lab that fulfilled your booking request has sent you the following messages:
     {% for email_message in messages %}

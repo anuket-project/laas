@@ -9,6 +9,7 @@
 
 from django.contrib import admin
 
-from notifier.models import Notification
+from notifier.models import Notification, Emailed
 
 admin.site.register(Notification)
+admin.site.register(Emailed)

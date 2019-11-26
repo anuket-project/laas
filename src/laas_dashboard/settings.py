@@ -192,6 +192,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'dashboard.tasks.free_hosts',
         'schedule': timedelta(minutes=1)
     },
+    'notify_expiring': {
+        'task': 'notifier.tasks.notify_expiring',
+        'schedule': timedelta(hours=1)
+    },
 }
 
 # Notifier Settings
@@ -202,3 +206,5 @@ EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
 EMAIL_USE_TLS = True
 DEFAULT_EMAIL_FROM = os.environ.get('DEFAULT_EMAIL_FROM', 'webmaster@localhost')
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+EXPIRE_LIFETIME = 12 # Minimum lifetime of booking to send notification
+EXPIRE_HOURS = 48 # Notify when booking is expiring within this many hours

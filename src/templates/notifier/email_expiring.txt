@@ -1,9 +1,9 @@
 {{user_name|default:"Developer"}},
 
 {% if owner %}
-The booking you requested from the OPNFV Lab as a Service has ended.
+The booking you requested from the OPNFV Lab as a Service is about to expire.
 {% else %}
-The booking you collaborated on at the OPNFV Lab as a Service has ended.
+The booking you collaborate on at the OPNFV Lab as a Service is about to expire.
 {% endif %}
 
 booking information:
@@ -18,7 +18,7 @@ booking information:
 You may visit the following link for more information:
 {{booking_url}}
 
-Feel free to create another booking with us!
+Please take the time to backup all data or extend the booking if needed.
 
 Thank you for contributing to the OPNFV platform!
 

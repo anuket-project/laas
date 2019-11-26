@@ -7,10 +7,11 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 import os
-from notifier.models import Notification
+from notifier.models import Notification, Emailed
 
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 
 class NotificationHandler(object):
@@ -26,6 +27,13 @@ class NotificationHandler(object):
         template = "notifier/end_booking.html"
         titles = ["Your booking (" + str(booking.id) + ") has ended", "A booking (" + str(booking.id) + ") that you collaborate on has ended"]
         cls.booking_notify(booking, template, titles)
+
+    @classmethod
+    def notify_booking_expiring(cls, booking):
+        template = "notifier/expiring_booking.html"
+        titles = ["Your booking (" + str(booking.id) + ") is about to expire", "A booking (" + str(booking.id) + ") that you collaborate on is about to expire"]
+        cls.booking_notify(booking, template, titles)
+        cls.email_booking_expiring(booking)
 
     @classmethod
     def booking_notify(cls, booking, template, titles):
@@ -72,7 +80,7 @@ class NotificationHandler(object):
             user_tasklist = []
             # gather up all the relevant messages from the lab
             for task in all_tasks:
-                if (not hasattr(task, "user")) or task.user == user:
+                if (not hasattr(task.config, "user")) or task.config.user == user:
                     user_tasklist.append(
                         {
                             "title": task.type_str() + " Message: ",
@@ -81,6 +89,7 @@ class NotificationHandler(object):
                     )
             # gather up all the other needed info
             context = {
+                "owner": user == job.booking.owner,
                 "user_name": user.userprofile.full_name,
                 "messages": user_tasklist,
                 "booking_url": os.environ.get("DASHBOARD_URL", "<Dashboard url>") + "/booking/detail/" + str(job.booking.id) + "/"
@@ -118,7 +127,31 @@ class NotificationHandler(object):
                 "Your Booking has Expired",
                 message,
                 os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@laas-dashboard"),
-                user.userprofile.email_addr,
+                [user.userprofile.email_addr],
+                fail_silently=False
+            )
+
+    @classmethod
+    def email_booking_expiring(cls, booking):
+        template_name = "notifier/email_expiring.txt"
+        hostnames = [host.template.resource.name for host in booking.resource.hosts.all()]
+        users = list(booking.collaborators.all())
+        users.append(booking.owner)
+        for user in users:
+            context = {
+                "user_name": user.userprofile.full_name,
+                "booking": booking,
+                "hosts": hostnames,
+                "booking_url": os.environ.get("DASHBOARD_URL", "<Dashboard url>") + "/booking/detail/" + str(booking.id) + "/"
+            }
+
+            message = render_to_string(template_name, context)
+
+            send_mail(
+                "Your Booking is Expiring",
+                message,
+                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@laas-dashboard"),
+                [user.userprofile.email_addr],
                 fail_silently=False
             )
 
@@ -126,8 +159,20 @@ class NotificationHandler(object):
     def task_updated(cls, task):
         """
         called every time a lab updated info about a task.
-        currently only checks if the job is now done so I can send an email,
-        may add more functionality later
+        sends an email when 'task' changing state means a booking has
+        just been fulfilled (all tasks done, servers ready to use)
+        or is over.
         """
+        if task.job is None or task.job.booking is None:
+            return
         if task.job.is_fulfilled():
-            cls.email_job_fulfilled(task.job)
+            if task.job.booking.end < timezone.now():
+                if Emailed.objects.filter(end_booking=task.job.booking).exists():
+                    return
+                Emailed.objects.create(end_booking=task.job.booking)
+                cls.email_booking_over(task.job.booking)
+            if task.job.booking.end > timezone.now() and task.job.booking.start < timezone.now():
+                if Emailed.objects.filter(begin_booking=task.job.booking).exists():
+                    return
+                Emailed.objects.create(begin_booking=task.job.booking)
+                cls.email_job_fulfilled(task.job)

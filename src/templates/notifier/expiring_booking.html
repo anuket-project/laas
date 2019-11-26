@@ -2,12 +2,13 @@
     <body>
         <div id="message_content_wrapper">
             {% if owner %}
-            <h3>You have created a new booking</h3>
-            <p>We have recieved your booking request and will start working on it right away.</p>
+            <h3>Your booking is about to expire</h3>
+            <p>Your booking will expire within 48 hours ({{booking.end}}).</p>
             {% else %}
-            <h3>You have been added as a collaborator to a booking</h3>
-            <p>{{booking.owner.username}} has given you access to their booking.</p>
+            <h3>A booking that you collaborate on is about to expire</h3>
+            <p>The booking owned by {{booking.owner.username}} that you work on is about to expire</p>
             {% endif %}
+            <p>Please take the time to backup all data or extend the booking if needed.</p>
             <p>Booking information:</p>
             <ul>
                 <li>owner: {{booking.owner.username}}</li>
