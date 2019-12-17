@@ -6,21 +6,20 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-FROM node as static
-RUN npm install -g bower
-ADD src/static/ /static
-WORKDIR /static/
-RUN bower install --allow-root
-
 FROM python:3.5
 ENV PYTHONUNBUFFERED 1
+
+RUN apt-get update && apt-get install -y npm
+RUN npm install -g bower
 
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
 ADD web/init.sh /init.sh
 ADD src/ /laas_dashboard/
-COPY --from=static /static/ laas_dashboard/static/
+
+ADD src/static/ laas_dashboard/static/
+RUN cd laas_dashboard/static/ && bower install --allow-root
 
 WORKDIR /laas_dashboard/
 CMD ["/init.sh"]

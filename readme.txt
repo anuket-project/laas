@@ -19,7 +19,10 @@ Deployment:
 - complete the config.env.sample file and save it as config.env
 - install docker, docker-compose
 - run 'make data'
-- run 'make up' to run the dashboard
+- run 'make up' to run the dashboard (or 'make dev-up' for development)
+
+Production will be running on port 80 by default.
+Development will be running on port 8000 by default.
 
 Updating:
 

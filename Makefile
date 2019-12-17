@@ -4,7 +4,7 @@ build:
 	docker-compose -f docker-compose.yml -f docker-compose.override-dev.yml build
 
 dev-up:
-	docker-compose -f docker-compose.yml -f docker-compose.override-dev.yml up -d
+	docker-compose -f docker-compose.yml -f docker-compose.override-dev.yml up
 
 dev-start:
 	docker-compose -f docker-compose.yml -f docker-compose.override-dev.yml start

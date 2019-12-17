@@ -9,11 +9,24 @@
 ##############################################################################
 version: '3'
 services:
+    nginx:
+        command: echo "Nginx is disabled in dev mode."
+        restart: "no"
+
     web:
         image: opnfv/laas-dashboard:dev
         build:
             context: .
             dockerfile: web/Dockerfile
+        command: >
+            sh -c "cd static && bower install --allow-root && cd .. &&
+                   ./manage.py migrate &&
+                   ./manage.py runserver 0:8000"
+        volumes:
+            - ./src:/laas_dashboard
+        ports:
+            - "8000:8000"
+
     worker:
         image: opnfv/laas-celery:dev
         build:
