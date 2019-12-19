@@ -18,16 +18,22 @@ import resource_inventory.resource_manager
 
 class Booking(models.Model):
     id = models.AutoField(primary_key=True)
+    # All bookings are owned by the user who requested it
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='owner')
+    # an owner can add other users to the booking
     collaborators = models.ManyToManyField(User, related_name='collaborators')
+    # start and end time
     start = models.DateTimeField()
     end = models.DateTimeField()
     reset = models.BooleanField(default=False)
     jira_issue_id = models.IntegerField(null=True, blank=True)
     jira_issue_status = models.CharField(max_length=50, blank=True)
     purpose = models.CharField(max_length=300, blank=False)
+    # bookings can be extended a limited number of times
     ext_count = models.IntegerField(default=2)
+    # the hardware that the user has booked
     resource = models.ForeignKey(ResourceBundle, on_delete=models.SET_NULL, null=True)
+    # configuration for the above hardware
     config_bundle = models.ForeignKey(ConfigBundle, on_delete=models.SET_NULL, null=True)
     opnfv_config = models.ForeignKey(OPNFVConfig, on_delete=models.SET_NULL, null=True)
     project = models.CharField(max_length=100, default="", blank=True, null=True)
@@ -41,6 +47,7 @@ class Booking(models.Model):
     def save(self, *args, **kwargs):
         """
         Save the booking if self.user is authorized and there is no overlapping booking.
+
         Raise PermissionError if the user is not authorized
         Raise ValueError if there is an overlapping booking
         """

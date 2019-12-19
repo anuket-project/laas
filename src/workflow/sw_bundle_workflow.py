@@ -28,6 +28,8 @@ class Define_Software(WorkflowStep):
 
     def build_filter_data(self, hosts_data):
         """
+        Build list of Images to filter out.
+
         returns a 2D array of images to exclude
         based on the ordering of the passed
         hosts_data

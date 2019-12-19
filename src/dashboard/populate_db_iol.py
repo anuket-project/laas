@@ -216,6 +216,8 @@ class Populator:
 
     def make_profile_data(self):
         """
+        Create Profile Data.
+
         returns a dictionary of data from the yaml files
         created by inspection scripts
         """

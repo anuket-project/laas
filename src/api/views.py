@@ -27,6 +27,18 @@ from booking.models import Booking
 from api.models import LabManagerTracker, get_task
 from notifier.manager import NotificationHandler
 
+"""
+API views.
+
+All functions return a Json blob
+Most functions that deal with info from a specific lab (tasks, host info)
+requires the Lab auth token.
+    for example, curl -H auth-token:mylabsauthtoken url
+
+Most functions let you GET or POST to the same endpoint, and
+the correct thing will happen
+"""
+
 
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()

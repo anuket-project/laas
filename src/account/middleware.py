@@ -16,9 +16,12 @@ from account.models import UserProfile
 
 class TimezoneMiddleware(MiddlewareMixin):
     """
+    Manage user's Timezone preference.
+
     Activate the timezone from request.user.userprofile if user is authenticated,
     deactivate the timezone otherwise and use default (UTC)
     """
+
     def process_request(self, request):
         if request.user.is_authenticated:
             try:

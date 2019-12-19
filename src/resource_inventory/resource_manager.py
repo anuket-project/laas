@@ -44,10 +44,10 @@ class ResourceManager:
 
     def hostsAvailable(self, grb):
         """
-        This method will check if the given GenericResourceBundle
-        is available. No changes to the database
-        """
+        Check if the given GenericResourceBundle is available.
 
+        No changes to the database
+        """
         # count up hosts
         profile_count = {}
         for host in grb.getResources():
@@ -90,7 +90,10 @@ class ResourceManager:
 
     def convertResourceBundle(self, genericResourceBundle, config=None):
         """
-        Takes in a GenericResourceBundle and 'converts' it into a ResourceBundle
+        Convert a GenericResourceBundle into a ResourceBundle.
+
+        Takes in a genericResourceBundle and reserves all the
+        Resources needed and returns a completed ResourceBundle.
         """
         resource_bundle = ResourceBundle.objects.create(template=genericResourceBundle)
         generic_hosts = genericResourceBundle.getResources()

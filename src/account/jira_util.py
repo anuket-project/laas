@@ -37,7 +37,7 @@ class SignatureMethod_RSA_SHA1(oauth.SignatureMethod):
         return key, raw
 
     def sign(self, request, consumer, token):
-        """Builds the base signature string."""
+        """Build the base signature string."""
         key, raw = self.signing_base(request, consumer, token)
 
         module_dir = os.path.dirname(__file__)  # get current directory

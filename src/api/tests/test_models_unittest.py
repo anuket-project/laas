@@ -108,7 +108,8 @@ class ValidBookingCreatesValidJob(TestCase):
 
     def make_networks(self, hostprofile, nets):
         """
-        distributes nets accross hostprofile's interfaces
+        Distribute nets accross hostprofile's interfaces.
+
         returns a 2D array
         """
         network_struct = []

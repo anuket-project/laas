@@ -27,10 +27,8 @@ class Notification(models.Model):
 
 
 class Emailed(models.Model):
-    """
-    A simple record to remember who has already gotten an email
-    to avoid resending
-    """
+    """A simple record to remember who has already gotten an email to avoid resending."""
+
     begin_booking = models.OneToOneField(
         Booking,
         null=True,
@@ -49,4 +47,3 @@ class Emailed(models.Model):
         on_delete=models.CASCADE,
         related_name="over_mail"
     )
-

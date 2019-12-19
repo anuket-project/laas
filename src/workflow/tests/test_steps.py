@@ -8,7 +8,8 @@
 ##############################################################################
 
 """
-This file tests basic functionality of each step class
+This file tests basic functionality of each step class.
+
 More in depth case coverage of WorkflowStep.post() must happen elsewhere.
 """
 
@@ -28,9 +29,11 @@ from workflow.tests import test_fixtures
 
 class TestConfig:
     """
-    Basic class to instantiate and hold reference
+    Basic class to instantiate and hold reference.
+
     to models we will need often
     """
+
     def __init__(self, usr=None):
         self.lab = make_lab()
         self.user = usr or make_user()
@@ -77,6 +80,8 @@ class StepTestCase(TestCase):
 
     def assertCorrectPostBehavior(self, post_data):
         """
+        Stub for validating step behavior on POST request.
+
         allows subclasses to override and make assertions about
         the side effects of self.step.post()
         post_data is the data passed into post()
@@ -85,6 +90,8 @@ class StepTestCase(TestCase):
 
     def add_to_repo(self, repo):
         """
+        Stub for modifying the step's repo.
+
         This method is a hook that allows subclasses to modify
         the contents of the repo before the step is created.
         """
@@ -92,8 +99,8 @@ class StepTestCase(TestCase):
 
     def assertValidHtml(self, html_str):
         """
-        This method should make sure that html_str is a valid
-        html fragment.
+        Assert that html_str is a valid html fragment.
+
         However, I know of no good way of doing this in python
         """
         self.assertTrue(isinstance(html_str, str))

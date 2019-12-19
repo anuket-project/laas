@@ -21,10 +21,20 @@ from resource_inventory.models import ResourceBundle, GenericResourceBundle, Con
 
 
 class BookingModelTestCase(TestCase):
+    """
+    Test the Booking model.
+
+    Creates all the scafolding needed and tests the Booking model
+    """
 
     count = 0
 
     def setUp(self):
+        """
+        Prepare for Booking model tests.
+
+        Creates all the needed models, such as users, resources, and configurations
+        """
         self.owner = User.objects.create(username='owner')
 
         self.res1 = ResourceBundle.objects.create(
@@ -52,6 +62,8 @@ class BookingModelTestCase(TestCase):
 
     def test_start_end(self):
         """
+        Verify the start and end fields.
+
         if the start of a booking is greater or equal then the end,
         saving should raise a ValueException
         """
@@ -79,6 +91,8 @@ class BookingModelTestCase(TestCase):
 
     def test_conflicts(self):
         """
+        Verify conflicting dates are dealt with.
+
         saving an overlapping booking on the same resource
         should raise a ValueException
         saving for different resources should succeed
@@ -207,6 +221,8 @@ class BookingModelTestCase(TestCase):
 
     def test_extensions(self):
         """
+        Test booking extensions.
+
         saving a booking with an extended end time is allows to happen twice,
         and each extension must be a maximum of one week long
         """

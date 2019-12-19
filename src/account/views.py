@@ -169,6 +169,8 @@ def account_detail_view(request):
 
 def account_resource_view(request):
     """
+    Display a user's resources.
+
     gathers a users genericResoureBundles and
     turns them into displayable objects
     """

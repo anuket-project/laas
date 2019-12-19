@@ -65,7 +65,9 @@ class SearchableSelectMultipleField(forms.Field):
                  items=None, queryset=None, show_from_noentry=True, show_x_results=-1,
                  results_scrollable=False, selectable_limit=-1, placeholder="search here",
                  name="searchable_select", initial=[], **kwargs):
-        """from the documentation:
+        """
+        From the documentation.
+
         # required -- Boolean that specifies whether the field is required.
         #             True by default.
         # widget -- A Widget class, or instance of a Widget class, that should
@@ -90,7 +92,6 @@ class SearchableSelectMultipleField(forms.Field):
         # label_suffix -- Suffix to be added to the label. Overrides
         #                 form's label_suffix.
         """
-
         self.widget = widget
         if self.widget is None:
             self.widget = SearchableSelectMultipleWidget(
@@ -287,8 +288,9 @@ class FormUtils:
     @staticmethod
     def getLabData(multiple_hosts=False):
         """
-        Gets all labs and thier host profiles and returns a serialized version the form can understand.
-        Should be rewritten with a related query to make it faster
+        Get all labs and thier host profiles, returns a serialized version the form can understand.
+
+        Could be rewritten with a related query to make it faster
         """
         # javascript truthy variables
         true = 1

@@ -14,15 +14,11 @@ from resource_inventory.models import Host, InterfaceProfile
 
 
 class PDFTemplater:
-    """
-    Utility class to create a full PDF yaml file
-    """
+    """Utility class to create a full PDF yaml file."""
 
     @classmethod
     def makePDF(cls, booking):
-        """
-        fills the pod descriptor file template with info about the resource
-        """
+        """Fill the pod descriptor file template with info about the resource."""
         template = "dashboard/pdf.yaml"
         info = {}
         info['details'] = cls.get_pdf_details(booking.resource)
@@ -33,9 +29,7 @@ class PDFTemplater:
 
     @classmethod
     def get_pdf_details(cls, resource):
-        """
-        Info for the "details" section
-        """
+        """Info for the "details" section."""
         details = {}
         owner = "Anon"
         email = "email@mail.com"
@@ -64,6 +58,7 @@ class PDFTemplater:
 
     @classmethod
     def get_jumphost(cls, booking):
+        """Return the host designated as the Jumphost for the booking."""
         jumphost = None
         if booking.opnfv_config:
             jumphost_opnfv_config = booking.opnfv_config.host_opnfv_config.get(
@@ -80,9 +75,7 @@ class PDFTemplater:
 
     @classmethod
     def get_pdf_jumphost(cls, booking):
-        """
-        returns a dict of all the info for the "jumphost" section
-        """
+        """Return a dict of all the info for the "jumphost" section."""
         jumphost = cls.get_jumphost(booking)
         jumphost_info = cls.get_pdf_host(jumphost)
         jumphost_info['os'] = jumphost.config.image.os.name
@@ -90,9 +83,7 @@ class PDFTemplater:
 
     @classmethod
     def get_pdf_nodes(cls, booking):
-        """
-        returns a list of all the "nodes" (every host except jumphost)
-        """
+        """Return a list of all the "nodes" (every host except jumphost)."""
         pdf_nodes = []
         nodes = set(Host.objects.filter(bundle=booking.resource))
         nodes.discard(cls.get_jumphost(booking))
@@ -105,8 +96,9 @@ class PDFTemplater:
     @classmethod
     def get_pdf_host(cls, host):
         """
-        method to gather all needed info about a host
-        returns a dict
+        Gather all needed info about a host.
+
+        returns a dictionary
         """
         host_info = {}
         host_info['name'] = host.template.resource.name
@@ -125,9 +117,7 @@ class PDFTemplater:
 
     @classmethod
     def get_pdf_host_node(cls, host):
-        """
-        returns "node" info for a given host
-        """
+        """Return "node" info for a given host."""
         d = {}
         d['type'] = "baremetal"
         d['vendor'] = host.vendor
@@ -148,9 +138,7 @@ class PDFTemplater:
 
     @classmethod
     def get_pdf_host_disk(cls, disk):
-        """
-        returns a dict describing the given disk
-        """
+        """Return a dict describing the given disk."""
         disk_info = {}
         disk_info['name'] = disk.name
         disk_info['capacity'] = str(disk.size) + "G"
@@ -161,9 +149,7 @@ class PDFTemplater:
 
     @classmethod
     def get_pdf_host_iface(cls, interface):
-        """
-        returns a dict describing given interface
-        """
+        """Return a dict describing given interface."""
         iface_info = {}
         iface_info['features'] = "none"
         iface_info['mac_address'] = interface.mac_address
@@ -179,9 +165,7 @@ class PDFTemplater:
 
     @classmethod
     def get_pdf_host_remote_management(cls, host):
-        """
-        gives the remote params of the host
-        """
+        """Get the remote params of the host."""
         man = host.remote_management
         mgmt = {}
         mgmt['address'] = man.address

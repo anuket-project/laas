@@ -97,6 +97,11 @@ class BookingPermissionException(Exception):
 
 
 def parse_host_field(host_json):
+    """
+    Parse the json from the frontend.
+
+    returns a reference to the selected Lab and HostProfile objects
+    """
     lab, profile = (None, None)
     lab_dict = host_json['lab']
     for lab_info in lab_dict.values():
@@ -117,6 +122,12 @@ def parse_host_field(host_json):
 
 
 def check_available_matching_host(lab, hostprofile):
+    """
+    Check the resources are available.
+
+    Returns true if the requested host type is availble,
+    Or throws an exception
+    """
     available_host_types = ResourceManager.getInstance().getAvailableHostTypes(lab)
     if hostprofile not in available_host_types:
         # TODO: handle deleting generic resource in this instance along with grb
@@ -129,7 +140,10 @@ def check_available_matching_host(lab, hostprofile):
     return True
 
 
+# Functions to create models
+
 def generate_grb(owner, lab, common_id):
+    """Create a Generic Resource Bundle."""
     grbundle = GenericResourceBundle(owner=owner)
     grbundle.lab = lab
     grbundle.name = "grbundle for quick booking with uid " + common_id
@@ -140,6 +154,7 @@ def generate_grb(owner, lab, common_id):
 
 
 def generate_gresource(bundle, hostname):
+    """Create a Generic Resource."""
     if not re.match(r"(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})$", hostname):
         raise InvalidHostnameException("Hostname must comply to RFC 952 and all extensions to it until this point")
     gresource = GenericResource(bundle=bundle, name=hostname)
@@ -149,6 +164,7 @@ def generate_gresource(bundle, hostname):
 
 
 def generate_ghost(generic_resource, host_profile):
+    """Create a Generic Host."""
     ghost = GenericHost()
     ghost.resource = generic_resource
     ghost.profile = host_profile
@@ -158,6 +174,7 @@ def generate_ghost(generic_resource, host_profile):
 
 
 def generate_config_bundle(owner, common_id, grbundle):
+    """Create a Configuration Bundle."""
     cbundle = ConfigBundle()
     cbundle.owner = owner
     cbundle.name = "configbundle for quick booking with uid " + common_id
@@ -169,6 +186,7 @@ def generate_config_bundle(owner, common_id, grbundle):
 
 
 def generate_opnfvconfig(scenario, installer, config_bundle):
+    """Create an OPNFV Configuration."""
     opnfvconfig = OPNFVConfig()
     opnfvconfig.scenario = scenario
     opnfvconfig.installer = installer
@@ -179,6 +197,7 @@ def generate_opnfvconfig(scenario, installer, config_bundle):
 
 
 def generate_hostconfig(generic_host, image, config_bundle):
+    """Create a Host Configuration."""
     hconf = HostConfiguration()
     hconf.host = generic_host
     hconf.image = image
@@ -190,6 +209,7 @@ def generate_hostconfig(generic_host, image, config_bundle):
 
 
 def generate_hostopnfv(hostconfig, opnfvconfig):
+    """Relate the Host and OPNFV Configs."""
     config = HostOPNFVConfig()
     role = None
     try:
@@ -207,6 +227,7 @@ def generate_hostopnfv(hostconfig, opnfvconfig):
 
 
 def generate_resource_bundle(generic_resource_bundle, config_bundle):  # warning: requires cleanup
+    """Create a Resource Bundle."""
     try:
         resource_manager = ResourceManager.getInstance()
         resource_bundle = resource_manager.convertResourceBundle(generic_resource_bundle, config=config_bundle)
@@ -218,6 +239,11 @@ def generate_resource_bundle(generic_resource_bundle, config_bundle):  # warning
 
 
 def check_invariants(request, **kwargs):
+    """
+    Verify all the contraints on the requested booking.
+
+    verifies software compatibility, booking length, etc
+    """
     installer = kwargs['installer']
     image = kwargs['image']
     scenario = kwargs['scenario']
@@ -256,6 +282,12 @@ def configure_networking(grb, config):
 
 
 def create_from_form(form, request):
+    """
+    Create a Booking from the user's form.
+
+    Large, nasty method to create a booking or return a useful error
+    based on the form from the frontend
+    """
     quick_booking_id = str(uuid.uuid4())
 
     host_field = form.cleaned_data['filter_field']
@@ -330,6 +362,13 @@ def create_from_form(form, request):
 
 
 def drop_filter(user):
+    """
+    Return a dictionary that contains filters.
+
+    Only certain installlers are supported on certain images, etc
+    so the image filter indexed at [imageid][installerid] is truthy if
+    that installer is supported on that image
+    """
     installer_filter = {}
     for image in Image.objects.all():
         installer_filter[image.id] = {}

@@ -253,12 +253,13 @@ class Define_Nets(WorkflowStep):
 
     def decomposeXml(self, xmlString):
         """
+        Translate XML into useable data.
+
         This function takes in an xml doc from our front end
         and returns dictionaries that map cellIds to the xml
         nodes themselves. There is no unpacking of the
         xml objects, just grouping and organizing
         """
-
         connections = {}
         networks = {}
         hosts = {}

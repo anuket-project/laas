@@ -27,8 +27,10 @@ class AccountMiddlewareTestCase(TestCase):
 
     def test_timezone_middleware(self):
         """
-        The timezone should be UTC for anonymous users, for authenticated users it should be set
-        to user.userprofile.timezone
+        Verify timezone is being set by Middleware.
+
+        The timezone should be UTC for anonymous users,
+        for authenticated users it should be set to user.userprofile.timezone
         """
         # default
         self.assertEqual(timezone.get_current_timezone_name(), 'UTC')
