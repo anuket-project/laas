@@ -2,32 +2,30 @@
 {% load bootstrap4 %}
 
 {% block content %}
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12 col-xl-6">
-                {% bootstrap_messages %}
-                <div class="login-panel panel panel-default">
-                    <div class="panel-body">
-                        <form enctype="multipart/form-data" method="post">
-                            {% csrf_token %}
-                            {% bootstrap_form form %}
-                            <p><b>API Token</b>
-                                <a href="{% url 'generate_token' %}" class="btn btn-primary">
-                                    Generate
-                                </a>
-                            </p>
-                            <p class="text-break">{{ token.key }}</p>
+<div class="row">
+    <div class="col-12 col-xl-6">
+        {% bootstrap_messages %}
+        <div class="login-panel panel panel-default">
+            <div class="panel-body">
+                <form enctype="multipart/form-data" method="post">
+                    {% csrf_token %}
+                    {% bootstrap_form form %}
+                    <p><b>API Token</b>
+                        <a href="{% url 'generate_token' %}" class="btn btn-primary">
+                            Generate
+                        </a>
+                    </p>
+                    <p class="text-break">{{ token.key }}</p>
 
-                            <p></p>
-                            {% buttons %}
-                                <button type="submit" class="btn btn btn-success">
-                                    Save Profile
-                                </button>
-                            {% endbuttons %}
-                        </form>
-                    </div>
-                </div>
+                    <p></p>
+                    {% buttons %}
+                        <button type="submit" class="btn btn btn-success">
+                            Save Profile
+                        </button>
+                    {% endbuttons %}
+                </form>
             </div>
         </div>
     </div>
+</div>
 {% endblock content %}

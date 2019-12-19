@@ -15,74 +15,62 @@
 </div>
 {% csrf_token %}
 
-<div class="container-fluid">
-    <div class="row">
-        <!-- About us -->
-        <div class="col-12 col-lg-6 mb-4">
-            <h2 class="border-bottom">About Us:</h2>
-            <p>The Lab as a Service (LaaS) project aims to help in the development and testing of LFN projects such as
-                OPNFV
-                by hosting hardware and providing access to the community. Currently, the only participating lab is the
-                University of New Hampshire Interoperability Lab (UNH-IOL).</p>
-            <p>To get started, you can request access to a server at the right. PTL's have the ability to design and
-                book a
-                whole block of servers with customized layer2 networks (e.g. a Pharos Pod). Read more here: <a
-                    href="https://wiki.opnfv.org/display/INF/Lab+as+a+Service+2.0">LaaS Wiki</a></p>
-        </div>
-        <!-- Get started -->
-        <div class="col-12 col-lg-6 mb-4">
-            <h2 class="border-bottom">Get Started:</h2>
-            {% if request.user.is_anonymous %}
-            <h4 class="text-center">
-                To get started, please log in with your <a href="/accounts/login">Linux Foundation Jira account</a>
-            </h4>
-            {% else %}
-            <p>To get started, book a server below:</p>
-            <a class="btn btn-primary d-flex flex-column justify-content-center align-content-center border text-white p-4"
-                href="/booking/quick/">
-                <h4>Book a Server</h4>
-            </a>
-            <p class="mt-4">PTLs can use our advanced options to book multi-node pods. If you are a PTL, you may use the options
-                below:
-            </p>
-            <div class="row">
-                <div class="col-12 col-xl-4">
-                    <button class="btn btn-primary w-100" onclick="create_workflow(0)">Book a Pod</button>
-                </div>
-                <div class="col-12 col-xl-4">
-                    <button class="btn btn-primary w-100" onclick="create_workflow(1)">Design a Pod</button>
-                </div>
-                <div class="col-12 col-xl-4">
-                    <button class="btn btn-primary w-100" onclick="create_workflow(2)">Configure a Pod</button>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        <!-- Returning users -->
-        {% if not request.user.is_anonymous %}
-        <div class="col-12 col-lg-6 offset-lg-6 mb-4 mt-lg-4">
-            <h2 class="ht-4 border-bottom">Returning Users:</h2>
-            <p>If you're a returning user, some of the following options may be of interest:</p>
-            <div class="row">
-                <div class="col-12 col-xl-4">
-                    <button class="btn btn-primary w-100" onclick="create_workflow(3)">Snapshot a Host</button>
-                </div>
-                <div class="col-12 col-xl-4">
-                    <a class="btn btn-primary w-100" href="{% url 'account:my-bookings' %}">
-                        My Bookings
-                    </a>
-                </div>
-                {% if manager == True %}
-                    <div class="col-12 col-xl-4">
-                        <button class="btn btn-primary w-100" onclick="continue_workflow()">
-                            Resume Workflow
-                        </button>
-                    </div>
-                {% endif %}
-            </div>
+<div class="row">
+    <!-- About us -->
+    <div class="col-12 col-lg-6 mb-4">
+        <h2 class="border-bottom">About Us</h2>
+        <p>The Lab as a Service (LaaS) project aims to help in the development and testing of LFN projects such as
+            OPNFV
+            by hosting hardware and providing access to the community. Currently, the only participating lab is the
+            University of New Hampshire Interoperability Lab (UNH-IOL).</p>
+        <p>To get started, you can request access to a server at the right. PTL's have the ability to design and
+            book a
+            whole block of servers with customized layer2 networks (e.g. a Pharos Pod). Read more here: <a
+                href="https://wiki.opnfv.org/display/INF/Lab+as+a+Service+2.0">LaaS Wiki</a></p>
+    </div>
+
+    <!-- Get started -->
+    <div class="col-12 col-lg-6 mb-4">
+        <h2 class="border-bottom">Get Started</h2>
+        {% if request.user.is_anonymous %}
+        <h4 class="text-center">
+            To get started, please log in with your <a href="/accounts/login">Linux Foundation Jira account</a>
+        </h4>
+        {% else %}
+        <p>To get started, book a server below:</p>
+        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border text-white p-4"
+            href="/booking/quick/">
+            Book a Server
+        </a>
+        <p class="mt-4">PTLs can use our advanced options to book multi-node pods. If you are a PTL, you may use the options
+            below:
+        </p>
+        <div class="btn-group-vertical w-100">
+            <button class="btn btn-primary" onclick="create_workflow(0)">Book a Pod</button>
+            <button class="btn btn-primary" onclick="create_workflow(1)">Design a Pod</button>
+            <button class="btn btn-primary" onclick="create_workflow(2)">Configure a Pod</button>
         </div>
         {% endif %}
     </div>
+
+    <!-- Returning users -->
+    {% if not request.user.is_anonymous %}
+    <div class="col-12 col-lg-6 offset-lg-6 mb-4 mt-lg-4">
+        <h2 class="ht-4 border-bottom">Returning Users</h2>
+        <p>If you're a returning user, some of the following options may be of interest:</p>
+        <div class="btn-group-vertical w-100">
+            <button class="btn btn-primary" onclick="create_workflow(3)">Snapshot a Host</button>
+            <a class="btn btn-primary" href="{% url 'account:my-bookings' %}">
+                My Bookings
+            </a>
+            {% if manager == True %}
+            <button class="btn btn-primary" onclick="continue_workflow()">
+                Resume Workflow
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <div class="hidden_form d-none" id="form_div">

@@ -9,14 +9,14 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-4">
-        <div class="card my-2">
+        <div class="card mb-3">
             <div class="card-header d-flex">
                 <h4>Lab Profile</h4>
                 <button class="btn btn-outline-secondary ml-auto" data-toggle="collapse" data-target="#panel_overview">Expand</button>
             </div>
             <div class="collapse show" id="panel_overview">
-                <div class="card-body">
-                    <table class="table">
+                <div class="overflow-auto">
+                    <table class="table m-0">
                         <tr>
                             <td>Lab Name: </td>
                             <td>{{lab.name}}</td>
@@ -58,14 +58,14 @@
                 </div>
             </div>
         </div>
-        <div class="card my-2">
+        <div class="card my-3">
             <div class="card-header d-flex">
                 <h4 class="d-inline-block">Host Profiles</h4>
                 <button data-toggle="collapse" data-target="#profile_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
             <div class="collapse show" id="profile_panel">
-                <div class="card-body">
-                    <table class="table">
+                <div class="overflow-auto">
+                    <table class="table m-0">
                         {% for profile in hostprofiles %}
                             <tr>
                                 <td>{{profile.name}}</td>
@@ -78,35 +78,32 @@
             </div>
         </div>
 
-
-        <div class="card my-2">
+        <div class="card my-3">
             <div class="card-header d-flex">
                 <h4 class="d-inline">Networking Capabilities</h4>
                 <button data-toggle="collapse" data-target="#network_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
 
             <div class="collapse show" id="network_panel">
-                <div class="card-body">
-                    <table class="table">
-                        <tr>
-                            <td>Block Size: (number of VLANs allowed per deployment)</td><td>{{lab.vlan_manager.block_size}}</td>
-                        </tr>
-                        <tr>
-                            <td>Overlapping Vlans Allowed (user can pick which VLANs they wish to use): </td>
-                            <td>{{lab.vlan_manager.allow_overlapping}}</td>
-                        </tr>
-                    </table>
-                </div>
+                <table class="table m-0">
+                    <tr>
+                        <td>Block Size: (number of VLANs allowed per deployment)</td><td>{{lab.vlan_manager.block_size}}</td>
+                    </tr>
+                    <tr>
+                        <td>Overlapping Vlans Allowed (user can pick which VLANs they wish to use): </td>
+                        <td>{{lab.vlan_manager.allow_overlapping|yesno:"Yes,No"}}</td>
+                    </tr>
+                </table>
             </div>
         </div>
-        <div class="card my-2">
+        <div class="card my-3">
             <div class="card-header d-flex">
                 <h4>Images</h4>
                 <button data-toggle="collapse" data-target="#image_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
             <div class="collapse show" id="image_panel">
-                <div class="card-body">
-                    <table class="table">
+                <div class="overflow-auto">
+                    <table class="table m-0">
                         <tr>
                             <th>Name</th>
                             <th>Owner</th>
@@ -128,37 +125,35 @@
 
     </div>
     <div class="col-lg-8">
-        <div class="card my-2">
+        <div class="card mb-3">
             <div class="card-header d-flex">
                 <h4>Lab Hosts</h4>
                 <button data-toggle="collapse" data-target="#lab_hosts_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
 
             <div class="collapse show" id="lab_hosts_panel">
-                <div class="card-body">
-                    <table class="table">
+                <table class="table m-0">
+                    <tr>
+                        <th>Name</th>
+                        <th>Profile</th>
+                        <th>Booked</th>
+                        <th>Working</th>
+                        <th>Vendor</th>
+                    </tr>
+                    {% for host in lab.host_set.all %}
                         <tr>
-                            <th>Name</th>
-                            <th>Profile</th>
-                            <th>Booked</th>
-                            <th>Working</th>
-                            <th>Vendor</th>
+                            <td>{{host.labid}}</td>
+                            <td>{{host.profile}}</td>
+                            <td>{{host.booked|yesno:"Yes,No"}}</td>
+                            {% if host.working %}
+                                <td class="bg-success text-white">Yes</td>
+                            {% else %}
+                                <td class="bg-danger text-white">No</td>
+                            {% endif %}
+                            <td>{{host.vendor}}</td>
                         </tr>
-                        {% for host in lab.host_set.all %}
-                            <tr>
-                                <td>{{host.labid}}</td>
-                                <td>{{host.profile}}</td>
-                                <td>{{host.booked}}</td>
-                                {% if host.working %}
-                                    <td class="bg-success text-white">{{host.working}}</td>
-                                {% else %}
-                                    <td>{{host.working}}</td>
-                                {% endif %}
-                                <td>{{host.vendor}}</td>
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
+                    {% endfor %}
+                </table>
             </div>
         </div>
     </div>

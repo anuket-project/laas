@@ -7,10 +7,7 @@
 
 <form method="POST" id="step_form" class="form">
     {% csrf_token %}
-    <p>Give it a name:</p>
     {% bootstrap_field form.name %}
-
-    <p>And a description:</p>
     {% bootstrap_field form.description %}
 </form>
 

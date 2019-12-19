@@ -1,27 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Labs</h2>
 <div class="row">
     {% for lab in labs %}
-    <div class="p-2 col-12 col-md-6 col-lg-4 col-xl-3">
+    <div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-3">
         <div class="card h-100">
             <div class="card-header">
                 <h3 class="mt-2">{{lab.name}}</h3>
             </div>
-            <div class="p-4">
-                <ul class="list-group">
-                    <li class="list-group-item">name: {{lab.name}}</li>
-                    <li class="list-group-item">description: {{lab.description}}</li>
-                    <li class="list-group-item">location: {{lab.location}}</li>
-                    {% if lab.status == 0 %}
-                    <li class="list-group-item">status: Up</li>
-                    {% elif lab.status == 100 %}
-                    <li class="list-group-item">status: Down for Maintenance</li>
-                    {% elif lab.status == 200 %}
-                    <li class="list-group-item">status: Down</li>
-                    {% endif %}
-                </ul>
-                <a class="btn btn-primary mt-4 w-100" href="/lab/{{lab.name}}/">Details</a>
+            <ul class="list-group list-group-flush h-100">
+                <li class="list-group-item">name: {{lab.name}}</li>
+                <li class="list-group-item">description: {{lab.description}}</li>
+                <li class="list-group-item">location: {{lab.location}}</li>
+                {% if lab.status == 0 %}
+                <li class="list-group-item">status: Up</li>
+                {% elif lab.status == 100 %}
+                <li class="list-group-item">status: Down for Maintenance</li>
+                {% elif lab.status == 200 %}
+                <li class="list-group-item">status: Down</li>
+                {% endif %}
+            </ul>
+            <div class="card-footer">
+                <a class="btn btn-primary w-100" href="/lab/{{lab.name}}/">Details</a>
             </div>
         </div>
     </div>

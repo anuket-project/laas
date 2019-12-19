@@ -8,7 +8,7 @@
 <form id="step_form" method="post">
     {% csrf_token %}
     <table class="px-4">
-        {% bootstrap_form form field_class="px-4" label_class="px-4 mt-2" %}
+        {% bootstrap_form form %}
     </table>
 </form>
 {% endblock content %}

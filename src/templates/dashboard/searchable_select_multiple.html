@@ -15,14 +15,10 @@
     </div>
 
     <input id="user_field" name="ignore_this" class="form-control" autocomplete="off" type="text" placeholder="{{placeholder}}" value="" oninput="searchable_select_multiple_widget.search(this.value)"
-    {% if disabled %} disabled {% endif %}
-    >
-    </input>
+    {% if disabled %} disabled {% endif %}>
 
     <input type="hidden" id="selector" name="{{ name }}" class="form-control d-none"
-    {% if disabled %} disabled {% endif %}
-    >
-    </input>
+    {% if disabled %} disabled {% endif %}>
 
     <div id="scroll_restrictor" class="d-flex pb-4 position-relative">
         <div id="drop_results" class="list-group w-100 z-2 overflow-auto position-absolute mh-30vh"></div>

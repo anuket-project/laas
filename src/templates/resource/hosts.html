@@ -20,10 +20,10 @@
                 <a href="profiles/{{ host.profile.id }}">{{ host.profile }}</a>
             </td>
             <td>
-                {{ host.booked }}
+                {{ host.booked|yesno:"Yes,No" }}
             </td>
             <td>
-                {{ host.working }}
+                {{ host.working|yesno:"Yes,No" }}
             </td>
         </tr>
     {% endfor %}

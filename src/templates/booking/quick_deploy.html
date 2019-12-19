@@ -6,7 +6,6 @@
 {% bootstrap_form_errors form type='non_fields' %}
 <form id="quick_booking_form" action="/booking/quick/" method="POST" class="form">
     {% csrf_token %}
-    <div class="container-fluid">
         <div class="row mx-0 px-0">
             <div class="col-12 mx-0 px-0 mt-2">
                 <p class="my-0">Please select a host type you wish to book. Only available types are shown.</p>
@@ -14,7 +13,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-12 col-lg-3 px-1 my-2">
+            <div class="col-12 col-lg-3 my-2">
                 <div class="col border rounded py-2 h-100">
                     {% bootstrap_field form.purpose %}
                     {% bootstrap_field form.project %}
@@ -26,30 +25,29 @@
                     </script>
                 </div>
             </div>
-            <div class="col-12 col-lg-3 px-1 my-2">
+            <div class="col-12 col-lg-3 my-2">
                 <div class="col border rounded py-2 h-100">
                     <label>Collaborators</label>
                     {{ form.users }}
                 </div>
             </div>
-            <div class="col-12 col-lg-3 px-1 my-2">
+            <div class="col-12 col-lg-3 my-2">
                 <div class="col border rounded py-2 h-100">
                     {% bootstrap_field form.hostname %}
                     {% bootstrap_field form.image %}
                 </div>
             </div>
-            <div class="col-12 col-lg-3 px-1 my-2">
+            <div class="col-12 col-lg-3 my-2">
                 <div class="col border rounded py-2 h-100">
                     <strong>OPNFV: (Optional)</strong>
                     {% bootstrap_field form.installer %}
                     {% bootstrap_field form.scenario %}
                 </div>
             </div>
-            <div class="col-12 d-flex px-0 mt-2 justify-content-end">
+            <div class="col-12 d-flex mt-2 justify-content-end">
                 <button id="quick_booking_confirm" onclick="submit_form();" type="button" class="btn btn-success">Confirm</button>
             </div>
         </div>
-    </div>
 </form>
 
 <script type="text/javascript">

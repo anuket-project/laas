@@ -10,13 +10,11 @@
                 <button data-toggle="collapse" data-target="#availableAt" class="btn ml-auto btn-outline-secondary">Expand</button>
             </div>
             <div class="collapse show" id="availableAt">
-                <div class="card-body">
-                    <ul class="list-group">
-                        {% for lab in hostprofile.labs.all %}
-                            <li class="list-group-item">{{lab.name}}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                <ul class="list-group list-group-flush">
+                    {% for lab in hostprofile.labs.all %}
+                        <li class="list-group-item">{{lab.name}}</li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
         <div class="card mb-4">
@@ -37,22 +35,20 @@
                 <button data-toggle="collapse" data-target="#cpuPanel" class="btn ml-auto btn-outline-secondary">Expand</button>
             </div>
             <div class="collapse show" id="cpuPanel">
-                <div class="card-body">
-                    <table class="table">
-                        <tr>
-                            <td>Arch:</td>
-                            <td>{{hostprofile.cpuprofile.first.architecture}}</td>
-                        </tr>
-                        <tr>
-                            <td>Cores:</td>
-                            <td>{{hostprofile.cpuprofile.first.cores}}</td>
-                        </tr>
-                        <tr>
-                            <td>Sockets:</td>
-                            <td>{{hostprofile.cpuprofile.first.cpus}}</td>
-                        </tr>
-                    </table>
-                </div>
+                <table class="table">
+                    <tr>
+                        <td>Arch:</td>
+                        <td>{{hostprofile.cpuprofile.first.architecture}}</td>
+                    </tr>
+                    <tr>
+                        <td>Cores:</td>
+                        <td>{{hostprofile.cpuprofile.first.cores}}</td>
+                    </tr>
+                    <tr>
+                        <td>Sockets:</td>
+                        <td>{{hostprofile.cpuprofile.first.cpus}}</td>
+                    </tr>
+                </table>
             </div>
         </div>
         <div class="card mb-4">
@@ -61,22 +57,20 @@
                 <button data-toggle="collapse" data-target="#diskPanel" class="btn ml-auto btn-outline-secondary">Expand</button>
             </div>
             <div class="collapse show" id="diskPanel">
-                <div class="card-body">
-                    <table class="table">
-                        <tr>
-                            <td>Size:</td>
-                            <td>{{hostprofile.storageprofile.first.size}} GiB</td>
-                        </tr>
-                        <tr>
-                            <td>Type:</td>
-                            <td>{{hostprofile.storageprofile.first.media_type}}</td>
-                        </tr>
-                        <tr>
-                            <td>Mount Point:</td>
-                            <td>{{hostprofile.storageprofile.first.name}}</td>
-                        </tr>
-                    </table>
-                </div>
+                <table class="table">
+                    <tr>
+                        <td>Size:</td>
+                        <td>{{hostprofile.storageprofile.first.size}} GiB</td>
+                    </tr>
+                    <tr>
+                        <td>Type:</td>
+                        <td>{{hostprofile.storageprofile.first.media_type}}</td>
+                    </tr>
+                    <tr>
+                        <td>Mount Point:</td>
+                        <td>{{hostprofile.storageprofile.first.name}}</td>
+                    </tr>
+                </table>
             </div>
         </div>
     </div>
@@ -87,24 +81,22 @@
                 <button data-toggle="collapse" data-target="#interfacePanel" class="btn ml-auto btn-outline-secondary">Expand</button>
             </div>
             <div class="collapse show" id="interfacePanel">
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Speed</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for intprof in hostprofile.interfaceprofile.all %}
-                            <tr>
-                                <td>{{intprof.name}}</td>
-                                <td>{{intprof.speed}}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Speed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for intprof in hostprofile.interfaceprofile.all %}
+                        <tr>
+                            <td>{{intprof.name}}</td>
+                            <td>{{intprof.speed}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

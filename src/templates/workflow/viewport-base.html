@@ -30,7 +30,7 @@
     </div>
 </div>
 <!-- Top header -->
-<div class="row px-4">
+<div class="row">
     <div class="col">
         <div id="iframe_header" class="row view-header">
             <div class="col-lg-12">
@@ -44,13 +44,9 @@
         <button id="cancel_btn" class="btn btn-danger ml-auto" onclick="pop_workflow()">Cancel</button>
     </div>
 </div>
-<div class="row d-flex flex-column flex-grow-1">
-    <div class="container-fluid d-flex flex-column h-100">
-        <div class="row d-flex flex-grow-1 p-4">
-            <div class="col-12 d-flex flex-grow-1 px-0">
-                <div id="formContainer" class="h-100 w-100"></div>
-            </div>
-        </div>
+<div class="row d-flex flex-column flex-grow-1 mt-3">
+    <div class="col flex-grow-1">
+        <div id="formContainer" class="h-100 w-100"></div>
     </div>
 </div>
 {% csrf_token %}

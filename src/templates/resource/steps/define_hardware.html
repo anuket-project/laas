@@ -10,7 +10,7 @@ with your current configuration will become unavailable.</p>
 <h4>NOTE: Only PTL's are able to create multi-node PODs. See
     <a href="https://wiki.opnfv.org/display/INF/Lab-as-a-Service+at+the+UNH-IOL">here</a>
     for more details</h4>
-<form id="step_form" method="post" class="px-3">
+<form id="step_form" method="post">
     {% csrf_token %}
     {{form.filter_field|default:"<p>No Form</p>"}}
 </form>

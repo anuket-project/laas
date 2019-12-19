@@ -20,6 +20,12 @@
     color: inherit;
 }
 
+/* Make sure pre elements wrap to not break box sizing */
+/* Note: the pre element or parent may need to use the text-break class as well */
+.pre-wrap {
+    white-space: pre-wrap;
+}
+
 /* Allow for sidebar to be small, but also resize on small screens */
 .sidebar {
     min-width: 200px;
@@ -70,12 +76,6 @@ a[aria-expanded="true"] > i.rotate {
 /* Cursor effects */
 .not-allowed {
     cursor: not-allowed;
-}
-
-/* Used with position-absolute class to make a full height object */
-.topToBottom {
-    bottom: 0;
-    top: 0;
 }
 
 .z-2 {

@@ -21,7 +21,7 @@ from workflow.workflow_manager import ManagerTracker
 
 def lab_list_view(request):
     labs = Lab.objects.all()
-    context = {"labs": labs}
+    context = {"labs": labs, 'title': 'Labs'}
 
     return render(request, "dashboard/lab_list.html", context)
 

@@ -11,71 +11,70 @@
 
 <!-- Calls the main function after the page has loaded. Container is dynamically created. -->
 {% block content %}
-    <div class="row p-0 w-100 mx-0 position-absolute overflow-hidden topToBottom">
-        <div id="graphParent" class="col px-0">
-            <div class="row">
-                <div class="col pr-0">
-                    <div id="toolbarContainer" class="bg-light pl-4"></div>
+<div class="h-100 w-100 position-relative">
+    <div class="h-100 w-100 position-absolute overflow-hidden">
+        <div class="row h-100">
+            <div id="graphParent" class="col h-100">
+                <div class="d-flex bg-light border">
+                    <div id="toolbarContainer"></div>
+                    <div class="ml-4 text-info">Hold right click to drag</div>
                 </div>
+                <!-- Creates a container for the sidebar -->
+                <div id="graphContainer" class="border h-100"></div>
             </div>
-            <!-- Creates a container for the sidebar -->
-            <div id="graphContainer"></div>
-        </div>
 
-        <div id="network_select" class="p-0 w-25 ml-auto col-2">
-            <div class="px-0 mb-2">
+            <div id="network_select" class="col-2">
                 <!-- Creates a container for the outline -->
-                <div id="outlineContainer" class="border"></div>
+                <div id="outlineContainer" class="border mb-2"></div>
+                <button id="btn_add_network" type="button" class="btn btn-primary w-100 mb-2" onclick="network_step.newNetworkWindow();">Add Network</button>
+                <ul id="network_list" class="list-group">
+                </ul>
+                <button type="button" class="d-none" onclick="network_step.submitForm();">Submit</button>
             </div>
-            <div>
-                <button id="btn_add_network" type="button" class="btn btn-primary w-100" onclick="network_step.newNetworkWindow();">Add Network</button>
-            </div>
-            <ul id="network_list" class="list-group">
-            </ul>
-            <button type="button" class="d-none" onclick="network_step.submitForm();">Submit</button>
         </div>
     </div>
-    <form id="step_form" method="post">
-        {% csrf_token %}
-        <input type="hidden" id="hidden_xml_input" name="xml" />
-    </form>
-    <script>
-        //gather context data
-        let debug = false;
-        {% if debug %}
-        debug = true;
-        {% endif %}
+</div>
+<form id="step_form" method="post">
+    {% csrf_token %}
+    <input type="hidden" id="hidden_xml_input" name="xml">
+</form>
+<script>
+    //gather context data
+    let debug = false;
+    {% if debug %}
+    debug = true;
+    {% endif %}
 
-        let xml = '';
-        {% if xml %}
-        xml = '{{xml|safe}}';
-        {% endif %}
+    let xml = '';
+    {% if xml %}
+    xml = '{{xml|safe}}';
+    {% endif %}
 
-        let hosts = [];
-        {% for host in hosts %}
-        hosts.push({{host|safe}});
-        {% endfor %}
+    let hosts = [];
+    {% for host in hosts %}
+    hosts.push({{host|safe}});
+    {% endfor %}
 
-        let added_hosts = [];
-        {% for host in added_hosts %}
-        added_hosts.push({{host|safe}});
-        {% endfor %}
+    let added_hosts = [];
+    {% for host in added_hosts %}
+    added_hosts.push({{host|safe}});
+    {% endfor %}
 
-        let removed_host_ids = {{removed_hosts|safe}};
+    let removed_host_ids = {{removed_hosts|safe}};
 
-        network_step = new NetworkStep(
-            debug,
-            xml,
-            hosts,
-            added_hosts,
-            removed_host_ids,
-            document.getElementById('graphContainer'),
-            document.getElementById('outlineContainer'),
-            document.getElementById('toolbarContainer'),
-            document.getElementById('sidebarContainer')
-        );
-        form_submission_callbacks.push(() => network_step.prepareForm());
-    </script>
+    network_step = new NetworkStep(
+        debug,
+        xml,
+        hosts,
+        added_hosts,
+        removed_host_ids,
+        document.getElementById('graphContainer'),
+        document.getElementById('outlineContainer'),
+        document.getElementById('toolbarContainer'),
+        document.getElementById('sidebarContainer')
+    );
+    form_submission_callbacks.push(() => network_step.prepareForm());
+</script>
 {% endblock content %}
 {% block onleave %}
 network_step.submitForm();
