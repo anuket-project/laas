@@ -13,19 +13,20 @@
     <title>OPNFV Laas {{ title }}</title>
 
     <!-- Bootstrap Core CSS -->
-    <link href="{% static "bower_components/bootstrap/dist/css/bootstrap.min.css" %}"
+    <link href="{% static "node_modules/bootstrap/dist/css/bootstrap.min.css" %}"
           rel="stylesheet">
 
     <!-- Custom Fonts -->
-    <link href="{% static "bower_components/Font-Awesome/css/all.min.css" %}"
+    <link href="{% static "node_modules/@fortawesome/fontawesome-free/css/all.min.css" %}"
           rel="stylesheet" type="text/css">
 
     <link href="{% static "css/base.css" %}" rel="stylesheet">
 
     <!-- Favicon -->
     <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
-    <script src="https://code.jquery.com/jquery-2.2.4.min.js"
-        integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+
+    <!-- jQuery -->
+    <script src="{% static "node_modules/jquery/dist/jquery.min.js" %}"></script>
 
     {% block extrahead %}
     {% endblock extrahead %}
@@ -36,7 +37,6 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-
 </head>
 
 {% block extrastyle %}
@@ -46,14 +46,10 @@
 {% block basecontent %}
 {% endblock basecontent %}
 
-{#<!-- jQuery -->#}
-{#<script src="{% static "bower_components/jquery/dist/jquery.min.js" %}"></script>#}
-{#<script src="{% static "bower_components/jquery-migrate/jquery-migrate.min.js" %}"></script>#}
 <!-- Popper.js -->
-<script src="{% static "bower_components/popper.js/dist/umd/popper.min.js" %}"></script>
-{#<script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>#}
+<script src="{% static "node_modules/popper.js/dist/umd/popper.min.js" %}"></script>
 <!-- Bootstrap Core JavaScript -->
-<script src="{% static "bower_components/bootstrap/dist/js/bootstrap.min.js" %}"></script>
+<script src="{% static "node_modules/bootstrap/dist/js/bootstrap.min.js" %}"></script>
 
 {% block extrajs %}
 {% endblock extrajs %}

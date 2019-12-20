@@ -17,7 +17,7 @@ module.exports = function(config) {
     files: [
       'https://code.jquery.com/jquery-3.4.1.min.js',
       '../src/static/js/dashboard.js',
-      '../src/static/js/mxClient.min.js',
+      '../src/static/node_modules/mxgraph/javascript/mxClient.min.js',
       'tests/*.js'
     ],
 

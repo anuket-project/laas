@@ -3,7 +3,7 @@
 
 {% block extrahead %}
 {{ block.super }}
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="{% static "node_modules/plotly.js-dist/plotly.js" %}"></script>
 <script>
 function drawGraph(data, graph_id, graph_title){
     var container = document.getElementById(graph_id);

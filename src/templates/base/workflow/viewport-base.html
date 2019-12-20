@@ -62,9 +62,12 @@
             success: update_page
         });
     });
+
+    // global variable required for mxgraph to load its css and images
+    mxBasePath = '{% static "node_modules/mxgraph/javascript/src" %}';
 </script>
 <!-- lazy load scripts -->
-<script type="text/javascript" src="/static/js/mxClient.min.js" ></script>
+<script type="text/javascript" src="{% static "node_modules/mxgraph/javascript/mxClient.js" %}" ></script>
 <!-- end lazy load scripts -->
 <div class="d-none" id="workflow_pop_form_div">
     <form id="workflow_pop_form" action="/workflow/finish/" method="post">

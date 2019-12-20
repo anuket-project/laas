@@ -19,7 +19,7 @@ services:
             context: .
             dockerfile: web/Dockerfile
         command: >
-            sh -c "cd static && bower install --allow-root && cd .. &&
+            sh -c "cd static && npm install && cd .. &&
                    ./manage.py migrate &&
                    ./manage.py runserver 0:8000"
         volumes:

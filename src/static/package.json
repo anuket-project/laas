@@ -1,0 +1,26 @@
+{
+  "name": "laas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://git.opnfv.org/laas"
+  },
+  "license": "Apache-2.0",
+  "private": true,
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.12.0",
+    "bootstrap": "^4.4.1",
+    "datatables.net-bs4": "^1.10.20",
+    "datatables.net-responsive-bs4": "^2.2.3",
+    "jquery": "^3.4.1",
+    "mxgraph": "^4.0.6",
+    "plotly.js-dist": "^1.51.3",
+    "popper.js": "^1.16.0"
+  }
+}

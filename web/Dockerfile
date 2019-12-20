@@ -10,7 +10,6 @@ FROM python:3.5
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y npm
-RUN npm install -g bower
 
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
@@ -19,7 +18,7 @@ ADD web/init.sh /init.sh
 ADD src/ /laas_dashboard/
 
 ADD src/static/ laas_dashboard/static/
-RUN cd laas_dashboard/static/ && bower install --allow-root
+RUN cd laas_dashboard/static/ && npm install
 
 WORKDIR /laas_dashboard/
 CMD ["/init.sh"]
