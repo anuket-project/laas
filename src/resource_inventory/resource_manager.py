@@ -20,7 +20,8 @@ from resource_inventory.models import (
     ResourceBundle,
     HostProfile,
     Network,
-    Vlan
+    Vlan,
+    PhysicalNetwork,
 )
 
 
@@ -131,12 +132,16 @@ class ResourceManager:
             generic_interface = generic_interfaces[int_num]
             physical_interface.config.clear()
             for connection in generic_interface.connections.all():
+                physicalNetwork = PhysicalNetwork.objects.create(
+                    vlan_id=vlan_map[connection.network.name],
+                    generic_network=connection.network
+                )
                 physical_interface.config.add(
                     Vlan.objects.create(
                         vlan_id=vlan_map[connection.network.name],
                         tagged=connection.vlan_is_tagged,
                         public=connection.network.is_public,
-                        network=connection.network
+                        network=physicalNetwork
                     )
                 )
 

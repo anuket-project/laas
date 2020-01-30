@@ -424,6 +424,10 @@ class Host(Resource):
             "ipmi_create": str(ipmi)
         }
 
+    def release(self):
+        self.booked = False
+        self.save()
+
 
 class Interface(models.Model):
     id = models.AutoField(primary_key=True)
