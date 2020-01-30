@@ -19,14 +19,9 @@
     <!-- About us -->
     <div class="col-12 col-lg-6 mb-4">
         <h2 class="border-bottom">About Us</h2>
-        <p>The Lab as a Service (LaaS) project aims to help in the development and testing of LFN projects such as
-            OPNFV
-            by hosting hardware and providing access to the community. Currently, the only participating lab is the
-            University of New Hampshire Interoperability Lab (UNH-IOL).</p>
-        <p>To get started, you can request access to a server at the right. PTL's have the ability to design and
-            book a
-            whole block of servers with customized layer2 networks (e.g. a Pharos Pod). Read more here: <a
-                href="https://wiki.opnfv.org/display/INF/Lab+as+a+Service+2.0">LaaS Wiki</a></p>
+        {% block about_us %}
+        <p>Here is some information about us!</p>
+        {% endblock about_us %}
     </div>
 
     <!-- Get started -->

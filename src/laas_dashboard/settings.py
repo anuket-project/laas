@@ -53,10 +53,23 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'laas_dashboard.urls'
 
+TEMPLATE_OVERRIDE = os.environ.get("TEMPLATE_OVERRIDE_DIR", "")  # the user's custom template dir
+TEMPLATE_DIRS = ["base"]  # where all the base templates are
+
+# If the user has a custom template directory,
+# We should search that first. Then we search the
+# root template directory so that we can extend the base
+# templates within the custom template dir.
+if TEMPLATE_OVERRIDE:
+    TEMPLATE_DIRS = [TEMPLATE_OVERRIDE, ""] + TEMPLATE_DIRS
+
+# all template dirs are relative to /project_root/templates/
+dirs = [os.path.join(BASE_DIR, "templates", d) for d in TEMPLATE_DIRS]
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': dirs,
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

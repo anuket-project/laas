@@ -1,0 +1,25 @@
+We use a special directory structure here that allows you to define
+your own set of templates than inherit from a common base.
+
+To create your own templates:
+
+Create your new directory as a sibling of base/
+    `mkdir my_templates`
+
+Now you can override any template file in base/ by creating a file of the same name in my_templates.
+
+For example, to replace base/booking/booking_table.html,
+you would create my_templates/booking/booking_table.html. Your template will be loaded instead of the original.
+
+
+You can also inherit from the base templates. For example, if you
+wanted to add to base/dashboard/landing.html, you can create
+a template at my_templates/dashboard/landing.html and add this line to
+the top of the file:
+    {% extends base/dashboard/landing.html %}
+
+This way you can add in new {% block %} tags to the parents and define only
+the new content you need without affecting the default behavior.
+
+
+When your template directory is ready, you must add it to your config.env
