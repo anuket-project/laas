@@ -9,8 +9,7 @@
 ##############################################################################
 
 # first, basic lint with flake8
-find . -type f -name "*.py" -not -name "manage.py" | xargs flake8 --count --ignore E501
-
+find . -type f -name "*.py" -not -name "manage.py" -not -path "*/migrations/*" | xargs flake8 --count
 
 # this file should be executed from the dir it is in
 docker exec -it dg01 python manage.py test

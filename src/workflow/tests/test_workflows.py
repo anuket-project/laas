@@ -50,9 +50,7 @@ class WorkflowTestCase(TestCase):
         session.save()
 
     def render_steps(self):
-        """
-        retrieves each step individually at /wf/workflow/step=<index>
-        """
+        """Retrieve each step individually at /wf/workflow/step=<index>."""
         for i in range(self.step_count):
             #  renders the step itself, not in an iframe
             exception = None

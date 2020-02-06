@@ -16,6 +16,8 @@ class StatisticsManager(object):
     @staticmethod
     def getContinuousBookingTimeSeries(span=28):
         """
+        Calculate Booking usage data points.
+
         Will return a dictionary of names and 2-D array of x and y data points.
         e.g. {"plot1": [["x1", "x2", "x3"],["y1", "y2", "y3]]}
         x values will be dates in string

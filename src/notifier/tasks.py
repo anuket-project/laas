@@ -19,15 +19,15 @@ from notifier.manager import NotificationHandler
 
 @shared_task
 def notify_expiring():
-    """
-    Notify users if their booking is within 48 hours of expiring.
-    """
+    """Notify users if their booking is within 48 hours of expiring."""
     expire_time = timezone.now() + timezone.timedelta(hours=settings.EXPIRE_HOURS)
     # Don't email people about bookings that have started recently
     start_time = timezone.now() - timezone.timedelta(hours=settings.EXPIRE_LIFETIME)
-    bookings = Booking.objects.filter(end__lte=expire_time,
+    bookings = Booking.objects.filter(
+        end__lte=expire_time,
         end__gte=timezone.now(),
-        start__lte=start_time)
+        start__lte=start_time
+    )
     for booking in bookings:
         if Emailed.objects.filter(almost_end_booking=booking).exists():
             continue

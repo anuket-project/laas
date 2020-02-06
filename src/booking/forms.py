@@ -62,6 +62,8 @@ class QuickBookingForm(forms.Form):
 
     def build_user_list(self):
         """
+        Build list of UserProfiles.
+
         returns a mapping of UserProfile ids to displayable objects expected by
         searchable multiple select widget
         """

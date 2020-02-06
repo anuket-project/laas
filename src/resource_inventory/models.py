@@ -111,24 +111,20 @@ class Resource(models.Model):
 
     def get_configuration(self, state):
         """
+        Get configuration of Resource.
+
         Returns the desired configuration for this host as a
         JSON object as defined in the rest api spec.
         state is a ConfigState
-        TODO: single method, or different methods for hw, network, snapshot, etc?
         """
         raise NotImplementedError("Must implement in concrete Resource classes")
 
     def reserve(self):
-        """
-        Reserves this resource for its currently
-        assigned booking.
-        """
+        """Reserve this resource for its currently assigned booking."""
         raise NotImplementedError("Must implement in concrete Resource classes")
 
     def release(self):
-        """
-        Makes this resource available again for new boookings
-        """
+        """Make this resource available again for new boookings."""
         raise NotImplementedError("Must implement in concrete Resource classes")
 
 
@@ -170,15 +166,14 @@ class PhysicalNetwork(Resource):
 
     def get_configuration(self, state):
         """
-        Returns the network configuration
+        Get the network configuration.
+
         Collects info about each attached network interface and vlan, etc
         """
         return {}
 
     def reserve(self):
-        """
-        Reserves vlan(s) associated with this network
-        """
+        """Reserve vlan(s) associated with this network."""
         # vlan_manager = self.bundle.lab.vlan_manager
         return False
 
@@ -329,9 +324,8 @@ class OPNFVRole(models.Model):
 
 
 class Image(models.Model):
-    """
-    model for representing OS images / snapshots of hosts
-    """
+    """Model for representing OS images / snapshots of hosts."""
+
     id = models.AutoField(primary_key=True)
     lab_id = models.IntegerField()  # ID the lab who holds this image knows
     from_lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
@@ -354,10 +348,8 @@ def get_sentinal_opnfv_role():
 
 
 class HostConfiguration(models.Model):
-    """
-    model to represent a complete configuration for a single
-    physical host
-    """
+    """Model to represent a complete configuration for a single physical host."""
+
     id = models.AutoField(primary_key=True)
     host = models.ForeignKey(GenericHost, related_name="configuration", on_delete=models.CASCADE)
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
@@ -438,8 +430,7 @@ class Interface(models.Model):
 
 
 class OPNFV_SETTINGS():
-    """
-    This is a static configuration class
-    """
+    """This is a static configuration class."""
+
     # all the required network types in PDF/IDF spec
     NETWORK_ROLES = ["public", "private", "admin", "mgmt"]

@@ -88,9 +88,7 @@ def booking_poll():
 
 @shared_task
 def free_hosts():
-    """
-    gets all hosts from the database that need to be freed and frees them
-    """
+    """Free all hosts that should be freed."""
     undone_statuses = [JobStatus.NEW, JobStatus.CURRENT, JobStatus.ERROR]
     undone_jobs = Job.objects.filter(
         hostnetworkrelation__status__in=undone_statuses,

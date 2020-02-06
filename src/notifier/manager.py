@@ -38,8 +38,8 @@ class NotificationHandler(object):
     @classmethod
     def booking_notify(cls, booking, template, titles):
         """
-        Creates a notification for a booking owner and collaborators
-        using the template.
+        Create a notification for a booking owner and collaborators using the template.
+
         titles is a list - the first is the title for the owner's notification,
             the last is the title for the collaborators'
         """
@@ -158,6 +158,8 @@ class NotificationHandler(object):
     @classmethod
     def task_updated(cls, task):
         """
+        Notification of task changing.
+
         called every time a lab updated info about a task.
         sends an email when 'task' changing state means a booking has
         just been fulfilled (all tasks done, servers ready to use)

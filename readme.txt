@@ -20,6 +20,7 @@ Deployment:
 - install docker, docker-compose
 - run 'make data'
 - run 'make up' to run the dashboard (or 'make dev-up' for development)
+- get the rsa.pem and rsa.pub keys from your jira admin and place them in src/account
 
 Production will be running on port 80 by default.
 Development will be running on port 8000 by default.

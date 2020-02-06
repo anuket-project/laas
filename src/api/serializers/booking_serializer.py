@@ -25,7 +25,8 @@ class BookingField(serializers.Field):
 
     def to_representation(self, booking):
         """
-        Takes in a booking object.
+        Take in a booking object.
+
         Returns a dictionary of primitives representing that booking
         """
         ser = {}
@@ -75,8 +76,7 @@ class BookingField(serializers.Field):
 
     def to_internal_value(self, data):
         """
-        Takes in a dictionary of primitives
-        Returns a booking object
+        Take in a dictionary of primitives, and return a booking object.
 
         This is not going to be implemented or allowed.
         If someone needs to create a booking through the api,
@@ -146,9 +146,7 @@ class InterfaceField(serializers.Field):
         pass
 
     def to_internal_value(self, data):
-        """
-        takes in a serialized interface and creates an Interface model
-        """
+        """Take in a serialized interface and creates an Interface model."""
         mac = data['mac']
         bus_address = data['busaddr']
         switch_name = data['switchport']['switch_name']

@@ -16,9 +16,8 @@ from resource_inventory.models import Vlan
 
 
 class IDFTemplater:
-    """
-    Utility class to create a full IDF yaml file
-    """
+    """Utility class to create a full Installer Descriptor File (IDF) yaml file."""
+
     net_names = ["admin", "mgmt", "private", "public"]
     bridge_names = {
         "admin": "br-admin",
@@ -39,9 +38,7 @@ class IDFTemplater:
             }
 
     def makeIDF(self, booking):
-        """
-        fills the installer descriptor file template with info about the resource
-        """
+        """Fill the IDF template with info about the resource."""
         template = "dashboard/idf.yaml"
         info = {}
         info['version'] = "0.1"
