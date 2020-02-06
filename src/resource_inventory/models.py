@@ -127,6 +127,13 @@ class Resource(models.Model):
         """Make this resource available again for new boookings."""
         raise NotImplementedError("Must implement in concrete Resource classes")
 
+    def get_interfaces(self):
+        """
+        Returns a list of interfaces on this resource.
+        The ordering of interfaces should be consistent.
+        """
+        raise NotImplementedError("Must implement in concrete Resource classes")
+
 
 # Generic resource templates
 class GenericResourceBundle(models.Model):
@@ -419,6 +426,9 @@ class Host(Resource):
     def release(self):
         self.booked = False
         self.save()
+
+    def get_interfaces(self):
+        return list(self.interfaces.all().order_by('bus_address'))
 
 
 class Interface(models.Model):
