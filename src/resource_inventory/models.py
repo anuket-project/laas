@@ -421,9 +421,9 @@ class Interface(models.Model):
     id = models.AutoField(primary_key=True)
     mac_address = models.CharField(max_length=17)
     bus_address = models.CharField(max_length=50)
-    name = models.CharField(max_length=100, default="eth0")
     config = models.ManyToManyField(Vlan)
     host = models.ForeignKey(Host, on_delete=models.CASCADE, related_name='interfaces')
+    profile = models.ForeignKey(InterfaceProfile, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.mac_address + " on host " + str(self.host)
