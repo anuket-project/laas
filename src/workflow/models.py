@@ -18,7 +18,7 @@ import requests
 from workflow.forms import ConfirmationForm
 from api.models import JobFactory
 from dashboard.exceptions import ResourceAvailabilityException, ModelValidationException
-from resource_inventory.models import Image, GenericInterface, OPNFVConfig, HostOPNFVConfig, NetworkRole
+from resource_inventory.models import Image, InterfaceProfile, OPNFVConfig, ResourceOPNFVConfig, NetworkRole
 from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.pdf_templater import PDFTemplater
 from notifier.manager import NotificationHandler
@@ -552,7 +552,7 @@ class Repository():
             if 'connections' in models:
                 for resource_name, mapping in models['connections'].items():
                     for profile_name, connection_set in mapping.items():
-                        interface = GenericInterface.objects.get(
+                        interface = InterfaceConfiguration.objects.get(
                             profile__name=profile_name,
                             host__resource__name=resource_name,
                             host__resource__bundle=models['bundle']

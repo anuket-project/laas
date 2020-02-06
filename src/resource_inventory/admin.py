@@ -11,7 +11,7 @@
 from django.contrib import admin
 
 from resource_inventory.models import (
-    HostProfile,
+    ResourceProfile,
     InterfaceProfile,
     DiskProfile,
     CpuProfile,
@@ -32,7 +32,7 @@ from resource_inventory.models import (
     OPNFVConfig,
     OPNFVRole,
     Image,
-    HostConfiguration,
+    ResourceConfiguration,
     RemoteInfo
 )
 

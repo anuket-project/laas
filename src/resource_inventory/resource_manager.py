@@ -8,17 +8,10 @@
 ##############################################################################
 import re
 
-from dashboard.exceptions import (
-    ResourceExistenceException,
-    ResourceAvailabilityException,
-    ResourceProvisioningException,
-    ModelValidationException,
-)
+from dashboard.exceptions import ResourceAvailabilityException
+
 from resource_inventory.models import (
-    Host,
-    HostConfiguration,
     ResourceBundle,
-    HostProfile,
     Network,
     Vlan,
     PhysicalNetwork,
@@ -38,32 +31,22 @@ class ResourceManager:
             ResourceManager.instance = ResourceManager()
         return ResourceManager.instance
 
-    def getAvailableHostTypes(self, lab):
-        hostset = Host.objects.filter(lab=lab).filter(booked=False).filter(working=True)
-        hostprofileset = HostProfile.objects.filter(host__in=hostset, labs=lab)
-        return set(hostprofileset)
-
-    def hostsAvailable(self, grb):
+    def templateIsReservable(self, resource_template):
         """
-        Check if the given GenericResourceBundle is available.
+        Check if the required resources to reserve this template is available.
 
         No changes to the database
         """
         # count up hosts
         profile_count = {}
-        for host in grb.getResources():
-            if host.profile not in profile_count:
-                profile_count[host.profile] = 0
-            profile_count[host.profile] += 1
+        for config in resource_template.getConfigs():
+            if config.profile not in profile_count:
+                profile_count[config.profile] = 0
+            profile_count[config.profile] += 1
 
         # check that all required hosts are available
         for profile in profile_count.keys():
-            available = Host.objects.filter(
-                booked=False,
-                working=True,
-                lab=grb.lab,
-                profile=profile
-            ).count()
+            available = len(profile.get_resources(lab=resource_template.lab, unreserved=True))
             needed = profile_count[profile]
             if available < needed:
                 return False
@@ -71,8 +54,8 @@ class ResourceManager:
 
     # public interface
     def deleteResourceBundle(self, resourceBundle):
-        for host in Host.objects.filter(bundle=resourceBundle):
-            host.release()
+        for resource in resourceBundle.get_resources():
+            resource.release()
         resourceBundle.delete()
 
     def get_vlans(self, genericResourceBundle):
@@ -89,43 +72,32 @@ class ResourceManager:
                 networks[network.name] = vlan
         return networks
 
-    def convertResourceBundle(self, genericResourceBundle, config=None):
+    def instantiateTemplate(self, resource_template, config=None):
         """
-        Convert a GenericResourceBundle into a ResourceBundle.
+        Convert a ResourceTemplate into a ResourceBundle.
 
-        Takes in a genericResourceBundle and reserves all the
+        Takes in a ResourceTemplate and reserves all the
         Resources needed and returns a completed ResourceBundle.
         """
-        resource_bundle = ResourceBundle.objects.create(template=genericResourceBundle)
-        generic_hosts = genericResourceBundle.getResources()
-        physical_hosts = []
+        resource_bundle = ResourceBundle.objects.create(template=resource_template)
+        res_configs = resource_template.getConfigs()
+        resources = []
 
-        vlan_map = self.get_vlans(genericResourceBundle)
+        vlan_map = self.get_vlans(resource_template)
 
-        for generic_host in generic_hosts:
-            host_config = None
-            if config:
-                host_config = HostConfiguration.objects.get(bundle=config, host=generic_host)
+        for config in res_configs:
             try:
-                physical_host = self.acquireHost(generic_host, genericResourceBundle.lab.name)
-            except ResourceAvailabilityException:
-                self.fail_acquire(physical_hosts, vlan_map, genericResourceBundle)
-                raise ResourceAvailabilityException("Could not provision hosts, not enough available")
-            try:
-                physical_host.bundle = resource_bundle
-                physical_host.template = generic_host
-                physical_host.config = host_config
-                physical_hosts.append(physical_host)
+                phys_res = self.acquireHost(config)
+                phys_res.bundle = resource_bundle
+                phys_res.config = config
+                resources.append(phys_res)
 
-                self.configureNetworking(physical_host, vlan_map)
-            except Exception:
-                self.fail_acquire(physical_hosts, vlan_map, genericResourceBundle)
-                raise ResourceProvisioningException("Network configuration failed.")
-            try:
-                physical_host.save()
-            except Exception:
-                self.fail_acquire(physical_hosts, vlan_map, genericResourceBundle)
-                raise ModelValidationException("Saving hosts failed")
+                self.configureNetworking(phys_res, vlan_map)
+                phys_res.save()
+
+            except Exception as e:
+                self.fail_acquire(resources, vlan_map, resource_template)
+                raise e
 
         return resource_bundle
 
@@ -149,30 +121,27 @@ class ResourceManager:
                 )
 
     # private interface
-    def acquireHost(self, genericHost, labName):
-        host_full_set = Host.objects.filter(lab__name__exact=labName, profile=genericHost.profile)
-        if not host_full_set.first():
-            raise ResourceExistenceException("No matching servers found")
-        host_set = host_full_set.filter(booked=False, working=True)
-        if not host_set.first():
-            raise ResourceAvailabilityException("No unbooked hosts match requested hosts")
-        host = host_set.first()
-        host.booked = True
-        host.template = genericHost
-        host.save()
-        return host
+    def acquireHost(self, resource_config):
+        resources = resource_config.profile.get_resources(lab=resource_config.lab, unreserved=True)
+        try:
+            resource = resources[0]  # TODO: should we randomize and 'load balance' the servers?
+            resource.config = resource_config
+            resource.reserve()
+            return resource
+        except IndexError:
+            raise ResourceAvailabilityException("No available resources of requested type")
 
-    def releaseNetworks(self, grb, vlan_manager, vlans):
+    def releaseNetworks(self, template, vlans):
+        vlan_manager = template.lab.vlan_manager
         for net_name, vlan_id in vlans.items():
-            net = Network.objects.get(name=net_name, bundle=grb)
+            net = Network.objects.get(name=net_name, bundle=template)
             if(net.is_public):
                 vlan_manager.release_public_vlan(vlan_id)
             else:
                 vlan_manager.release_vlans(vlan_id)
 
-    def fail_acquire(self, hosts, vlans, grb):
-        vlan_manager = grb.lab.vlan_manager
-        self.releaseNetworks(grb, vlan_manager, vlans)
+    def fail_acquire(self, hosts, vlans, template):
+        self.releaseNetworks(template, vlans)
         for host in hosts:
             host.release()
 
