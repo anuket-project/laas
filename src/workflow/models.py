@@ -18,7 +18,7 @@ import requests
 from workflow.forms import ConfirmationForm
 from api.models import JobFactory
 from dashboard.exceptions import ResourceAvailabilityException, ModelValidationException
-from resource_inventory.models import Image, InterfaceProfile, OPNFVConfig, ResourceOPNFVConfig, NetworkRole
+from resource_inventory.models import Image, InterfaceConfiguration, OPNFVConfig, ResourceOPNFVConfig, NetworkRole
 from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.pdf_templater import PDFTemplater
 from notifier.manager import NotificationHandler
@@ -725,7 +725,7 @@ class Repository():
             config = config_bundle.hostConfigurations.get(
                 host__resource__name=host_role['host_name']
             )
-            HostOPNFVConfig.objects.create(
+            ResourceOPNFVConfig.objects.create(
                 role=host_role['role'],
                 host_config=config,
                 opnfv_config=opnfv_config

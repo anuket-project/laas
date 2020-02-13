@@ -12,7 +12,7 @@ from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 
-from resource_inventory.models import HostProfile, Host
+from resource_inventory.models import ResourceProfile, ResourceQuery
 
 
 class HostView(TemplateView):
@@ -20,13 +20,13 @@ class HostView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(HostView, self).get_context_data(**kwargs)
-        hosts = Host.objects.filter(working=True)
+        hosts = ResourceQuery.filter(working=True)
         context.update({'hosts': hosts, 'title': "Hardware Resources"})
         return context
 
 
 def hostprofile_detail_view(request, hostprofile_id):
-    hostprofile = get_object_or_404(HostProfile, id=hostprofile_id)
+    hostprofile = get_object_or_404(ResourceProfile, id=hostprofile_id)
 
     return render(
         request,

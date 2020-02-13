@@ -16,9 +16,8 @@ from booking.models import Booking
 from workflow.workflow_factory import WorkflowFactory
 from workflow.models import Repository
 from resource_inventory.models import (
-    GenericResourceBundle,
-    ConfigBundle,
-    HostConfiguration,
+    ResourceTemplate,
+    ResourceConfiguration,
     OPNFVConfig
 )
 from workflow.forms import ManagerForm
@@ -154,10 +153,10 @@ class SessionManager():
             edit_object = Booking.objects.get(pk=target_id)
             self.prefill_booking(edit_object)
         elif workflow_type == 1:
-            edit_object = GenericResourceBundle.objects.get(pk=target_id)
+            edit_object = ResourceTemplate.objects.get(pk=target_id)
             self.prefill_resource(edit_object)
         elif workflow_type == 2:
-            edit_object = ConfigBundle.objects.get(pk=target_id)
+            edit_object = ResourceTemplate.objects.get(pk=target_id)
             self.prefill_config(edit_object)
 
     def prefill_booking(self, booking):
@@ -213,7 +212,7 @@ class SessionManager():
         models = self.active_workflow().repository.el.get(self.active_workflow().repository.CONFIG_MODELS, {})
         models['bundle'] = config
         models['host_configs'] = []
-        for host_conf in HostConfiguration.objects.filter(bundle=config):
+        for host_conf in ResourceConfiguration.objects.filter(bundle=config):
             models['host_configs'].append(host_conf)
         models['opnfv'] = OPNFVConfig.objects.filter(bundle=config).last()
         return models
@@ -227,7 +226,7 @@ class SessionManager():
         opnfv = OPNFVConfig.objects.filter(bundle=config).last()
         confirm['configuration']['installer'] = opnfv.installer.name
         confirm['configuration']['scenario'] = opnfv.scenario.name
-        for host_conf in HostConfiguration.objects.filter(bundle=config):
+        for host_conf in ResourceConfiguration.objects.filter(bundle=config):
             h = {"name": host_conf.host.resource.name, "image": host_conf.image.name, "role": host_conf.opnfvRole.name}
             confirm['configuration']['hosts'].append(h)
         return confirm

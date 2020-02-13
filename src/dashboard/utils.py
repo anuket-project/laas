@@ -1,3 +1,14 @@
+##############################################################################
+# Copyright (c) 2020 Parker Berberian and others.
+#
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Apache License, Version 2.0
+# which accompanies this distribution, and is available at
+# http://www.apache.org/licenses/LICENSE-2.0
+##############################################################################
+
+from django.core.exceptions import ObjectDoesNotExist
+
 
 class AbstractModelQuery():
     """
@@ -22,3 +33,10 @@ class AbstractModelQuery():
         result = []
         for model in cls.model_list:
             result += list(model.objects.filter(*args, **kwargs))
+
+    @classmethod
+    def get(cls, *args, **kwargs):
+        try:
+            return cls.filter(*args, **kwargs)[0]
+        except IndexError:
+            raise ObjectDoesNotExist()

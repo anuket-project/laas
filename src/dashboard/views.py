@@ -15,7 +15,7 @@ from django.shortcuts import render
 
 from account.models import Lab
 
-from resource_inventory.models import Image, HostProfile
+from resource_inventory.models import Image, ResourceProfile
 from workflow.workflow_manager import ManagerTracker
 
 
@@ -80,7 +80,7 @@ class LandingView(TemplateView):
 
         hosts = []
 
-        for host_profile in HostProfile.objects.all():
+        for host_profile in ResourceProfile.objects.all():
             name = host_profile.name
             description = host_profile.description
             in_labs = host_profile.labs

@@ -13,7 +13,7 @@ from django.forms import formset_factory
 from workflow.models import WorkflowStep
 from workflow.forms import BasicMetaForm, HostSoftwareDefinitionForm
 from workflow.booking_workflow import Abstract_Resource_Select
-from resource_inventory.models import Image, GenericHost, ConfigBundle, HostConfiguration
+from resource_inventory.models import Image, ResourceConfiguration, ResourceTemplate
 
 
 class SWConf_Resource_Select(Abstract_Resource_Select):
@@ -38,7 +38,7 @@ class Define_Software(WorkflowStep):
         user = self.repo_get(self.repo.SESSION_USER)
         lab = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE).lab
         for i, host_data in enumerate(hosts_data):
-            host = GenericHost.objects.get(pk=host_data['host_id'])
+            host = ResourceConfiguration.objects.get(pk=host_data['host_id'])
             wrong_owner = Image.objects.exclude(owner=user).exclude(public=True)
             wrong_host = Image.objects.exclude(host_type=host.profile)
             wrong_lab = Image.objects.exclude(from_lab=lab)
@@ -86,7 +86,7 @@ class Define_Software(WorkflowStep):
             if not grb:
                 return []
         if grb.id:
-            return GenericHost.objects.filter(resource__bundle=grb)
+            return ResourceConfiguration.objects.filter(resource__bundle=grb)
         generic_hosts = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {}).get("hosts", [])
         return generic_hosts
 
@@ -109,7 +109,7 @@ class Define_Software(WorkflowStep):
     def post(self, post_data, user):
         models = self.repo_get(self.repo.CONFIG_MODELS, {})
         if "bundle" not in models:
-            models['bundle'] = ConfigBundle(owner=self.repo_get(self.repo.SESSION_USER))
+            models['bundle'] = ResourceTemplate(owner=self.repo_get(self.repo.SESSION_USER))
 
         confirm = self.repo_get(self.repo.CONFIRMATION, {})
 
@@ -127,7 +127,7 @@ class Define_Software(WorkflowStep):
                 if headnode:
                     has_headnode = True
                 bundle = models['bundle']
-                hostConfig = HostConfiguration(
+                hostConfig = ResourceConfiguration(
                     host=host,
                     image=image,
                     bundle=bundle,
@@ -175,7 +175,7 @@ class Config_Software(WorkflowStep):
     def post(self, post_data, user):
         models = self.repo_get(self.repo.CONFIG_MODELS, {})
         if "bundle" not in models:
-            models['bundle'] = ConfigBundle(owner=self.repo_get(self.repo.SESSION_USER))
+            models['bundle'] = ResourceTemplate(owner=self.repo_get(self.repo.SESSION_USER))
 
         confirm = self.repo_get(self.repo.CONFIRMATION, {})
         if "configuration" not in confirm:

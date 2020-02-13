@@ -12,7 +12,7 @@ import json
 from django.db.models import Q
 from datetime import timedelta
 from django.utils import timezone
-from django.form import ValidationException
+from django.core.exceptions import ValidationError
 from account.models import Lab
 
 from resource_inventory.models import (
@@ -21,7 +21,7 @@ from resource_inventory.models import (
     Image,
     OPNFVRole,
     OPNFVConfig,
-    HostOPNFVConfig,
+    ResourceOPNFVConfig,
 )
 from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.pdf_templater import PDFTemplater
@@ -49,9 +49,9 @@ def parse_resource_field(resource_json):
             template = ResourceTemplate.objects.get(pk=resource_info['id'])
 
     if lab is None:
-        raise ValidationException("No lab was selected")
+        raise ValidationError("No lab was selected")
     if template is None:
-        raise ValidationException("No Host was selected")
+        raise ValidationError("No Host was selected")
 
     return lab, template
 
@@ -82,7 +82,7 @@ def generate_hostopnfv(hostconfig, opnfvconfig):
             name="Jumphost",
             description="Single server jumphost role"
         )
-    return HostOPNFVConfig.objects.create(
+    return ResourceOPNFVConfig.objects.create(
         role=role,
         host_config=hostconfig,
         opnfv_config=opnfvconfig
@@ -107,15 +107,15 @@ def check_invariants(request, **kwargs):
     if installer in image.os.sup_installers.all():
         # if installer not here, we can omit that and not check for scenario
         if not scenario:
-            raise ValidationException("An OPNFV Installer needs a scenario to be chosen to work properly")
+            raise ValidationError("An OPNFV Installer needs a scenario to be chosen to work properly")
         if scenario not in installer.sup_scenarios.all():
-            raise ValidationException("The chosen installer does not support the chosen scenario")
+            raise ValidationError("The chosen installer does not support the chosen scenario")
     if image.from_lab != lab:
-        raise ValidationException("The chosen image is not available at the chosen hosting lab")
+        raise ValidationError("The chosen image is not available at the chosen hosting lab")
     if image.host_type != host_profile:
-        raise ValidationException("The chosen image is not available for the chosen host type")
+        raise ValidationError("The chosen image is not available for the chosen host type")
     if not image.public and image.owner != request.user:
-        raise ValidationException("You are not the owner of the chosen private image")
+        raise ValidationError("You are not the owner of the chosen private image")
     if length < 1 or length > 21:
         raise BookingLengthException("Booking must be between 1 and 21 days long")
 

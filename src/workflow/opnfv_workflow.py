@@ -11,7 +11,7 @@
 from django.forms import formset_factory
 
 from workflow.models import WorkflowStep, AbstractSelectOrCreate
-from resource_inventory.models import ConfigBundle, OPNFV_SETTINGS
+from resource_inventory.models import ResourceTemplate, OPNFV_SETTINGS
 from workflow.forms import OPNFVSelectionForm, OPNFVNetworkRoleForm, OPNFVHostRoleForm, SWConfigSelectorForm, BasicMetaForm
 
 
@@ -27,7 +27,7 @@ class OPNFV_Resource_Select(AbstractSelectOrCreate):
 
     def get_form_queryset(self):
         user = self.repo_get(self.repo.SESSION_USER)
-        qs = ConfigBundle.objects.filter(owner=user)
+        qs = ResourceTemplate.objects.filter(owner=user)
         return qs
 
     def put_confirm_info(self, bundle):

@@ -200,6 +200,7 @@ class ResourceConfiguration(models.Model):
     image = models.ForeignKey("Image", on_delete=models.PROTECT)
     template = models.ForeignKey(ResourceTemplate, related_name="resourceConfigurations", null=True, on_delete=models.CASCADE)
     is_head_node = models.BooleanField(default=False)
+    # name?
 
     def __str__(self):
         return "config with " + str(self.template) + " and image " + str(self.image)

@@ -12,7 +12,7 @@ from django.utils import timezone
 import json
 
 from booking.models import Booking
-from resource_inventory.models import Host, Image
+from resource_inventory.models import ResourceQuery, Image
 from workflow.models import WorkflowStep
 from workflow.forms import BasicMetaForm, SnapshotHostSelectForm
 
@@ -61,7 +61,7 @@ class Select_Host_Step(WorkflowStep):
         name = host['name']
         booking_id = host['booking']
         booking = Booking.objects.get(pk=booking_id)
-        host = Host.objects.get(bundle=booking.resource, template__resource__name=name)
+        host = ResourceQuery.get(bundle=booking.resource, template__resource__name=name)
         models = self.repo_get(self.repo.SNAPSHOT_MODELS, {})
         if "host" not in models:
             models['host'] = host
