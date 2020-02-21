@@ -45,3 +45,5 @@ Development:
 - Install dependencies listed in 'Deployment'
 - run 'make build'
 - run 'make dev-up'
+
+    NOTE: DEBUG must be set to True in config.env when running development builds
