@@ -5,7 +5,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0011_auto_20200218_1536'),
+        ('api', '0013_manual_20200218_1536'),
         ('resource_inventory', '0013_auto_20200218_1536')
     ]
 

@@ -6,17 +6,33 @@ import django.db.models.deletion
 import resource_inventory.models
 
 
+def clear_resource_bundles(apps, schema_editor):
+    ResourceBundle = apps.get_model('resource_inventory', 'ResourceBundle')
+    for rb in ResourceBundle.objects.all():
+        rb.template = None
+        rb.save()
+
+
+def create_default_template(apps, schema_editor):
+    ResourceTemplate = apps.get_model('resource_inventory', 'ResourceTemplate')
+    ResourceTemplate.objects.create(id=1, name="Default Template")
+
+
 def populate_servers(apps, schema_editor):
     """Convert old Host models to Server Resources."""
     Host = apps.get_model('resource_inventory', 'Host')
     Server = apps.get_model('resource_inventory', 'Server')
+    ResourceProfile = apps.get_model('resource_inventory', 'ResourceProfile')
     for h in Host.objects.all():
+        rp = ResourceProfile.objects.get(id=h.profile.id)
         Server.objects.create(
             working=h.working,
             vendor=h.vendor,
             labid=h.labid,
             booked=h.booked,
-            name=h.labid
+            name=h.labid,
+            lab=h.lab,
+            profile=rp
         )
 
 
@@ -42,14 +58,16 @@ def populate_resource_profiles(apps, schema_editor):
     HostProfile = apps.get_model('resource_inventory', 'HostProfile')
     ResourceProfile = apps.get_model('resource_inventory', 'ResourceProfile')
     for hp in HostProfile.objects.all():
-        rp = ResourceProfile.objects.create(name=hp.name, description=hp.description)
+        rp = ResourceProfile.objects.create(id=hp.id, name=hp.name, description=hp.description)
         rp.labs.add(*list(hp.labs.all()))
+        """
+        TODO: link these models together
         rp.interfaceprofile = hp.interfaceprofile
         rp.storageprofile = hp.storageprofile
         rp.cpuprofile = hp.cpuprofile
         rp.ramprofile = hp.ramprofile
         rp.save()
-        rp.interfaceprofile.host = rp
+        hp.interfaceprofile.host = rp
         rp.storageprofile.host = rp
         rp.cpuprofile.host = rp
         rp.ramprofile.host = rp
@@ -57,30 +75,17 @@ def populate_resource_profiles(apps, schema_editor):
         rp.storageprofile.save()
         rp.cpuprofile.save()
         rp.ramprofile.save()
+        """
 
 
 class Migration(migrations.Migration):
-    """TODO: Creation of the following models.
-
-    - Server
-    - ResourceTemplate
-    - ResourceProfile
-    - ResourceConfiguration (?)
-    - InterfaceConfiguration (?)
-
-    And set the correct defaults for the following fields:
-    - Interface.profile
-    - OpnfvConfig.template (?)
-    - physicalnetwork.lab
-    - physicalnetwork.profile
-    """
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('booking', '0007_remove_booking_config_bundle'),
         ('account', '0004_downtime'),
-        ('api', '0011_auto_20200218_1536'),
-        ('resource_inventory', '0012_auto_20200103_1850'),
+        ('api', '0013_manual_20200218_1536'),
+        ('resource_inventory', '0012_manual_20200218_1536'),
     ]
 
     operations = [
@@ -142,6 +147,36 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
+        ),
+        migrations.AddField(
+            model_name='server',
+            name='bundle',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='resource_inventory.ResourceBundle'),
+        ),
+        migrations.AddField(
+            model_name='server',
+            name='config',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='resource_inventory.ResourceConfiguration'),
+        ),
+        migrations.AddField(
+            model_name='server',
+            name='interfaces',
+            field=models.ManyToManyField(to='resource_inventory.Interface'),
+        ),
+        migrations.AddField(
+            model_name='server',
+            name='lab',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='account.Lab'),
+        ),
+        migrations.AddField(
+            model_name='server',
+            name='profile',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='resource_inventory.ResourceProfile'),
+        ),
+        migrations.AddField(
+            model_name='server',
+            name='remote_management',
+            field=models.ForeignKey(default=resource_inventory.models.get_default_remote_info, on_delete=models.SET(resource_inventory.models.get_default_remote_info), to='resource_inventory.RemoteInfo'),
         ),
         migrations.RunPython(populate_servers),
         migrations.RemoveField(
@@ -251,47 +286,6 @@ class Migration(migrations.Migration):
             name='order',
             field=models.IntegerField(default=-1),
         ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='bundle',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='resource_inventory.ResourceBundle'),
-        ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='interfaces',
-            field=models.ManyToManyField(to='resource_inventory.Interface'),
-        ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='lab',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='account.Lab'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='labid',
-            field=models.CharField(default='default_id', max_length=200, unique=True),
-        ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='model',
-            field=models.CharField(default='unknown', max_length=150),
-        ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='remote_management',
-            field=models.ForeignKey(default=resource_inventory.models.get_default_remote_info, on_delete=models.SET(resource_inventory.models.get_default_remote_info), to='resource_inventory.RemoteInfo'),
-        ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='vendor',
-            field=models.CharField(default='unknown', max_length=100),
-        ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='working',
-            field=models.BooleanField(default=True),
-        ),
         migrations.AlterField(
             model_name='cpuprofile',
             name='host',
@@ -322,6 +316,7 @@ class Migration(migrations.Migration):
             name='host',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ramprofile', to='resource_inventory.ResourceProfile'),
         ),
+        migrations.RunPython(clear_resource_bundles),
         migrations.AlterField(
             model_name='resourcebundle',
             name='template',
@@ -343,9 +338,6 @@ class Migration(migrations.Migration):
             name='GenericResourceBundle',
         ),
         migrations.DeleteModel(
-            name='Host',
-        ),
-        migrations.DeleteModel(
             name='HostConfiguration',
         ),
         migrations.DeleteModel(
@@ -354,35 +346,8 @@ class Migration(migrations.Migration):
         migrations.DeleteModel(
             name='HostProfile',
         ),
-        migrations.AddField(
-            model_name='server',
-            name='bundle',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='resource_inventory.ResourceBundle'),
-        ),
-        migrations.AddField(
-            model_name='server',
-            name='config',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='resource_inventory.ResourceConfiguration'),
-        ),
-        migrations.AddField(
-            model_name='server',
-            name='interfaces',
-            field=models.ManyToManyField(to='resource_inventory.Interface'),
-        ),
-        migrations.AddField(
-            model_name='server',
-            name='lab',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='account.Lab'),
-        ),
-        migrations.AddField(
-            model_name='server',
-            name='profile',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='resource_inventory.ResourceProfile'),
-        ),
-        migrations.AddField(
-            model_name='server',
-            name='remote_management',
-            field=models.ForeignKey(default=resource_inventory.models.get_default_remote_info, on_delete=models.SET(resource_inventory.models.get_default_remote_info), to='resource_inventory.RemoteInfo'),
+        migrations.DeleteModel(
+            name='Host',
         ),
         migrations.AddField(
             model_name='resourceopnfvconfig',
@@ -429,21 +394,11 @@ class Migration(migrations.Migration):
             name='acts_as',
             field=models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, to='resource_inventory.InterfaceConfiguration'),
         ),
+        migrations.RunPython(create_default_template),
         migrations.AddField(
             model_name='opnfvconfig',
             name='template',
             field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, related_name='opnfv_config', to='resource_inventory.ResourceTemplate'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='config',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='resource_inventory.ResourceConfiguration'),
-        ),
-        migrations.AddField(
-            model_name='physicalnetwork',
-            name='profile',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='resource_inventory.ResourceProfile'),
             preserve_default=False,
         ),
     ]

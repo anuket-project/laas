@@ -382,7 +382,7 @@ class Network(models.Model):
         return self.name
 
 
-class PhysicalNetwork(Resource):
+class PhysicalNetwork(models.Model):
     vlan_id = models.IntegerField()
     generic_network = models.ForeignKey(Network, on_delete=models.CASCADE)
 

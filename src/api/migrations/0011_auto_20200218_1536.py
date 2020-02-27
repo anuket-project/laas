@@ -3,14 +3,6 @@
 from django.db import migrations, models
 
 
-def set_resource_id(apps, schema_editor):
-    for cls in ["HardwareConfig", "NetworkConfig", "SnapshotConfig"]:
-        model = apps.get_model('api', cls)
-        for m in model.objects.all():
-            m.resource_id = m.host.labid
-            m.save()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -33,22 +25,5 @@ class Migration(migrations.Migration):
             model_name='snapshotconfig',
             name='resource_id',
             field=models.CharField(default='default_id', max_length=200),
-        ),
-        migrations.RunPython(set_resource_id),
-        migrations.RemoveField(
-            model_name='hosthardwarerelation',
-            name='host',
-        ),
-        migrations.RemoveField(
-            model_name='hostnetworkrelation',
-            name='host',
-        ),
-        migrations.RemoveField(
-            model_name='snapshotconfig',
-            name='host',
-        ),
-        migrations.RemoveField(
-            model_name='opnfvapiconfig',
-            name='roles',
         ),
     ]

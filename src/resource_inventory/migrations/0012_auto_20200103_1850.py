@@ -4,29 +4,22 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-def genTempVlanNetwork(apps, editor):
-    Vlan = apps.get_model("resource_inventory", "Vlan")
-    Network = apps.get_model("resource_inventory", "Network")
-    tempVlanNetwork = apps.get_model("resource_inventory", "tempVlanNetwork")
-    for vlan in Vlan.objects.filter(network__isnull=False):
-        tempVlanNetwork.objects.create(network=vlan.network, vlan=vlan)
-
-def deleteTempVlanNetworks(apps, editor):
-    tempVlanNetwork = apps.get_model("resource_inventory", "tempVlanNetwork")
-    tempVlanNetwork.objects.all().delete()
-
-
 def pairVlanPhysicalNetworks(apps, editor):
     PhysicalNetwork = apps.get_model("resource_inventory", "PhysicalNetwork")
-    tempVlanPair = apps.get_model("resource_inventory", "tempVlanNetwork")
-    for pair in tempVlanPair.objects.all():
-        physicalNetwork = PhysicalNetwork.objects.create(vlan_id=vlan.vlan_id,
-                generic_network=pair.network)
-        pair.vlan.network = physicalNetwork
+    Vlan = apps.get_model("resource_inventory", "Vlan")
+    for vlan in Vlan.objects.filter(network__isnull=False):
+        if PhysicalNetwork.objects.filter(id=vlan.network.id).exists():
+            continue
+        PhysicalNetwork.objects.create(id=vlan.network.id, vlan_id=vlan.vlan_id, generic_network=vlan.network)
+
 
 def deletePhysicalNetworks(apps, editor):
+    Vlan = apps.get_model("resource_inventory", "Vlan")
+    for vlan in Vlan.objects.all():
+        vlan.network = None
     PhysicalNetwork = apps.get_model("resource_inventory", "PhysicalNetwork")
     PhysicalNetwork.objects.all().delete()
+
 
 class Migration(migrations.Migration):
 
@@ -56,21 +49,11 @@ class Migration(migrations.Migration):
             name='id',
             field=models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
         ),
-        migrations.CreateModel(
-            name='tempVlanNetwork',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('vlan', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='resource_inventory.vlan')),
-                ('network', models.ForeignKey(null=True, to='resource_inventory.network', on_delete=django.db.models.deletion.CASCADE)),
-            ]
-        ),
-        migrations.RunPython(genTempVlanNetwork, deleteTempVlanNetworks),
+        migrations.RunPython(pairVlanPhysicalNetworks, deletePhysicalNetworks),
         migrations.AlterField(
             model_name='vlan',
             name='network',
             field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING,
                 to='resource_inventory.PhysicalNetwork', null=True),
         ),
-        migrations.RunPython(pairVlanPhysicalNetworks, deletePhysicalNetworks),
-        migrations.DeleteModel("tempVlanNetwork")
     ]
