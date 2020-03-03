@@ -7,11 +7,13 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 import re
+from django.db.models import Q
 
 from dashboard.exceptions import ResourceAvailabilityException
 
 from resource_inventory.models import (
     ResourceBundle,
+    ResourceTemplate,
     Network,
     Vlan,
     PhysicalNetwork,
@@ -30,6 +32,11 @@ class ResourceManager:
         if ResourceManager.instance is None:
             ResourceManager.instance = ResourceManager()
         return ResourceManager.instance
+
+    def getAvailableResourceTemplates(self, lab, user):
+        templates = ResourceTemplate.objects.filter(lab=lab)
+        templates.filter(Q(owner=user) | Q(public=True))
+        return templates
 
     def templateIsReservable(self, resource_template):
         """
