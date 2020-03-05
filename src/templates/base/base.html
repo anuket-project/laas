@@ -12,17 +12,19 @@
 {% block basecontent %}
 <div id="wrapper" class="d-flex flex-column">
     <!-- Navigation -->
+    {% block bgColor %}
     <nav class="navbar navbar-light bg-light navbar-fixed-top border-bottom py-0 mb-0" role="navigation">
+    {% endblock bgColor %}
         <div class="container-fluid pb-2 pb-sm-0">
             <!-- Logo -->
+            {% block logo %}
             <div class="col-12 col-sm order-1 order-sm-2 text-center text-lg-left">
-                <a href="https://www.opnfv.org/" class="navbar-brand">
-                    <img src="{% static "img/opnfv-logo.png" %}">
-                </a>
+            <h2>Logo Here</h2>
                 <a class="navbar-brand d-none d-lg-inline" href={% url 'dashboard:index' %}>
                     Laas Dashboard
                 </a>
             </div>
+            {% endblock logo %}
             <!-- Sidebar button -->
             <div class="col-6 col-sm-2 d-flex order-1 order-lg-3 d-lg-none">
                 <button class="btn border mx-auto" type="button" data-toggle="collapse" data-target="#sidebar"
@@ -75,6 +77,7 @@
                             <a href="/" class="list-group-item list-group-item-action">
                                 Home
                             </a>
+                            {% block dropDown %}
                             <a class="list-group-item list-group-item-action" data-toggle="collapse"
                                 href="#createList" role="button">
                                 Create <i class="fas fa-angle-down rotate"></i>
@@ -99,6 +102,7 @@
                                     Configure OPNFV
                                 </a>
                             </div>
+                            {% endblock dropDown %}
                             <a href="{% url 'resource:hosts' %}" class="list-group-item list-group-item-action">
                                 Hosts
                             </a>

@@ -1,0 +1,13 @@
+{% extends "base/base.html" %}
+{% load staticfiles %}
+{% block logo %}
+<div class="col-12 col-sm order-1 order-sm-2 text-center text-lg-left">
+    <a href="https://www.opnfv.org/" class="navbar-brand">
+        <img src="{% static "img/opnfv-logo.png" %}">
+    </a>
+    <a class="navbar-brand d-none d-lg-inline" href={% url 'dashboard:index' %}>
+        Laas Dashboard
+    </a>
+</div>
+{% endblock logo %}
+

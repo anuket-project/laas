@@ -10,7 +10,9 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
+    {% block head-title %}
     <title>OPNFV Laas {{ title }}</title>
+    {% endblock head-title %}
 
     <!-- Bootstrap Core CSS -->
     <link href="{% static "node_modules/bootstrap/dist/css/bootstrap.min.css" %}"

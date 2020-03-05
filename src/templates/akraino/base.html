@@ -1,0 +1,24 @@
+{% extends "base/base.html" %}
+{% load staticfiles %}
+{% block bgColor %}
+<style>
+.bgAkr {
+    background: #d9c2f2;
+}
+</style>
+<nav class="navbar navbar-light bgAkr navbar-fixed-top border-bottom py-0 mb-0" role="navigation">
+{% endblock bgColor %}
+
+{% block logo %}
+<div class="col-12 col-sm order-1 order-sm-2 text-center text-lg-left">
+    <a href="https://www.lfedge.org/projects/akraino/" class="navbar-brand">
+        <img src="{% static "img/akraino_logo.logo" %}">
+    </a>
+
+    <a class="navbar-brand d-none d-lg-inline" href={% url 'dashboard:index' %}>
+        Akraino Dashboard
+    </a>
+</div>
+{% endblock logo %}
+{% block dropDown %}
+{% endblock dropDown %}

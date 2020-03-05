@@ -32,9 +32,9 @@
             To get started, please log in with your <a href="/accounts/login">Linux Foundation Jira account</a>
         </h4>
         {% else %}
+        {% block btnGrp %}
         <p>To get started, book a server below:</p>
-        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border text-white p-4"
-            href="/booking/quick/">
+        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border text-white p-4" href="/booking/quick/">
             Book a Server
         </a>
         <p class="mt-4">PTLs can use our advanced options to book multi-node pods. If you are a PTL, you may use the options
@@ -45,11 +45,13 @@
             <button class="btn btn-primary" onclick="create_workflow(1)">Design a Pod</button>
             <button class="btn btn-primary" onclick="create_workflow(2)">Configure a Pod</button>
         </div>
+        {% endblock btnGrp %}
         {% endif %}
     </div>
 
     <!-- Returning users -->
     {% if not request.user.is_anonymous %}
+    {% block returningUsers %}
     <div class="col-12 col-lg-6 offset-lg-6 mb-4 mt-lg-4">
         <h2 class="ht-4 border-bottom">Returning Users</h2>
         <p>If you're a returning user, some of the following options may be of interest:</p>
@@ -65,6 +67,7 @@
             {% endif %}
         </div>
     </div>
+    {% endblock returningUsers %}
     {% endif %}
 </div>
 
