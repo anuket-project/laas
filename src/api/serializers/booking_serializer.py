@@ -11,7 +11,7 @@
 from rest_framework import serializers
 
 from resource_inventory.models import (
-    HostConfiguration,
+    ResourceConfiguration,
     CpuProfile,
     DiskProfile,
     InterfaceProfile,
@@ -35,7 +35,7 @@ class BookingField(serializers.Field):
         host_configs = {}  # mapping hostname -> config
         networks = {}  # mapping vlan id -> network_hosts
         for host in booking.resource.hosts.all():
-            host_configs[host.name] = HostConfiguration.objects.get(host=host.template)
+            host_configs[host.name] = ResourceConfiguration.objects.get(host=host.template)
             if "jumphost" not in ser and host_configs[host.name].opnfvRole.name.lower() == "jumphost":
                 ser['jumphost'] = host.name
             # host is a Host model

@@ -18,7 +18,7 @@ from django.shortcuts import redirect, render
 from django.db.models import Q
 from django.urls import reverse
 
-from resource_inventory.models import ResourceBundle, HostProfile, Image, Host
+from resource_inventory.models import ResourceBundle, ResourceProfile, Image, ResourceQuery
 from resource_inventory.resource_manager import ResourceManager
 from account.models import Lab, Downtime
 from booking.models import Booking
@@ -42,11 +42,11 @@ def quick_create(request):
         context = {}
 
         r_manager = ResourceManager.getInstance()
-        profiles = {}
+        templates = {}
         for lab in Lab.objects.all():
-            profiles[str(lab)] = r_manager.getAvailableHostTypes(lab)
+            templates[str(lab)] = r_manager.getAvailableResourceTemplates(lab, request.user)
 
-        context['lab_profile_map'] = profiles
+        context['lab_profile_map'] = templates
 
         context['form'] = QuickBookingForm(default_user=request.user.username, user=request.user)
 
@@ -130,7 +130,7 @@ class ResourceBookingsJSON(View):
 
 def build_image_mapping(lab, user):
     mapping = {}
-    for profile in HostProfile.objects.filter(labs=lab):
+    for profile in ResourceProfile.objects.filter(labs=lab):
         images = Image.objects.filter(
             from_lab=lab,
             host_type=profile
@@ -178,7 +178,7 @@ def booking_modify_image(request, booking_id):
         if timezone.now() > booking.end:
             return HttpResponse("unauthorized")
         new_image = Image.objects.get(id=form.cleaned_data['image_id'])
-        host = Host.objects.get(id=form.cleaned_data['host_id'])
+        host = ResourceQuery.get(labid=form.cleaned_data['host_id'])
         host.config.image = new_image
         host.config.save()
         JobFactory.reimageHost(new_image, booking, host)

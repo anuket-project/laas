@@ -300,7 +300,7 @@ class FormUtils:
         else:
             multiple_hosts = false
         labs = {}
-        hosts = {}
+        resources = {}
         items = {}
         neighbors = {}
         for lab in Lab.objects.all():
@@ -311,24 +311,21 @@ class FormUtils:
                 'description': lab.description,
                 'selected': false,
                 'selectable': true,
-                'follow': false,
+                'follow': multiple_hosts,
                 'multiple': false,
                 'class': 'lab'
             }
-            if multiple_hosts:
-                # "follow" this lab node to discover more hosts if allowed
-                lab_node['follow'] = true
             items[lab_node['id']] = lab_node
             neighbors[lab_node['id']] = []
             labs[lab_node['id']] = lab_node
 
-            for host in lab.hostprofiles.all():
-                host_node = {
+            for template in lab.resourcetemplates.all():
+                resource_node = {
                     'form': {"name": "host_name", "type": "text", "placeholder": "hostname"},
-                    'id': "host_" + str(host.id),
-                    'model_id': host.id,
-                    'name': host.name,
-                    'description': host.description,
+                    'id': "resource_" + str(template.id),
+                    'model_id': template.id,
+                    'name': template.name,
+                    'description': template.description,
                     'selected': false,
                     'selectable': true,
                     'follow': false,
@@ -336,15 +333,15 @@ class FormUtils:
                     'class': 'host'
                 }
                 if multiple_hosts:
-                    host_node['values'] = []  # place to store multiple values
-                items[host_node['id']] = host_node
-                neighbors[lab_node['id']].append(host_node['id'])
-                if host_node['id'] not in neighbors:
-                    neighbors[host_node['id']] = []
-                neighbors[host_node['id']].append(lab_node['id'])
-                hosts[host_node['id']] = host_node
+                    resource_node['values'] = []  # place to store multiple values
+                items[resource_node['id']] = resource_node
+                neighbors[lab_node['id']].append(resource_node['id'])
+                if resource_node['id'] not in neighbors:
+                    neighbors[resource_node['id']] = []
+                neighbors[resource_node['id']].append(lab_node['id'])
+                resources[resource_node['id']] = resource_node
 
-        display_objects = [("lab", labs.values()), ("host", hosts.values())]
+        display_objects = [("lab", labs.values()), ("resource", resources.values())]
 
         context = {
             'display_objects': display_objects,

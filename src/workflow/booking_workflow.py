@@ -14,7 +14,7 @@ from datetime import timedelta
 from booking.models import Booking
 from workflow.models import WorkflowStep, AbstractSelectOrCreate
 from workflow.forms import ResourceSelectorForm, SWConfigSelectorForm, BookingMetaForm, OPNFVSelectForm
-from resource_inventory.models import GenericResourceBundle, ConfigBundle, OPNFVConfig
+from resource_inventory.models import OPNFVConfig, ResourceTemplate
 from django.db.models import Q
 
 
@@ -44,8 +44,7 @@ class Abstract_Resource_Select(AbstractSelectOrCreate):
 
     def get_form_queryset(self):
         user = self.repo_get(self.repo.SESSION_USER)
-        qs = GenericResourceBundle.objects.filter(Q(hidden=False) & (Q(owner=user) | Q(public=True)))
-        return qs
+        return ResourceTemplate.objects.filter(Q(hidden=False) & (Q(owner=user) | Q(public=True)))
 
     def get_page_context(self):
         return {
@@ -83,7 +82,7 @@ class SWConfig_Select(AbstractSelectOrCreate):
     def get_form_queryset(self):
         user = self.repo_get(self.repo.SESSION_USER)
         grb = self.repo_get(self.repo.SELECTED_GRESOURCE_BUNDLE)
-        qs = ConfigBundle.objects.filter(Q(hidden=False) & (Q(owner=user) | Q(public=True))).filter(bundle=grb)
+        qs = ResourceTemplate.objects.filter(Q(hidden=False) & (Q(owner=user) | Q(public=True))).filter(bundle=grb)
         return qs
 
     def put_confirm_info(self, bundle):

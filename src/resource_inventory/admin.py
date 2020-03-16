@@ -11,16 +11,15 @@
 from django.contrib import admin
 
 from resource_inventory.models import (
-    HostProfile,
+    ResourceProfile,
     InterfaceProfile,
     DiskProfile,
     CpuProfile,
     RamProfile,
-    GenericResourceBundle,
-    GenericResource,
-    GenericHost,
-    GenericInterface,
-    Host,
+    ResourceTemplate,
+    ResourceConfiguration,
+    InterfaceConfiguration,
+    Server,
     Interface,
     Network,
     Vlan,
@@ -28,26 +27,30 @@ from resource_inventory.models import (
     Scenario,
     Installer,
     Opsys,
-    ConfigBundle,
     OPNFVConfig,
     OPNFVRole,
     Image,
-    HostConfiguration,
     RemoteInfo
 )
 
-profiles = [HostProfile, InterfaceProfile, DiskProfile, CpuProfile, RamProfile]
-
-admin.site.register(profiles)
-
-generics = [GenericResourceBundle, GenericResource, GenericHost, GenericInterface]
-
-admin.site.register(generics)
-
-physical = [Host, Interface, Network, Vlan, ResourceBundle]
-
-admin.site.register(physical)
-
-config = [Scenario, Installer, Opsys, ConfigBundle, OPNFVConfig, OPNFVRole, Image, HostConfiguration, RemoteInfo]
-
-admin.site.register(config)
+admin.site.register([
+    ResourceProfile,
+    InterfaceProfile,
+    DiskProfile,
+    CpuProfile,
+    RamProfile,
+    ResourceTemplate,
+    ResourceConfiguration,
+    InterfaceConfiguration,
+    Server,
+    Interface,
+    Network,
+    Vlan,
+    ResourceBundle,
+    Scenario,
+    Installer,
+    Opsys,
+    OPNFVConfig,
+    OPNFVRole,
+    Image,
+    RemoteInfo])

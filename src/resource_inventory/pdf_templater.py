@@ -10,7 +10,7 @@
 
 from django.template.loader import render_to_string
 import booking
-from resource_inventory.models import Host, InterfaceProfile
+from resource_inventory.models import Server, InterfaceProfile
 
 
 class PDFTemplater:
@@ -66,7 +66,7 @@ class PDFTemplater:
             )
             jumphost = booking.resource.hosts.get(config=jumphost_opnfv_config.host_config)
         else:  # if there is no opnfv config, use headnode
-            jumphost = Host.objects.filter(
+            jumphost = Server.objects.filter(
                 bundle=booking.resource,
                 config__is_head_node=True
             ).first()
@@ -85,7 +85,7 @@ class PDFTemplater:
     def get_pdf_nodes(cls, booking):
         """Return a list of all the "nodes" (every host except jumphost)."""
         pdf_nodes = []
-        nodes = set(Host.objects.filter(bundle=booking.resource))
+        nodes = set(Server.objects.filter(bundle=booking.resource))
         nodes.discard(cls.get_jumphost(booking))
 
         for node in nodes:

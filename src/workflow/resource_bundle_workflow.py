@@ -22,11 +22,10 @@ from workflow.forms import (
     ResourceMetaForm,
 )
 from resource_inventory.models import (
-    GenericResourceBundle,
-    GenericInterface,
-    GenericHost,
-    GenericResource,
-    HostProfile,
+    ResourceProfile,
+    ResourceTemplate,
+    ResourceConfiguration,
+    InterfaceConfiguration,
     Network,
     NetworkConnection
 )
@@ -64,12 +63,12 @@ class Define_Hardware(WorkflowStep):
         models['hosts'] = []  # This will always clear existing data when this step changes
         models['interfaces'] = {}
         if "bundle" not in models:
-            models['bundle'] = GenericResourceBundle(owner=self.repo_get(self.repo.SESSION_USER))
+            models['bundle'] = ResourceTemplate(owner=self.repo_get(self.repo.SESSION_USER))
         host_data = data['host']
         names = {}
         for host_profile_dict in host_data.values():
             id = host_profile_dict['id']
-            profile = HostProfile.objects.get(id=id)
+            profile = ResourceProfile.objects.get(id=id)
             # instantiate genericHost and store in repo
             for name in host_profile_dict['values'].values():
                 if not re.match(r"(?=^.{1,253}$)(^([A-Za-z0-9-_]{1,62}\.)*[A-Za-z0-9-_]{1,63})", name):
@@ -77,14 +76,13 @@ class Define_Hardware(WorkflowStep):
                 if name in names:
                     raise NonUniqueHostnameException("All hosts must have unique names")
                 names[name] = True
-                genericResource = GenericResource(bundle=models['bundle'], name=name)
-                genericHost = GenericHost(profile=profile, resource=genericResource)
-                models['hosts'].append(genericHost)
+                resourceConfig = ResourceConfiguration(profile=profile, template=models['bundle'])
+                models['hosts'].append(resourceConfig)
                 for interface_profile in profile.interfaceprofile.all():
-                    genericInterface = GenericInterface(profile=interface_profile, host=genericHost)
-                    if genericHost.resource.name not in models['interfaces']:
-                        models['interfaces'][genericHost.resource.name] = []
-                    models['interfaces'][genericHost.resource.name].append(genericInterface)
+                    genericInterface = InterfaceConfiguration(profile=interface_profile, resource_config=resourceConfig)
+                    if resourceConfig.name not in models['interfaces']:
+                        models['interfaces'][resourceConfig.name] = []
+                    models['interfaces'][resourceConfig.name].append(genericInterface)
 
         # add selected lab to models
         for lab_dict in data['lab'].values():
@@ -226,7 +224,7 @@ class Define_Nets(WorkflowStep):
         for host in existing_host_list:
             existing_hosts[host.resource.name] = host
 
-        bundle = models.get("bundle", GenericResourceBundle(owner=self.repo_get(self.repo.SESSION_USER)))
+        bundle = models.get("bundle", ResourceTemplate(owner=self.repo_get(self.repo.SESSION_USER)))
 
         for net_id, net in networks.items():
             network = Network()
@@ -381,7 +379,7 @@ class Resource_Meta_Info(WorkflowStep):
             models = self.repo_get(self.repo.GRESOURCE_BUNDLE_MODELS, {})
             name = form.cleaned_data['bundle_name']
             desc = form.cleaned_data['bundle_description']
-            bundle = models.get("bundle", GenericResourceBundle(owner=self.repo_get(self.repo.SESSION_USER)))
+            bundle = models.get("bundle", ResourceTemplate(owner=self.repo_get(self.repo.SESSION_USER)))
             bundle.name = name
             bundle.description = desc
             models['bundle'] = bundle

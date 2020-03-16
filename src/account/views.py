@@ -33,7 +33,7 @@ from account.forms import AccountSettingsForm
 from account.jira_util import SignatureMethod_RSA_SHA1
 from account.models import UserProfile
 from booking.models import Booking
-from resource_inventory.models import GenericResourceBundle, ConfigBundle, Image
+from resource_inventory.models import ResourceTemplate, Image
 
 
 @method_decorator(login_required, name='dispatch')
@@ -177,7 +177,7 @@ def account_resource_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
     template = "account/resource_list.html"
-    resources = GenericResourceBundle.objects.filter(
+    resources = ResourceTemplate.objects.filter(
         owner=request.user).prefetch_related("configbundle_set")
     mapping = {}
     resource_list = []
@@ -218,7 +218,7 @@ def account_configuration_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
     template = "account/configuration_list.html"
-    configs = list(ConfigBundle.objects.filter(owner=request.user))
+    configs = list(ResourceTemplate.objects.filter(owner=request.user))
     context = {"title": "Configuration List", "configurations": configs}
     return render(request, template, context=context)
 
@@ -245,7 +245,7 @@ def account_images_view(request):
 def resource_delete_view(request, resource_id=None):
     if not request.user.is_authenticated:
         return HttpResponse('no')  # 403?
-    grb = get_object_or_404(GenericResourceBundle, pk=resource_id)
+    grb = get_object_or_404(ResourceTemplate, pk=resource_id)
     if not request.user.id == grb.owner.id:
         return HttpResponse('no')  # 403?
     if Booking.objects.filter(resource__template=grb, end__gt=timezone.now()).exists():
@@ -257,7 +257,7 @@ def resource_delete_view(request, resource_id=None):
 def configuration_delete_view(request, config_id=None):
     if not request.user.is_authenticated:
         return HttpResponse('no')  # 403?
-    config = get_object_or_404(ConfigBundle, pk=config_id)
+    config = get_object_or_404(ResourceTemplate, pk=config_id)
     if not request.user.id == config.owner.id:
         return HttpResponse('no')  # 403?
     if Booking.objects.filter(config_bundle=config, end__gt=timezone.now()).exists():
