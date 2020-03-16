@@ -161,7 +161,7 @@ class ResourceTemplate(models.Model):
     lab = models.ForeignKey(Lab, null=True, on_delete=models.SET_NULL, related_name="resourcetemplates")
     description = models.CharField(max_length=1000, default="")
     public = models.BooleanField(default=False)
-    hidden = models.BooleanField(default=False)
+    temporary = models.BooleanField(default=False)
 
     def getConfigs(self):
         return list(self.resourceConfigurations.all())
@@ -307,11 +307,12 @@ class Server(Resource):
     def get_configuration(self, state):
         ipmi = state == ConfigState.NEW
         power = "off" if state == ConfigState.CLEAN else "on"
+        image = self.config.image.lab_id if self.config else "unknown"
 
         return {
             "id": self.labid,
-            "image": self.config.image.lab_id,
-            "hostname": self.template.resource.name,
+            "image": image,
+            "hostname": self.name,
             "power": power,
             "ipmi_create": str(ipmi)
         }
@@ -498,7 +499,7 @@ class Interface(models.Model):
     profile = models.ForeignKey(InterfaceProfile, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.mac_address + " on host " + str(self.host)
+        return self.mac_address + " on host " + str(self.profile.host.name)
 
 
 """

@@ -34,6 +34,8 @@ class AbstractModelQuery():
         for model in cls.model_list:
             result += list(model.objects.filter(*args, **kwargs))
 
+        return result
+
     @classmethod
     def get(cls, *args, **kwargs):
         try:

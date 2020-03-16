@@ -110,7 +110,7 @@ class NotificationHandler(object):
     @classmethod
     def email_booking_over(cls, booking):
         template_name = "notifier/email_ended.txt"
-        hostnames = [host.template.resource.name for host in booking.resource.hosts.all()]
+        hostnames = [host.name for host in booking.resource.getResources()]
         users = list(booking.collaborators.all())
         users.append(booking.owner)
         for user in users:
@@ -134,7 +134,7 @@ class NotificationHandler(object):
     @classmethod
     def email_booking_expiring(cls, booking):
         template_name = "notifier/email_expiring.txt"
-        hostnames = [host.template.resource.name for host in booking.resource.hosts.all()]
+        hostnames = [host.name for host in booking.resource.getResources()]
         users = list(booking.collaborators.all())
         users.append(booking.owner)
         for user in users:
