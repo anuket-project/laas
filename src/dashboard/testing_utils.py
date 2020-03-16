@@ -122,7 +122,7 @@ def make_resource_config(template, profile=None, image=None):
         profile = make_resource_profile(lab=template.lab)
 
     if image is None:
-        image = make_image(profile)
+        image = make_image(profile, lab=template.lab)
 
     return ResourceConfiguration.objects.create(profile=profile, image=image, template=template)
 
