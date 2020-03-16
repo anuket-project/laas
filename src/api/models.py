@@ -941,7 +941,7 @@ class JobFactory(object):
         for res in resources:
             hardware_config = None
             try:
-                hardware_config = HardwareConfig.objects.get(relation__host=res)
+                hardware_config = HardwareConfig.objects.get(relation__resource_id=res.labid)
             except Exception:
                 hardware_config = HardwareConfig()
 
