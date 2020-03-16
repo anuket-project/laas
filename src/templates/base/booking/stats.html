@@ -5,20 +5,26 @@
 {{ block.super }}
 <script src="{% static "node_modules/plotly.js-dist/plotly.js" %}"></script>
 <script>
+
 function drawGraph(data, graph_id, graph_title){
     var container = document.getElementById(graph_id);
     var plot_data = { x: data[0],
         y: data[1],
-        fill: "tonexty",
+        line: {shape: "hv"},
         type: "scatter",
-        mode: "none",
+        mode: "lines+makers",
     };
     var layout = {
-        title: graph_title
+        title: graph_title,
+        yaxis: {
+            rangemode: 'tozero',
+            autorange: true
+        }
     };
     Plotly.newPlot(container, [plot_data], layout);
 }
-function getData(){
+
+function getData() {
     var req = new XMLHttpRequest();
     var url = "/booking/stats/json";
     var day_input = document.getElementById("number_days");
@@ -37,6 +43,7 @@ function getData(){
     req.open("GET", url, true);
     req.send();
 }
+
 </script>
 {% endblock %}
 
