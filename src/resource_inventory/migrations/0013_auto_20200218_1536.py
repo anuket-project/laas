@@ -25,7 +25,7 @@ def populate_servers(apps, schema_editor):
     ResourceProfile = apps.get_model('resource_inventory', 'ResourceProfile')
     for h in Host.objects.all():
         rp = ResourceProfile.objects.get(id=h.profile.id)
-        Server.objects.create(
+        server = Server.objects.create(
             working=h.working,
             vendor=h.vendor,
             labid=h.labid,
@@ -34,6 +34,9 @@ def populate_servers(apps, schema_editor):
             lab=h.lab,
             profile=rp
         )
+
+        for iface in h.interfaces.all():
+            server.interfaces.add(iface)
 
 
 def populate_resource_templates(apps, schema_editor):
