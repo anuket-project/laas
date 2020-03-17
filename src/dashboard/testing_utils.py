@@ -277,7 +277,7 @@ def make_os(installers=None, name="test OS"):
 
 
 def make_server(host_profile, lab, labid="test_host", name="test_host",
-                booked=False, working=True, config=None, template=None,
+                booked=False, working=True, config=None,
                 bundle=None, model="Model 1", vendor="ACME"):
     return Server.objects.create(
         lab=lab,
@@ -286,7 +286,6 @@ def make_server(host_profile, lab, labid="test_host", name="test_host",
         booked=booked,
         working=working,
         config=config,
-        template=template,
         bundle=bundle,
         model=model,
         vendor=vendor
