@@ -33,7 +33,7 @@ from resource_inventory.models import (
 )
 from resource_inventory.idf_templater import IDFTemplater
 from resource_inventory.pdf_templater import PDFTemplater
-from account.models import Downtime
+from account.models import Downtime, UserProfile
 from dashboard.utils import AbstractModelQuery
 
 
@@ -173,6 +173,26 @@ class LabManager(object):
             "count": len(profile.get_resources(lab=self.lab))}
             for profile in ResourceProfile.objects.filter(labs=self.lab)]
         return prof
+
+    def format_user(self, userprofile):
+        return {
+                    "id": userprofile.user.id,
+                    "username": userprofile.user.username,
+                    "email": userprofile.email_addr,
+                    "first_name": userprofile.user.first_name,
+                    "last_name": userprofile.user.last_name,
+                    "company": userprofile.company
+        }
+
+    def get_users(self):
+        userlist = [self.format_user(profile) for profile in UserProfile.objects.select_related("user").all()]
+
+        return json.dumps({"users": userlist})
+
+    def get_user(self, user_id):
+        profile = get_object_or_404(UserProfile, pk=user_id)
+
+        return json.dumps(self.format_user(profile))
 
     def get_inventory(self):
         inventory = {}
