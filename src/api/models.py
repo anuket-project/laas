@@ -33,7 +33,7 @@ from resource_inventory.models import (
 )
 from resource_inventory.idf_templater import IDFTemplater
 from resource_inventory.pdf_templater import PDFTemplater
-from account.models import Downtime
+from account.models import Downtime, UserProfile
 from dashboard.utils import AbstractModelQuery
 
 
@@ -173,6 +173,26 @@ class LabManager(object):
             "count": len(profile.get_resources(lab=self.lab))}
             for profile in ResourceProfile.objects.filter(labs=self.lab)]
         return prof
+
+    def format_user(self, userprofile):
+        return {
+                    "id": userprofile.user.id,
+                    "username": userprofile.user.username,
+                    "email": userprofile.email_addr,
+                    "first_name": userprofile.user.first_name,
+                    "last_name": userprofile.user.last_name,
+                    "company": userprofile.company
+        }
+
+    def get_users(self):
+        userlist = [self.format_user(profile) for profile in UserProfile.objects.select_related("user").all()]
+
+        return json.dumps({"users": userlist})
+
+    def get_user(self, user_id):
+        profile = get_object_or_404(UserProfile, pk=user_id)
+
+        return json.dumps(self.format_user(profile))
 
     def get_inventory(self):
         inventory = {}
@@ -331,7 +351,7 @@ class Job(models.Model):
         return {"id": self.id, "payload": d}
 
     def get_tasklist(self, status="all"):
-        if status == "all":
+        if status != "all":
             return JobTaskQuery.filter(job=self, status=status)
         return JobTaskQuery.filter(job=self)
 
@@ -408,7 +428,7 @@ class BridgeConfig(models.Model):
 
     def to_dict(self):
         d = {}
-        hid = self.interfaces.first().host.labid
+        hid = ResourceQuery.get(interface__pk=self.interfaces.first().pk).labid
         d[hid] = {}
         for interface in self.interfaces.all():
             d[hid][interface.mac_address] = []
@@ -611,7 +631,7 @@ class HardwareConfig(TaskConfig):
 
     def get_delta(self):
         return self.format_delta(
-            self.hosthardwarerelation.host.get_configuration(self.state),
+            self.hosthardwarerelation.get_resource().get_configuration(self.state),
             self.hosthardwarerelation.lab_token)
 
 
@@ -623,7 +643,7 @@ class NetworkConfig(TaskConfig):
 
     def to_dict(self):
         d = {}
-        hid = self.hostnetworkrelation.host.labid
+        hid = self.hostnetworkrelation.resource_id
         d[hid] = {}
         for interface in self.interfaces.all():
             d[hid][interface.mac_address] = []
@@ -652,7 +672,7 @@ class NetworkConfig(TaskConfig):
     def add_interface(self, interface):
         self.interfaces.add(interface)
         d = json.loads(self.delta)
-        hid = self.hostnetworkrelation.host.labid
+        hid = self.hostnetworkrelation.resource_id
         if hid not in d:
             d[hid] = {}
         d[hid][interface.mac_address] = []
@@ -809,6 +829,9 @@ class HostHardwareRelation(TaskRelation):
             raise ValidationError("resource_id " + str(self.resource_id) + " does not refer to a single resource")
         super().save(*args, **kwargs)
 
+    def get_resource(self):
+        return ResourceQuery.get(labid=self.resource_id)
+
 
 class HostNetworkRelation(TaskRelation):
     resource_id = models.CharField(max_length=200, default="default_id")
@@ -826,6 +849,9 @@ class HostNetworkRelation(TaskRelation):
         if len(ResourceQuery.filter(labid=self.resource_id)) != 1:
             raise ValidationError("resource_id " + str(self.resource_id) + " does not refer to a single resource")
         super().save(*args, **kwargs)
+
+    def get_resource(self):
+        return ResourceQuery.get(labid=self.resource_id)
 
 
 class SnapshotRelation(TaskRelation):
@@ -941,7 +967,7 @@ class JobFactory(object):
         for res in resources:
             hardware_config = None
             try:
-                hardware_config = HardwareConfig.objects.get(relation__host=res)
+                hardware_config = HardwareConfig.objects.get(relation__resource_id=res.labid)
             except Exception:
                 hardware_config = HardwareConfig()
 
@@ -1011,7 +1037,7 @@ class JobFactory(object):
 
     @classmethod
     def make_bridge_config(cls, booking):
-        if booking.resource.hosts.count() < 2:
+        if len(booking.resource.get_resources()) < 2:
             return None
         try:
             jumphost_config = ResourceOPNFVConfig.objects.filter(
@@ -1049,7 +1075,7 @@ class JobFactory(object):
         opnfv_api_config.set_xdf(booking, False)
         opnfv_api_config.save()
 
-        for host in booking.resource.hosts.all():
+        for host in booking.resource.get_resources():
             opnfv_api_config.roles.add(host)
         software_config = SoftwareConfig.objects.create(opnfv=opnfv_api_config)
         software_relation = SoftwareRelation.objects.create(job=job, config=software_config)

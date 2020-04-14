@@ -35,7 +35,7 @@ class ResourceManager:
 
     def getAvailableResourceTemplates(self, lab, user):
         templates = ResourceTemplate.objects.filter(lab=lab)
-        templates.filter(Q(owner=user) | Q(public=True))
+        templates = templates.filter(Q(owner=user) | Q(public=True)).filter(temporary=False)
         return templates
 
     def templateIsReservable(self, resource_template):
@@ -65,10 +65,10 @@ class ResourceManager:
             resource.release()
         resourceBundle.delete()
 
-    def get_vlans(self, genericResourceBundle):
+    def get_vlans(self, resourceTemplate):
         networks = {}
-        vlan_manager = genericResourceBundle.lab.vlan_manager
-        for network in genericResourceBundle.networks.all():
+        vlan_manager = resourceTemplate.lab.vlan_manager
+        for network in resourceTemplate.networks.all():
             if network.is_public:
                 public_net = vlan_manager.get_public_vlan()
                 vlan_manager.reserve_public_vlan(public_net.vlan)
@@ -108,12 +108,13 @@ class ResourceManager:
 
         return resource_bundle
 
-    def configureNetworking(self, host, vlan_map):
-        generic_interfaces = list(host.template.generic_interfaces.all())
-        for int_num, physical_interface in enumerate(host.interfaces.all()):
-            generic_interface = generic_interfaces[int_num]
+    def configureNetworking(self, resource, vlan_map):
+        for physical_interface in resource.interfaces.all():
+            iface_config = physical_interface.acts_as
+            if not iface_config:
+                continue
             physical_interface.config.clear()
-            for connection in generic_interface.connections.all():
+            for connection in iface_config.connections.all():
                 physicalNetwork = PhysicalNetwork.objects.create(
                     vlan_id=vlan_map[connection.network.name],
                     generic_network=connection.network
@@ -129,7 +130,7 @@ class ResourceManager:
 
     # private interface
     def acquireHost(self, resource_config):
-        resources = resource_config.profile.get_resources(lab=resource_config.lab, unreserved=True)
+        resources = resource_config.profile.get_resources(lab=resource_config.template.lab, unreserved=True)
         try:
             resource = resources[0]  # TODO: should we randomize and 'load balance' the servers?
             resource.config = resource_config

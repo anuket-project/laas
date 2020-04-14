@@ -81,17 +81,21 @@
     var sup_image_dict = {{image_filter | safe}};
     var sup_installer_dict = {{installer_filter | safe}};
     var sup_scenario_dict = {{scenario_filter | safe}};
+    var resource_profile_map = {{resource_profile_map | safe}};
 
     function imageFilter() {
         var drop = document.getElementById("id_image");
         var lab_pk = get_selected_value("lab");
-        var host_pk = get_selected_value("host");
+        var host_pk = get_selected_value("resource");
 
         for (const childNode of drop.childNodes) {
             var image_object = sup_image_dict[childNode.value];
             if (image_object) //weed out empty option
             {
-                childNode.disabled = !(image_object.host_profile == host_pk && image_object.lab == lab_pk);
+                const img_at_lab = image_object.lab == lab_pk;
+                const profiles = resource_profile_map[host_pk];
+                const img_in_template = profiles && profiles.indexOf(image_object.host_profile) > -1
+                childNode.disabled = !img_at_lab || !img_in_template;
             }
         }
     }

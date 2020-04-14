@@ -22,6 +22,10 @@ from resource_inventory.models import (
     OPNFVRole,
     OPNFVConfig,
     ResourceOPNFVConfig,
+    ResourceConfiguration,
+    NetworkConnection,
+    InterfaceConfiguration,
+    Network,
 )
 from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.pdf_templater import PDFTemplater
@@ -56,13 +60,73 @@ def parse_resource_field(resource_json):
     return lab, template
 
 
-def update_template(template, image, lab, hostname):
+def update_template(old_template, image, hostname, user):
     """
-    Update and copy a resource template to the user's profile.
+    Duplicate a template to the users account and update configured fields.
 
-    TODO: How, why, should we?
+    The dashboard presents users with preconfigured resource templates,
+    but the user might want to make small modifications, e.g hostname and
+    linux distro. So we copy the public template and create a private version
+    to the user's profile, and mark it temporary. When the booking ends the
+    new template is deleted
     """
-    pass
+    name = user.username + "'s Copy of '" + old_template.name + "'"
+    num_copies = ResourceTemplate.objects.filter(name__startswith=name).count()
+    template = ResourceTemplate.objects.create(
+        name=name if num_copies == 0 else name + " (" + str(num_copies) + ")",
+        xml=old_template.xml,
+        owner=user,
+        lab=old_template.lab,
+        description=old_template.description,
+        public=False,
+        temporary=True
+    )
+
+    for old_network in old_template.networks.all():
+        Network.objects.create(
+            name=old_network.name,
+            bundle=old_template,
+            is_public=False
+        )
+    # We are assuming there is only one opnfv config per public resource template
+    old_opnfv = template.opnfv_config.first()
+    if old_opnfv:
+        opnfv_config = OPNFVConfig.objects.create(
+            installer=old_opnfv.installer,
+            scenario=old_opnfv.installer,
+            template=template,
+            name=old_opnfv.installer,
+        )
+    # I am explicitly leaving opnfv_config.networks empty to avoid
+    # problems with duplicated / shared networks. In the quick deploy,
+    # there is never multiple networks anyway. This may have to change in the future
+
+    for old_config in old_template.getConfigs():
+        config = ResourceConfiguration.objects.create(
+            profile=old_config.profile,
+            image=image,
+            template=template
+        )
+
+        for old_iface_config in old_config.interface_configs.all():
+            iface_config = InterfaceConfiguration.objects.create(
+                profile=old_iface_config.profile,
+                resource_config=config
+            )
+
+            for old_connection in old_iface_config.connections.all():
+                iface_config.connections.add(NetworkConnection.objects.create(
+                    network=template.networks.get(name=old_connection.network.name),
+                    vlan_is_tagged=old_connection.vlan_is_tagged
+                ))
+
+        for old_res_opnfv in old_config.resource_opnfv_config.all():
+            if old_opnfv:
+                ResourceOPNFVConfig.objects.create(
+                    role=old_opnfv.role,
+                    resource_config=config,
+                    opnfv_config=opnfv_config
+                )
 
 
 def generate_opnfvconfig(scenario, installer, template):
@@ -91,7 +155,7 @@ def generate_hostopnfv(hostconfig, opnfvconfig):
 
 def generate_resource_bundle(template):
     resource_manager = ResourceManager.getInstance()
-    resource_bundle = resource_manager.convertResourceBundle(template)
+    resource_bundle = resource_manager.instantiateTemplate(template)
     return resource_bundle
 
 
@@ -101,7 +165,7 @@ def check_invariants(request, **kwargs):
     image = kwargs['image']
     scenario = kwargs['scenario']
     lab = kwargs['lab']
-    host_profile = kwargs['host_profile']
+    resource_template = kwargs['resource_template']
     length = kwargs['length']
     # check that image os is compatible with installer
     if installer in image.os.sup_installers.all():
@@ -112,8 +176,9 @@ def check_invariants(request, **kwargs):
             raise ValidationError("The chosen installer does not support the chosen scenario")
     if image.from_lab != lab:
         raise ValidationError("The chosen image is not available at the chosen hosting lab")
-    if image.host_type != host_profile:
-        raise ValidationError("The chosen image is not available for the chosen host type")
+    #TODO
+    #if image.host_type != host_profile:
+    #    raise ValidationError("The chosen image is not available for the chosen host type")
     if not image.public and image.owner != request.user:
         raise ValidationError("You are not the owner of the chosen private image")
     if length < 1 or length > 21:
@@ -152,7 +217,7 @@ def create_from_form(form, request):
 
     ResourceManager.getInstance().templateIsReservable(resource_template)
 
-    hconf = update_template(resource_template, image, lab, hostname)
+    hconf = update_template(resource_template, image, hostname, request.user)
 
     # if no installer provided, just create blank host
     opnfv_config = None
@@ -213,10 +278,19 @@ def drop_filter(user):
     for image in images:
         image_filter[image.id] = {
             'lab': 'lab_' + str(image.from_lab.lab_user.id),
-            'host_profile': 'host_' + str(image.host_type.id),
+            'host_profile': str(image.host_type.id),
             'name': image.name
         }
 
-    return {'installer_filter': json.dumps(installer_filter),
-            'scenario_filter': json.dumps(scenario_filter),
-            'image_filter': json.dumps(image_filter)}
+    resource_filter = {}
+    templates = ResourceTemplate.objects.filter(Q(public=True) | Q(owner=user))
+    for rt in templates:
+        profiles = [conf.profile for conf in rt.getConfigs()]
+        resource_filter["resource_" + str(rt.id)] = [str(p.id) for p in profiles]
+
+    return {
+        'installer_filter': json.dumps(installer_filter),
+        'scenario_filter': json.dumps(scenario_filter),
+        'image_filter': json.dumps(image_filter),
+        'resource_profile_map': json.dumps(resource_filter),
+    }

@@ -330,7 +330,7 @@ class FormUtils:
                     'selectable': true,
                     'follow': false,
                     'multiple': multiple_hosts,
-                    'class': 'host'
+                    'class': 'resource'
                 }
                 if multiple_hosts:
                     resource_node['values'] = []  # place to store multiple values

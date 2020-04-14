@@ -15,43 +15,15 @@ from booking.models import Booking
 from notifier.manager import NotificationHandler
 from api.models import Job, JobStatus, SoftwareRelation, HostHardwareRelation, HostNetworkRelation, AccessRelation
 from resource_inventory.resource_manager import ResourceManager
+from resource_inventory.models import ConfigState
 
 
 @shared_task
 def booking_poll():
-    def cleanup_hardware(qs):
+    def cleanup_resource_task(qs):
         for hostrelation in qs:
-            config = hostrelation.config
-            config.clear_delta()
-            config.power = "off"
-            config.save()
-            hostrelation.status = JobStatus.NEW
-            hostrelation.save()
-
-    def cleanup_network(qs):
-        for hostrelation in qs:
-            network = hostrelation.config
-            network.interfaces.clear()
-            host = hostrelation.host
-            network.clear_delta()
-            vlans = []
-            for interface in host.interfaces.all():
-                for vlan in interface.config.all():
-                    if vlan.public:
-                        try:
-                            host.lab.vlan_manager.release_public_vlan(vlan.vlan_id)
-                        except Exception:  # will fail if we already released in this loop
-                            pass
-                    else:
-                        vlans.append(vlan.vlan_id)
-
-                # release all vlans
-                if len(vlans) > 0:
-                    host.lab.vlan_manager.release_vlans(vlans)
-
-                interface.config.clear()
-                network.add_interface(interface)
-                network.save()
+            hostrelation.config.state = ConfigState.CLEAN
+            hostrelation.config.save()
             hostrelation.status = JobStatus.NEW
             hostrelation.save()
 
@@ -78,8 +50,8 @@ def booking_poll():
         if not booking.job.complete:
             job = booking.job
             cleanup_software(SoftwareRelation.objects.filter(job=job))
-            cleanup_hardware(HostHardwareRelation.objects.filter(job=job))
-            cleanup_network(HostNetworkRelation.objects.filter(job=job))
+            cleanup_resource_task(HostHardwareRelation.objects.filter(job=job))
+            cleanup_resource_task(HostNetworkRelation.objects.filter(job=job))
             cleanup_access(AccessRelation.objects.filter(job=job))
             job.complete = True
             job.save()
