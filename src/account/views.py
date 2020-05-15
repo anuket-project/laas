@@ -29,6 +29,7 @@ from django.shortcuts import render
 from jira import JIRA
 from rest_framework.authtoken.models import Token
 
+
 from account.forms import AccountSettingsForm
 from account.jira_util import SignatureMethod_RSA_SHA1
 from account.models import UserProfile
@@ -177,20 +178,15 @@ def account_resource_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
     template = "account/resource_list.html"
-    resources = ResourceTemplate.objects.filter(
-        owner=request.user).prefetch_related("configbundle_set")
-    mapping = {}
-    resource_list = []
-    booking_mapping = {}
-    for grb in resources:
-        resource_list.append(grb)
-        mapping[grb.id] = [{"id": x.id, "name": x.name} for x in grb.configbundle_set.all()]
-        if Booking.objects.filter(resource__template=grb, end__gt=timezone.now()).exists():
-            booking_mapping[grb.id] = "true"
+
+    active_bundles = [book.resource for book in Booking.objects.filter(
+        owner=request.user, end__gte=timezone.now())]
+    active_resources = [bundle.template.id for bundle in active_bundles]
+    resource_list = list(ResourceTemplate.objects.filter(owner=request.user))
+
     context = {
         "resources": resource_list,
-        "grb_mapping": mapping,
-        "booking_mapping": booking_mapping,
+        "active_resources": active_resources,
         "title": "My Resources"
     }
     return render(request, template, context=context)
@@ -260,7 +256,7 @@ def configuration_delete_view(request, config_id=None):
     config = get_object_or_404(ResourceTemplate, pk=config_id)
     if not request.user.id == config.owner.id:
         return HttpResponse('no')  # 403?
-    if Booking.objects.filter(config_bundle=config, end__gt=timezone.now()).exists():
+    if Booking.objects.filter(resource__template=config, end__gt=timezone.now()).exists():
         return HttpResponse('no')
     config.delete()
     return HttpResponse('')

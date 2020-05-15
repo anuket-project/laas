@@ -15,7 +15,7 @@ def clear_resource_bundles(apps, schema_editor):
 
 def create_default_template(apps, schema_editor):
     ResourceTemplate = apps.get_model('resource_inventory', 'ResourceTemplate')
-    ResourceTemplate.objects.create(id=1, name="Default Template")
+    ResourceTemplate.objects.create(name="Default Template", hidden=True)
 
 
 def populate_servers(apps, schema_editor):

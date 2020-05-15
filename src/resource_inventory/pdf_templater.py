@@ -10,7 +10,7 @@
 
 from django.template.loader import render_to_string
 import booking
-from resource_inventory.models import Server, InterfaceProfile
+from resource_inventory.models import Server
 
 
 class PDFTemplater:

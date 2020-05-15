@@ -1,6 +1,14 @@
 {% extends "base/booking/quick_deploy.html" %}
 {% block opnfv %}
 {% endblock opnfv %}
+{% block form-text %}
+<p class="my-0">
+    Please select a host type you wish to book.
+    Only available types are shown.
+    More information can be found here:
+    <a href="https://wiki.akraino.org/display/AK/Shared+Community+Lab">Akraino Wiki</a>
+</p>
+{% endblock form-text %}
 {% block collab %}
 <div class="col-12 col-lg-4 my-2">
     <div class="col border rounded py-2 h-100">

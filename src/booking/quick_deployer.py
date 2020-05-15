@@ -79,13 +79,14 @@ def update_template(old_template, image, hostname, user):
         lab=old_template.lab,
         description=old_template.description,
         public=False,
-        temporary=True
+        temporary=True,
+        copy_of=old_template
     )
 
     for old_network in old_template.networks.all():
         Network.objects.create(
             name=old_network.name,
-            bundle=old_template,
+            bundle=template,
             is_public=False
         )
     # We are assuming there is only one opnfv config per public resource template
@@ -105,7 +106,8 @@ def update_template(old_template, image, hostname, user):
         config = ResourceConfiguration.objects.create(
             profile=old_config.profile,
             image=image,
-            template=template
+            template=template,
+            is_head_node=old_config.is_head_node
         )
 
         for old_iface_config in old_config.interface_configs.all():
@@ -127,6 +129,7 @@ def update_template(old_template, image, hostname, user):
                     resource_config=config,
                     opnfv_config=opnfv_config
                 )
+    return template
 
 
 def generate_opnfvconfig(scenario, installer, template):
@@ -165,7 +168,6 @@ def check_invariants(request, **kwargs):
     image = kwargs['image']
     scenario = kwargs['scenario']
     lab = kwargs['lab']
-    resource_template = kwargs['resource_template']
     length = kwargs['length']
     # check that image os is compatible with installer
     if installer in image.os.sup_installers.all():
@@ -176,8 +178,8 @@ def check_invariants(request, **kwargs):
             raise ValidationError("The chosen installer does not support the chosen scenario")
     if image.from_lab != lab:
         raise ValidationError("The chosen image is not available at the chosen hosting lab")
-    #TODO
-    #if image.host_type != host_profile:
+    # TODO
+    # if image.host_type != host_profile:
     #    raise ValidationError("The chosen image is not available for the chosen host type")
     if not image.public and image.owner != request.user:
         raise ValidationError("You are not the owner of the chosen private image")
@@ -217,11 +219,12 @@ def create_from_form(form, request):
 
     ResourceManager.getInstance().templateIsReservable(resource_template)
 
-    hconf = update_template(resource_template, image, hostname, request.user)
+    resource_template = update_template(resource_template, image, hostname, request.user)
 
     # if no installer provided, just create blank host
     opnfv_config = None
     if installer:
+        hconf = resource_template.getConfigs()[0]
         opnfv_config = generate_opnfvconfig(scenario, installer, resource_template)
         generate_hostopnfv(hconf, opnfv_config)
 

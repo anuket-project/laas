@@ -1,5 +1,5 @@
 ##############################################################################
-# Copyright (c) 2018 Sawyer Bergeron, Parker Berberian, and others.
+# Copyright (c) 2018 Sawyer Bergeron, Parker Berberian, Sean Smith, and others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -9,8 +9,7 @@
 
 
 from workflow.booking_workflow import Booking_Resource_Select, SWConfig_Select, Booking_Meta, OPNFV_Select
-from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info
-from workflow.sw_bundle_workflow import Config_Software, Define_Software, SWConf_Resource_Select
+from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info, Define_Software
 from workflow.snapshot_workflow import Select_Host_Step, Image_Meta_Step
 from workflow.opnfv_workflow import Pick_Installer, Assign_Network_Roles, Assign_Host_Roles, OPNFV_Resource_Select, MetaInfo
 from workflow.models import Confirmation_Step
@@ -81,14 +80,9 @@ class WorkflowFactory():
 
     resource_steps = [
         Define_Hardware,
+        Define_Software,
         Define_Nets,
         Resource_Meta_Info,
-    ]
-
-    config_steps = [
-        SWConf_Resource_Select,
-        Define_Software,
-        Config_Software,
     ]
 
     snapshot_steps = [
@@ -108,7 +102,6 @@ class WorkflowFactory():
         workflow_types = [
             self.booking_steps,
             self.resource_steps,
-            self.config_steps,
             self.snapshot_steps,
             self.opnfv_steps,
         ]

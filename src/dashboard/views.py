@@ -15,7 +15,7 @@ from django.shortcuts import render
 
 from account.models import Lab
 
-from resource_inventory.models import Image, ResourceProfile
+from resource_inventory.models import Image, ResourceProfile, ResourceQuery
 from workflow.workflow_manager import ManagerTracker
 
 
@@ -37,14 +37,17 @@ def lab_detail_view(request, lab_name):
     if user:
         images = images | Image.objects.filter(from_lab=lab).filter(owner=user)
 
+    hosts = ResourceQuery.filter(lab=lab)
+
     return render(
         request,
         "dashboard/lab_detail.html",
         {
             'title': "Lab Overview",
             'lab': lab,
-            'hostprofiles': lab.hostprofiles.all(),
+            'hostprofiles': ResourceProfile.objects.filter(labs=lab),
             'images': images,
+            'hosts': hosts
         }
     )
 

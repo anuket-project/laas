@@ -140,9 +140,9 @@
                         <th>Working</th>
                         <th>Vendor</th>
                     </tr>
-                    {% for host in lab.host_set.all %}
+                    {% for host in hosts %}
                         <tr>
-                            <td>{{host.labid}}</td>
+                            <td>{{host.name}}</td>
                             <td>{{host.profile}}</td>
                             <td>{{host.booked|yesno:"Yes,No"}}</td>
                             {% if host.working %}

@@ -41,6 +41,11 @@
         var formData = ajaxForm.serialize();
         req = new XMLHttpRequest();
         var url = "delete/" + current_config_id;
+        req.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                location.reload();
+            }
+        };
         req.open("POST", url, true);
         req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         req.onerror = function() { alert("problem submitting form"); }

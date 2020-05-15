@@ -29,23 +29,20 @@
 {% endfor %}
 </div>
 <script>
-    var grb_mapping = {{grb_mapping|safe|default:"{}"}};
-    var booking_mapping = {{booking_mapping|safe|default:"{}"}};
+    var active_resources = {{active_resources|safe|default:"{}"}}
     var current_resource_id = -1;
     function delete_resource(resource_id) {
         document.getElementById("confirm_delete_button").removeAttribute("disabled");
-        var configs = grb_mapping[resource_id];
         var warning = document.createTextNode("Are You Sure?");
         var warning_subtext = document.createTextNode("This cannot be undone");
-        if(booking_mapping[resource_id]){
-            var warning = document.createTextNode("This resource is being used. It cannot be deleted.");
+        if(active_resources[resource_id]){
+            var warning = document.createTextNode("This resource is being used or is scheduled to be used. It cannot be deleted.");
             var warning_subtext = document.createTextNode("If your booking just ended, you may need to give us a few minutes to clean it up before this can be removed.");
 
             document.getElementById("confirm_delete_button").disabled = true;
         }
-        else if(configs.length > 0) {
-            list_configs(configs);
-            warning_text = "Are You Sure? The following Configurations will also be deleted.";
+        else {
+            warning_text = "Are You Sure?";
             warning = document.createTextNode(warning_text);
         }
 
@@ -56,7 +53,7 @@
     function set_modal_text(title, text) {
         var clear = function(node) {
             while(node.lastChild) {
-            node.removeChild(node.lastChild);
+                node.removeChild(node.lastChild);
             }
         }
         var warning_title = document.getElementById("config_warning");
@@ -84,6 +81,11 @@
         var formData = ajaxForm.serialize();
         req = new XMLHttpRequest();
         var url = "delete/" + current_resource_id;
+        req.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                location.reload();
+            }
+        };
         req.open("POST", url, true);
         req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         req.onerror = function() { alert("problem submitting form"); }

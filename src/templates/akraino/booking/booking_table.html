@@ -1,0 +1,41 @@
+{% load jira_filters %}
+
+
+<thead>
+<tr>
+    <th>Owner</th>
+    <th>Purpose</th>
+    <th>Project</th>
+    <th>Start</th>
+    <th>End</th>
+    <th>Operating System</th>
+    <th>Pod</th>
+</tr>
+</thead>
+<tbody>
+{% for booking in bookings %}
+    <tr>
+        <td>
+            {{ booking.owner.username }}
+        </td>
+        <td>
+            {{ booking.purpose }}
+        </td>
+        <td>
+            {{ booking.project }}
+        </td>
+        <td>
+            {{ booking.start }}
+        </td>
+        <td>
+            {{ booking.end }}
+        </td>
+        <td>
+            {{ booking.resource.get_head_node.config.image.os.name }}
+        </td>
+        <td>
+            {{ booking.resource.get_template_name }}
+        </td>
+    </tr>
+{% endfor %}
+</tbody>

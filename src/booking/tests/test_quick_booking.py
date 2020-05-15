@@ -14,17 +14,15 @@ from django.test import TestCase, Client
 
 from booking.models import Booking
 from dashboard.testing_utils import (
-    make_host,
     make_user,
     make_user_profile,
     make_lab,
-    make_installer,
     make_image,
-    make_scenario,
     make_os,
-    make_complete_host_profile,
     make_opnfv_role,
     make_public_net,
+    make_resource_template,
+    make_server
 )
 
 
@@ -36,15 +34,13 @@ class QuickBookingValidFormTestCase(TestCase):
         cls.user.save()
         make_user_profile(cls.user, True)
 
-        lab_user = make_user(True)
-        cls.lab = make_lab(lab_user)
+        cls.lab = make_lab()
 
-        cls.host_profile = make_complete_host_profile(cls.lab)
-        cls.scenario = make_scenario()
-        cls.installer = make_installer([cls.scenario])
-        os = make_os([cls.installer])
-        cls.image = make_image(cls.lab, 1, cls.user, os, cls.host_profile)
-        cls.host = make_host(cls.host_profile, cls.lab)
+        cls.res_template = make_resource_template(owner=cls.user, lab=cls.lab)
+        cls.res_profile = cls.res_template.getConfigs()[0].profile
+        os = make_os()
+        cls.image = make_image(cls.res_profile, lab=cls.lab, owner=cls.user, os=os)
+        cls.server = make_server(cls.res_profile, cls.lab)
         cls.role = make_opnfv_role()
         cls.pubnet = make_public_net(10, cls.lab)
 
@@ -55,10 +51,10 @@ class QuickBookingValidFormTestCase(TestCase):
     def build_post_data(cls):
         return {
             'filter_field': json.dumps({
-                "host": {
-                    "host_" + str(cls.host_profile.id): {
+                "resource": {
+                    "resource_" + str(cls.res_profile.id): {
                         "selected": True,
-                        "id": cls.host_profile.id
+                        "id": cls.res_template.id
                     }
                 },
                 "lab": {
@@ -75,8 +71,6 @@ class QuickBookingValidFormTestCase(TestCase):
             'users': '',
             'hostname': 'my_host',
             'image': str(cls.image.id),
-            'installer': str(cls.installer.id),
-            'scenario': str(cls.scenario.id)
         }
 
     def post(self, changed_fields={}):
@@ -97,15 +91,10 @@ class QuickBookingValidFormTestCase(TestCase):
         self.assertLess(delta, datetime.timedelta(minutes=1))
 
         resource_bundle = booking.resource
-        config_bundle = booking.config_bundle
 
-        opnfv_config = config_bundle.opnfv_config.first()
-        self.assertEqual(self.installer, opnfv_config.installer)
-        self.assertEqual(self.scenario, opnfv_config.scenario)
-
-        host = resource_bundle.hosts.first()
-        self.assertEqual(host.profile, self.host_profile)
-        self.assertEqual(host.template.resource.name, 'my_host')
+        host = resource_bundle.get_resources()[0]
+        self.assertEqual(host.profile, self.res_profile)
+        self.assertEqual(host.name, 'my_host')
 
     def test_with_too_long_length(self):
         response = self.post({'length': '22'})
@@ -133,10 +122,10 @@ class QuickBookingValidFormTestCase(TestCase):
 
     def test_with_invalid_host_id(self):
         response = self.post({'filter_field': json.dumps({
-            "host": {
-                "host_" + str(self.host_profile.id + 100): {
+            "resource": {
+                "resource_" + str(self.res_profile.id + 100): {
                     "selected": True,
-                    "id": self.host_profile.id + 100
+                    "id": self.res_profile.id + 100
                 }
             },
             "lab": {
@@ -151,12 +140,11 @@ class QuickBookingValidFormTestCase(TestCase):
         self.assertIsNone(Booking.objects.first())
 
     def test_with_invalid_lab_id(self):
-        response = self.post({'filter_field': '{"hosts":[{"host_' + str(self.host_profile.id) + '":"true"}], "labs": [{"lab_' + str(self.lab.lab_user.id + 100) + '":"true"}]}'})
         response = self.post({'filter_field': json.dumps({
-            "host": {
-                "host_" + str(self.host_profile.id): {
+            "resource": {
+                "resource_" + str(self.res_profile.id): {
                     "selected": True,
-                    "id": self.host_profile.id
+                    "id": self.res_profile.id
                 }
             },
             "lab": {

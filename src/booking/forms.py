@@ -11,8 +11,7 @@ from django.forms.widgets import NumberInput
 
 from workflow.forms import (
     MultipleSelectFilterField,
-    MultipleSelectFilterWidget,
-    FormUtils)
+    MultipleSelectFilterWidget)
 from account.models import UserProfile
 from resource_inventory.models import Image, Installer, Scenario
 from workflow.forms import SearchableSelectMultipleField
@@ -27,7 +26,7 @@ class QuickBookingForm(forms.Form):
     installer = forms.ModelChoiceField(queryset=Installer.objects.all(), required=False)
     scenario = forms.ModelChoiceField(queryset=Scenario.objects.all(), required=False)
 
-    def __init__(self, data=None, user=None, *args, **kwargs):
+    def __init__(self, data=None, user=None, lab_data=None, *args, **kwargs):
         if "default_user" in kwargs:
             default_user = kwargs.pop("default_user")
         else:
@@ -47,8 +46,6 @@ class QuickBookingForm(forms.Form):
             **get_user_field_opts()
         )
 
-        attrs = FormUtils.getLabData()
-        self.fields['filter_field'] = MultipleSelectFilterField(widget=MultipleSelectFilterWidget(**attrs))
         self.fields['length'] = forms.IntegerField(
             widget=NumberInput(
                 attrs={
@@ -59,6 +56,8 @@ class QuickBookingForm(forms.Form):
                 }
             )
         )
+
+        self.fields['filter_field'] = MultipleSelectFilterField(widget=MultipleSelectFilterWidget(**lab_data))
 
     def build_user_list(self):
         """

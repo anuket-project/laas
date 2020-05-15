@@ -30,7 +30,9 @@ from resource_inventory.models import (
     OPNFVConfig,
     OPNFVRole,
     Image,
-    RemoteInfo
+    RemoteInfo,
+    PhysicalNetwork,
+    NetworkConnection
 )
 
 admin.site.register([
@@ -53,4 +55,6 @@ admin.site.register([
     OPNFVConfig,
     OPNFVRole,
     Image,
+    PhysicalNetwork,
+    NetworkConnection,
     RemoteInfo])

@@ -408,11 +408,8 @@ class MultipleSelectFilterWidget {
         this.dropdown_count++;
         const label = document.createElement("H5")
         label.appendChild(document.createTextNode(node['name']))
-        label.classList.add("p-1", "m-1");
+        label.classList.add("p-1", "m-1", "flex-grow-1");
         div.appendChild(label);
-        let input = this.make_input(div, node, prepopulate);
-        input.classList.add("flex-grow-1", "p-1", "m-1");
-        div.appendChild(input);
         let remove_btn = this.make_remove_button(div, node);
         remove_btn.classList.add("p-1", "m-1");
         div.appendChild(remove_btn);
@@ -425,10 +422,10 @@ class MultipleSelectFilterWidget {
         const node = this.filter_items[node_id]
         const parent = div.parentNode;
         div.parentNode.removeChild(div);
-        delete this.result[node.class][node.id]['values'][div.id];
+        this.result[node.class][node.id]['count']--;
 
         //checks if we have removed last item in class
-        if(jQuery.isEmptyObject(this.result[node.class][node.id]['values'])){
+        if(this.result[node.class][node.id]['count'] == 0){
             delete this.result[node.class][node.id];
             this.clear(node);
         }
@@ -444,9 +441,9 @@ class MultipleSelectFilterWidget {
 
     updateObjectResult(node, childKey, childValue){
         if(!this.result[node.class][node.id])
-            this.result[node.class][node.id] = {selected: true, id: node.model_id, values: {}}
+            this.result[node.class][node.id] = {selected: true, id: node.model_id, count: 0}
 
-        this.result[node.class][node.id]['values'][childKey] = childValue;
+        this.result[node.class][node.id]['count']++;
     }
 
     finish(){
@@ -455,9 +452,41 @@ class MultipleSelectFilterWidget {
 }
 
 class NetworkStep {
-    constructor(debug, xml, hosts, added_hosts, removed_host_ids, graphContainer, overviewContainer, toolbarContainer){
-        if(!this.check_support())
+    // expects:
+    //
+    // debug: bool
+    // resources: {
+    //     id: {
+    //         id: int,
+    //         value: {
+    //             description: string,
+    //         },
+    //         interfaces: [
+    //             id: int,
+    //             name: str,
+    //             description: str,
+    //             connections: [
+    //                 {
+    //                     network: int, [networks.id]
+    //                     tagged: bool
+    //                 }
+    //             ],
+    //         ],
+    //     }
+    // }
+    // networks: {
+    //     id: {
+    //         id: int,
+    //         name: str,
+    //         public: bool,
+    //     }
+    // }
+    //
+    constructor(debug, resources, networks, graphContainer, overviewContainer, toolbarContainer){
+        if(!this.check_support()) {
+            console.log("Aborting, browser is not supported");
             return;
+        }
 
         this.currentWindow = null;
         this.netCount = 0;
@@ -470,9 +499,24 @@ class NetworkStep {
         this.editor = new mxEditor();
         this.graph = this.editor.graph;
 
+        window.global_graph = this.graph;
+        window.network_rr_index = 5;
+
         this.editor.setGraphContainer(graphContainer);
         this.doGlobalConfig();
-        this.prefill(xml, hosts, added_hosts, removed_host_ids);
+
+        let mx_networks = {}
+
+        for(const network_id in networks) {
+            let network = networks[network_id];
+
+            mx_networks[network_id] = this.populateNetwork(network);
+        }
+
+        this.prefillHosts(resources, mx_networks);
+
+        //this.addToolbarButton(this.editor, toolbarContainer, 'zoomIn', '', "/static/img/mxgraph/zoom_in.png", true);
+        //this.addToolbarButton(this.editor, toolbarContainer, 'zoomOut', '', "/static/img/mxgraph/zoom_out.png", true);
         this.addToolbarButton(this.editor, toolbarContainer, 'zoomIn', 'fa-search-plus');
         this.addToolbarButton(this.editor, toolbarContainer, 'zoomOut', 'fa-search-minus');
 
@@ -489,10 +533,6 @@ class NetworkStep {
         this.graph.addListener(mxEvent.CELL_CONNECTED, function(sender, event) {this.cellConnectionHandler(sender, event)}.bind(this));
         //hooks up double click functionality
         this.graph.dblClick = function(evt, cell) {this.doubleClickHandler(evt, cell);}.bind(this);
-
-        if(!this.has_public_net){
-            this.addPublicNetwork();
-        }
     }
 
     check_support(){
@@ -503,22 +543,84 @@ class NetworkStep {
         return true;
     }
 
-    prefill(xml, hosts, added_hosts, removed_host_ids){
-        //populate existing data
-        if(xml){
-            this.restoreFromXml(xml, this.editor);
-        } else if(hosts){
-            for(const host of hosts)
-                this.makeHost(host);
+    /**
+     * Expects
+     * mx_interface: mxCell for the interface itself
+     * network: mxCell for the outer network
+     * tagged: bool
+     */
+    connectNetwork(mx_interface, network, tagged) {
+        var cell = new mxCell(
+            "connection from " + network + " to " + mx_interface,
+            new mxGeometry(0, 0, 50, 50));
+        cell.edge = true;
+        cell.geometry.relative = true;
+        cell.setValue(JSON.stringify({tagged: tagged}));
+
+        let terminal = this.getClosestNetworkCell(mx_interface.geometry.y, network);
+        let edge = this.graph.addEdge(cell, null, mx_interface, terminal);
+        this.colorEdge(edge, terminal, true);
+        this.graph.refresh(edge);
+    }
+
+    /**
+     * Expects:
+     *
+     * to: desired y axis position of the matching cell
+     * within: graph cell for a full network, with all child cells
+     *
+     * Returns:
+     * an mx cell, the one vertically closest to the desired value
+     *
+     * Side effect:
+     * modifies the <rr_index> on the <within> parameter
+     */
+    getClosestNetworkCell(to, within) {
+        if(window.network_rr_index === undefined) {
+            window.network_rr_index = 5;
         }
 
-        //apply any changes
-        if(added_hosts){
-            for(const host of added_hosts)
-                this.makeHost(host);
-            this.updateHosts([]); //TODO: why?
+        let child_keys = within.children.keys();
+        let children = Array.from(within.children);
+        let index = (window.network_rr_index++) % children.length;
+
+        let child = within.children[child_keys[index]];
+
+        return children[index];
+    }
+
+    /** Expects
+     *
+     * hosts: {
+     *     id: {
+     *         id: int,
+     *         value: {
+     *             description: string,
+     *         },
+     *         interfaces: [
+     *             id: int,
+     *             name: str,
+     *             description: str,
+     *             connections: [
+     *                 {
+     *                     network: int, [networks.id]
+     *                     tagged: bool 
+     *                 }
+     *             ],
+     *         ],
+     *     }
+     * }
+     *
+     * network_mappings: {
+     *     <django network id>: <mxnetwork id>
+     * }
+     *
+     * draws given hosts into the mxgraph
+     */
+    prefillHosts(hosts, network_mappings){
+        for(const host_id in hosts) {
+            this.makeHost(hosts[host_id], network_mappings);
         }
-        this.updateHosts(removed_host_ids);
     }
 
     cellConnectionHandler(sender, event){
@@ -625,7 +727,10 @@ class NetworkStep {
                     color = kvp[1];
                 }
             }
+
             edge.setStyle('strokeColor=' + color);
+        } else {
+            console.log("Failed to color " + edge + ", " + terminal + ", " + source);
         }
     }
 
@@ -848,6 +953,7 @@ class NetworkStep {
                 return true;
             }
         }
+
         return false;
     };
 
@@ -926,6 +1032,27 @@ class NetworkStep {
         return ret_val;
     }
 
+    // expects:
+    //
+    // {
+    //     id: int,
+    //     name: str,
+    //     public: bool,
+    // }
+    //
+    // returns:
+    // mxgraph id of network
+    populateNetwork(network) {
+        let mxNet = this.makeMxNetwork(network.name, network.public);
+        this.makeSidebarNetwork(network.name, mxNet.color, mxNet.element_id);
+
+        if( network.public ) {
+            this.has_public_net = true;
+        }
+
+        return mxNet.element_id;
+    }
+
     addPublicNetwork() {
         const net = this.makeMxNetwork("public", true);
         this.makeSidebarNetwork("public", net['color'], net['element_id']);
@@ -986,7 +1113,33 @@ class NetworkStep {
         document.getElementById("network_list").appendChild(newNet);
     }
 
-    makeHost(hostInfo) {
+    /** 
+     * Expects format:
+     * {
+     *     'id': int,
+     *     'value': {
+     *         'description': string,
+     *     },
+     *     'interfaces': [
+     *          {
+     *              id: int,
+     *              name: str,
+     *              description: str,
+     *              connections: [
+     *                  {
+     *                      network: int, <django network id>,
+     *                      tagged: bool
+     *                  }
+     *              ]
+     *          }
+     *      ]
+     * }
+     *
+     * network_mappings: {
+     *     <django network id>: <mxnetwork id>
+     * }
+     */
+    makeHost(hostInfo, network_mappings) {
         const value = JSON.stringify(hostInfo['value']);
         const interfaces = hostInfo['interfaces'];
         const width = 100;
@@ -1022,6 +1175,15 @@ class NetworkStep {
                 false
             );
             port.getGeometry().offset = new mxPoint(-4*interfaces[i].name.length -2,0);
+            const iface = interfaces[i];
+            for( const connection of iface.connections ) {
+                const network = this
+                    .graph
+                    .getModel()
+                    .getCell(network_mappings[connection.network]);
+
+                this.connectNetwork(port, network, connection.tagged);
+            }
             this.graph.refresh(port);
         }
         this.graph.refresh(host);

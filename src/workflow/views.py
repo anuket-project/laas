@@ -35,7 +35,7 @@ def remove_workflow(request):
     if not manager:
         return no_workflow(request)
 
-    has_more_workflows, result = manager.pop_workflow()
+    has_more_workflows, result = manager.pop_workflow(discard=True)
 
     if not has_more_workflows:  # this was the last workflow, so delete the reference to it in the tracker
         del ManagerTracker.managers[request.session['manager_session']]

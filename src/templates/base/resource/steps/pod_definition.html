@@ -44,29 +44,16 @@
     debug = true;
     {% endif %}
 
-    let xml = '';
-    {% if xml %}
-    xml = '{{xml|safe}}';
-    {% endif %}
+    const False = false;
+    const True = true;
 
-    let hosts = [];
-    {% for host in hosts %}
-    hosts.push({{host|safe}});
-    {% endfor %}
-
-    let added_hosts = [];
-    {% for host in added_hosts %}
-    added_hosts.push({{host|safe}});
-    {% endfor %}
-
-    let removed_host_ids = {{removed_hosts|safe}};
+    let resources = {{resources|safe}};
+    let networks = {{networks|safe}};
 
     network_step = new NetworkStep(
         debug,
-        xml,
-        hosts,
-        added_hosts,
-        removed_host_ids,
+        resources,
+        networks,
         document.getElementById('graphContainer'),
         document.getElementById('outlineContainer'),
         document.getElementById('toolbarContainer'),

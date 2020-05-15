@@ -178,6 +178,9 @@ def make_vlan_manager(vlans=None, block_size=20, allow_overlapping=False, reserv
 def make_lab(user=None, name="Test_Lab_Instance",
              status=LabStatus.UP, vlan_manager=None,
              pub_net_count=5):
+    if Lab.objects.filter(name=name).exists():
+        return Lab.objects.get(name=name)
+
     if not vlan_manager:
         vlan_manager = make_vlan_manager()
 
@@ -207,6 +210,9 @@ resource_inventory instantiation section for permanent resources
 
 
 def make_resource_profile(lab, name="test_hostprofile"):
+    if ResourceProfile.objects.filter(name=name).exists():
+        return ResourceProfile.objects.get(name=name)
+
     resource_profile = ResourceProfile.objects.create(
         name=name,
         description='test resourceprofile instance'

@@ -17,6 +17,7 @@ from resource_inventory.models import (
     Network,
     Vlan,
     PhysicalNetwork,
+    InterfaceConfiguration,
 )
 
 
@@ -33,10 +34,12 @@ class ResourceManager:
             ResourceManager.instance = ResourceManager()
         return ResourceManager.instance
 
-    def getAvailableResourceTemplates(self, lab, user):
-        templates = ResourceTemplate.objects.filter(lab=lab)
-        templates = templates.filter(Q(owner=user) | Q(public=True)).filter(temporary=False)
-        return templates
+    def getAvailableResourceTemplates(self, lab, user=None):
+        filter = Q(public=True)
+        if user:
+            filter = filter | Q(owner=user)
+        filter = filter & Q(temporary=False) & Q(lab=lab)
+        return ResourceTemplate.objects.filter(filter)
 
     def templateIsReservable(self, resource_template):
         """
@@ -110,9 +113,15 @@ class ResourceManager:
 
     def configureNetworking(self, resource, vlan_map):
         for physical_interface in resource.interfaces.all():
-            iface_config = physical_interface.acts_as
-            if not iface_config:
+            # assign interface configs
+            iface_configs = InterfaceConfiguration.objects.filter(profile=physical_interface.profile, resource_config=resource.config)
+            if iface_configs.count() != 1:
                 continue
+            iface_config = iface_configs.first()
+            physical_interface.acts_as = iface_config
+            physical_interface.acts_as.save()
+            #if not iface_config:
+            #    continue
             physical_interface.config.clear()
             for connection in iface_config.connections.all():
                 physicalNetwork = PhysicalNetwork.objects.create(

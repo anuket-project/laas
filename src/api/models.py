@@ -979,7 +979,7 @@ class JobFactory(object):
             relation.config = relation.config
             relation.save()
 
-            hardware_config.set("image", "hostname", "power", "ipmi_create")
+            hardware_config.set("id", "image", "hostname", "power", "ipmi_create")
             hardware_config.save()
 
     @classmethod

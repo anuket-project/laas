@@ -19,11 +19,11 @@ from django.db.models import Q
 from django.urls import reverse
 
 from resource_inventory.models import ResourceBundle, ResourceProfile, Image, ResourceQuery
-from resource_inventory.resource_manager import ResourceManager
-from account.models import Lab, Downtime
+from account.models import Downtime
 from booking.models import Booking
 from booking.stats import StatisticsManager
 from booking.forms import HostReImageForm
+from workflow.forms import FormUtils
 from api.models import JobFactory
 from workflow.views import login
 from booking.forms import QuickBookingForm
@@ -40,21 +40,16 @@ def quick_create(request):
 
     if request.method == 'GET':
         context = {}
-
-        r_manager = ResourceManager.getInstance()
-        templates = {}
-        for lab in Lab.objects.all():
-            templates[str(lab)] = r_manager.getAvailableResourceTemplates(lab, request.user)
-
-        context['lab_profile_map'] = templates
-
-        context['form'] = QuickBookingForm(default_user=request.user.username, user=request.user)
-
+        attrs = FormUtils.getLabData(user=request.user)
+        context['form'] = QuickBookingForm(lab_data=attrs, default_user=request.user.username, user=request.user)
+        context['lab_profile_map'] = {}
         context.update(drop_filter(request.user))
-
         return render(request, 'booking/quick_deploy.html', context)
+
     if request.method == 'POST':
-        form = QuickBookingForm(request.POST, user=request.user)
+        attrs = FormUtils.getLabData(user=request.user)
+        form = QuickBookingForm(request.POST, lab_data=attrs, user=request.user)
+
         context = {}
         context['lab_profile_map'] = {}
         context['form'] = form

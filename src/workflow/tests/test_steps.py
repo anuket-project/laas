@@ -180,7 +180,7 @@ class SoftwareSelectTestCase(SelectStepTestCase):
 
     def add_to_repo(self, repo):
         repo.el[repo.SESSION_USER] = self.user
-        repo.el[repo.SELECTED_GRESOURCE_BUNDLE] = self.conf.grb
+        repo.el[repo.SELECTED_RESOURCE_TEMPLATE] = self.conf.grb
 
     @classmethod
     def setUpTestData(cls):
@@ -253,7 +253,7 @@ class DefineSoftwareTestCase(StepTestCase):
     }
 
     def add_to_repo(self, repo):
-        repo.el[repo.SELECTED_GRESOURCE_BUNDLE] = self.conf.grb
+        repo.el[repo.SELECTED_RESOURCE_TEMPLATE] = self.conf.grb
 
     @classmethod
     def setUpTestData(cls):
