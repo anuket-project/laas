@@ -10,6 +10,8 @@
 
 from django.contrib import admin
 
+from resource_inventory.forms import InterfaceConfigurationForm
+
 from resource_inventory.models import (
     ResourceProfile,
     InterfaceProfile,
@@ -32,8 +34,9 @@ from resource_inventory.models import (
     Image,
     RemoteInfo,
     PhysicalNetwork,
-    NetworkConnection
+    NetworkConnection,
 )
+
 
 admin.site.register([
     ResourceProfile,
@@ -43,7 +46,6 @@ admin.site.register([
     RamProfile,
     ResourceTemplate,
     ResourceConfiguration,
-    InterfaceConfiguration,
     Server,
     Interface,
     Network,
@@ -57,4 +59,12 @@ admin.site.register([
     Image,
     PhysicalNetwork,
     NetworkConnection,
-    RemoteInfo])
+    RemoteInfo]
+)
+
+
+class InterfaceConfigurationAdmin(admin.ModelAdmin):
+    form = InterfaceConfigurationForm
+
+
+admin.site.register(InterfaceConfiguration, InterfaceConfigurationAdmin)

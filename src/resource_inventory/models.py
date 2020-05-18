@@ -439,6 +439,9 @@ class InterfaceConfiguration(models.Model):
     def __str__(self):
         return "type " + str(self.profile) + " on host " + str(self.resource_config)
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
 
 """
 OPNFV / Software configuration models
@@ -504,11 +507,20 @@ class Interface(models.Model):
     mac_address = models.CharField(max_length=17)
     bus_address = models.CharField(max_length=50)
     config = models.ManyToManyField(Vlan)
-    acts_as = models.OneToOneField(InterfaceConfiguration, null=True, on_delete=models.SET_NULL)
+    acts_as = models.OneToOneField(InterfaceConfiguration, null=True, on_delete=models.CASCADE)
     profile = models.ForeignKey(InterfaceProfile, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.mac_address + " on host " + str(self.profile.host.name)
+
+    def clean(self, *args, **kwargs):
+        if self.acts_as.profile != self.profile:
+            raise ValidationError("Interface Configuration's Interface Profile does not match Interface Profile chosen for Interface.")
+        super().clean(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 """
