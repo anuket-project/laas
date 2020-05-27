@@ -8,7 +8,7 @@
 ##############################################################################
 
 
-from workflow.booking_workflow import Booking_Resource_Select, SWConfig_Select, Booking_Meta, OPNFV_Select
+from workflow.booking_workflow import Booking_Resource_Select, Booking_Meta, OPNFV_Select
 from workflow.resource_bundle_workflow import Define_Hardware, Define_Nets, Resource_Meta_Info, Define_Software
 from workflow.snapshot_workflow import Select_Host_Step, Image_Meta_Step
 from workflow.opnfv_workflow import Pick_Installer, Assign_Network_Roles, Assign_Host_Roles, OPNFV_Resource_Select, MetaInfo
@@ -73,7 +73,6 @@ class Workflow(object):
 class WorkflowFactory():
     booking_steps = [
         Booking_Resource_Select,
-        SWConfig_Select,
         Booking_Meta,
         OPNFV_Select,
     ]

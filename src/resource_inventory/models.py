@@ -1,5 +1,6 @@
 ##############################################################################
 # Copyright (c) 2018 Sawyer Bergeron, Parker Berberian, and others.
+# Copyright (c) 2020 Sawyer Bergeron, Sean Smith, others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -162,7 +163,7 @@ class ResourceTemplate(models.Model):
     description = models.CharField(max_length=1000, default="")
     public = models.BooleanField(default=False)
     temporary = models.BooleanField(default=False)
-    copy_of = models.ForeignKey("ResourceTemplate", null=True, on_delete=models.SET_NULL)
+    copy_of = models.ForeignKey("ResourceTemplate", blank=True, null=True, on_delete=models.SET_NULL)
 
     def getConfigs(self):
         configs = self.resourceConfigurations.all()
@@ -212,7 +213,7 @@ class ResourceConfiguration(models.Model):
     name = models.CharField(max_length=3000, default="<Hostname>")
 
     def __str__(self):
-        return "config with " + str(self.template) + " and image " + str(self.image)
+        return str(self.name)
 
 
 def get_default_remote_info():
@@ -238,9 +239,9 @@ class Resource(models.Model):
     class Meta:
         abstract = True
 
-    bundle = models.ForeignKey(ResourceBundle, on_delete=models.SET_NULL, null=True)
+    bundle = models.ForeignKey(ResourceBundle, on_delete=models.SET_NULL, blank=True, null=True)
     profile = models.ForeignKey(ResourceProfile, on_delete=models.CASCADE)
-    config = models.ForeignKey(ResourceConfiguration, on_delete=models.SET_NULL, null=True)
+    config = models.ForeignKey(ResourceConfiguration, on_delete=models.SET_NULL, blank=True, null=True)
     working = models.BooleanField(default=True)
     vendor = models.CharField(max_length=100, default="unknown")
     model = models.CharField(max_length=150, default="unknown")
@@ -413,10 +414,16 @@ class PhysicalNetwork(models.Model):
         # vlan_manager = self.bundle.lab.vlan_manager
         return False
 
+    def __str__(self):
+        return 'Physical Network for ' + self.generic_network.name
+
 
 class NetworkConnection(models.Model):
     network = models.ForeignKey(Network, on_delete=models.CASCADE)
     vlan_is_tagged = models.BooleanField()
+
+    def __str__(self):
+        return 'Connection to ' + self.network.name
 
 
 class Vlan(models.Model):
@@ -434,13 +441,10 @@ class InterfaceConfiguration(models.Model):
     id = models.AutoField(primary_key=True)
     profile = models.ForeignKey(InterfaceProfile, on_delete=models.CASCADE)
     resource_config = models.ForeignKey(ResourceConfiguration, on_delete=models.CASCADE, related_name='interface_configs')
-    connections = models.ManyToManyField(NetworkConnection)
+    connections = models.ManyToManyField(NetworkConnection, blank=True)
 
     def __str__(self):
         return "type " + str(self.profile) + " on host " + str(self.resource_config)
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
 
 
 """
@@ -507,14 +511,14 @@ class Interface(models.Model):
     mac_address = models.CharField(max_length=17)
     bus_address = models.CharField(max_length=50)
     config = models.ManyToManyField(Vlan)
-    acts_as = models.OneToOneField(InterfaceConfiguration, null=True, on_delete=models.CASCADE)
+    acts_as = models.OneToOneField(InterfaceConfiguration, blank=True, null=True, on_delete=models.CASCADE)
     profile = models.ForeignKey(InterfaceProfile, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.mac_address + " on host " + str(self.profile.host.name)
 
     def clean(self, *args, **kwargs):
-        if self.acts_as.profile != self.profile:
+        if self.acts_as and self.acts_as.profile != self.profile:
             raise ValidationError("Interface Configuration's Interface Profile does not match Interface Profile chosen for Interface.")
         super().clean(*args, **kwargs)
 

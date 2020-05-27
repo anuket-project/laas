@@ -368,7 +368,6 @@ class Repository():
     RESOURCE_SELECT = "resource_select"
     CONFIRMATION = "confirmation"
     SELECTED_RESOURCE_TEMPLATE = "selected resource template pk"
-    SELECTED_CONFIG_BUNDLE = "selected config bundle pk"
     SELECTED_OPNFV_CONFIG = "selected opnfv deployment config"
     RESOURCE_TEMPLATE_MODELS = "generic_resource_template_models"
     RESOURCE_TEMPLATE_INFO = "generic_resource_template_info"
@@ -454,15 +453,6 @@ class Repository():
             else:
                 self.el[self.HAS_RESULT] = True
                 self.el[self.RESULT_KEY] = self.SELECTED_RESOURCE_TEMPLATE
-                return
-
-        if self.CONFIG_MODELS in self.el:
-            errors = self.make_software_config_bundle()
-            if errors:
-                return errors
-            else:
-                self.el[self.HAS_RESULT] = True
-                self.el[self.RESULT_KEY] = self.SELECTED_CONFIG_BUNDLE
                 return
 
         if self.OPNFV_MODELS in self.el:
@@ -585,11 +575,6 @@ class Repository():
         else:
             return "BOOK, no selected resource. CODE:0x000e"
 
-        if self.SELECTED_CONFIG_BUNDLE not in self.el:
-            return "BOOK, no selected config bundle. CODE:0x001f"
-
-        booking.config_bundle = self.el[self.SELECTED_CONFIG_BUNDLE]
-
         if not booking.start:
             return "BOOK, booking has no start. CODE:0x0010"
         if not booking.end:
@@ -602,7 +587,8 @@ class Repository():
         else:
             return "BOOK, collaborators not defined. CODE:0x0013"
         try:
-            resource_bundle = ResourceManager.getInstance().convertResourceBundle(selected_grb, config=booking.config_bundle)
+            res_manager = ResourceManager.getInstance()
+            resource_bundle = res_manager.instantiateTemplate(selected_grb)
         except ResourceAvailabilityException as e:
             return "BOOK, requested resources are not available. Exception: " + str(e) + " CODE:0x0014"
         except ModelValidationException as e:

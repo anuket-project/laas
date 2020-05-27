@@ -1,5 +1,6 @@
 ##############################################################################
 # Copyright (c) 2018 Sawyer Bergeron, Parker Berberian, and others.
+# Copyright (c) 2020 Sawyer Bergeron, Sean Smith, and others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -13,7 +14,7 @@ from datetime import timedelta
 
 from booking.models import Booking
 from workflow.models import WorkflowStep, AbstractSelectOrCreate
-from workflow.forms import ResourceSelectorForm, SWConfigSelectorForm, BookingMetaForm, OPNFVSelectForm
+from workflow.forms import ResourceSelectorForm, BookingMetaForm, OPNFVSelectForm
 from resource_inventory.models import OPNFVConfig, ResourceTemplate
 from django.db.models import Q
 
@@ -63,41 +64,6 @@ class Abstract_Resource_Select(AbstractSelectOrCreate):
 
 class Booking_Resource_Select(Abstract_Resource_Select):
     workflow_type = "booking"
-
-
-class SWConfig_Select(AbstractSelectOrCreate):
-    title = "Select Software Configuration"
-    description = "Choose the software and related configurations you want to have used for your deployment"
-    short_title = "pod config"
-    form = SWConfigSelectorForm
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.select_repo_key = self.repo.SELECTED_CONFIG_BUNDLE
-        self.confirm_key = "booking"
-
-    def alert_bundle_missing(self):
-        self.set_invalid("Please select a valid pod config")
-
-    def get_form_queryset(self):
-        user = self.repo_get(self.repo.SESSION_USER)
-        grb = self.repo_get(self.repo.SELECTED_RESOURCE_TEMPLATE)
-        qs = ResourceTemplate.objects.filter(Q(hidden=False) & (Q(owner=user) | Q(public=True))).filter(bundle=grb)
-        return qs
-
-    def put_confirm_info(self, bundle):
-        confirm_dict = self.repo_get(self.repo.CONFIRMATION)
-        if self.confirm_key not in confirm_dict:
-            confirm_dict[self.confirm_key] = {}
-        confirm_dict[self.confirm_key]["Software Configuration"] = bundle.name
-        self.repo_put(self.repo.CONFIRMATION, confirm_dict)
-
-    def get_page_context(self):
-        return {
-            'select_type': 'swconfig',
-            'select_type_title': 'Software Config',
-            'addable_type_num': 2
-        }
 
 
 class OPNFV_EnablePicker(object):

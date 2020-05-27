@@ -82,7 +82,7 @@ class ResourceManager:
                 networks[network.name] = vlan
         return networks
 
-    def instantiateTemplate(self, resource_template, config=None):
+    def instantiateTemplate(self, resource_template):
         """
         Convert a ResourceTemplate into a ResourceBundle.
 
@@ -114,14 +114,16 @@ class ResourceManager:
     def configureNetworking(self, resource, vlan_map):
         for physical_interface in resource.interfaces.all():
             # assign interface configs
-            iface_configs = InterfaceConfiguration.objects.filter(profile=physical_interface.profile, resource_config=resource.config)
-            if iface_configs.count() != 1:
-                continue
+
+            iface_configs = InterfaceConfiguration.objects.filter(
+                profile=physical_interface.profile,
+                resource_config=resource.config
+            )
+
             iface_config = iface_configs.first()
             physical_interface.acts_as = iface_config
             physical_interface.acts_as.save()
-            #if not iface_config:
-            #    continue
+
             physical_interface.config.clear()
             for connection in iface_config.connections.all():
                 physicalNetwork = PhysicalNetwork.objects.create(
@@ -139,7 +141,11 @@ class ResourceManager:
 
     # private interface
     def acquireHost(self, resource_config):
-        resources = resource_config.profile.get_resources(lab=resource_config.template.lab, unreserved=True)
+        resources = resource_config.profile.get_resources(
+            lab=resource_config.template.lab,
+            unreserved=True
+        )
+
         try:
             resource = resources[0]  # TODO: should we randomize and 'load balance' the servers?
             resource.config = resource_config
