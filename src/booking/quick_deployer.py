@@ -103,9 +103,13 @@ def update_template(old_template, image, hostname, user):
     # there is never multiple networks anyway. This may have to change in the future
 
     for old_config in old_template.getConfigs():
+        image_to_set = image
+        if not image:
+            image_to_set = old_config.image
+
         config = ResourceConfiguration.objects.create(
             profile=old_config.profile,
-            image=image,
+            image=image_to_set,
             template=template,
             is_head_node=old_config.is_head_node
         )
@@ -170,19 +174,21 @@ def check_invariants(request, **kwargs):
     lab = kwargs['lab']
     length = kwargs['length']
     # check that image os is compatible with installer
-    if installer in image.os.sup_installers.all():
-        # if installer not here, we can omit that and not check for scenario
-        if not scenario:
-            raise ValidationError("An OPNFV Installer needs a scenario to be chosen to work properly")
-        if scenario not in installer.sup_scenarios.all():
-            raise ValidationError("The chosen installer does not support the chosen scenario")
-    if image.from_lab != lab:
-        raise ValidationError("The chosen image is not available at the chosen hosting lab")
-    # TODO
-    # if image.host_type != host_profile:
-    #    raise ValidationError("The chosen image is not available for the chosen host type")
-    if not image.public and image.owner != request.user:
-        raise ValidationError("You are not the owner of the chosen private image")
+    if image:
+        if installer or scenario:
+            if installer in image.os.sup_installers.all():
+                # if installer not here, we can omit that and not check for scenario
+                if not scenario:
+                    raise ValidationError("An OPNFV Installer needs a scenario to be chosen to work properly")
+                if scenario not in installer.sup_scenarios.all():
+                    raise ValidationError("The chosen installer does not support the chosen scenario")
+        if image.from_lab != lab:
+            raise ValidationError("The chosen image is not available at the chosen hosting lab")
+        # TODO
+        # if image.host_type != host_profile:
+        #    raise ValidationError("The chosen image is not available for the chosen host type")
+        if not image.public and image.owner != request.user:
+            raise ValidationError("You are not the owner of the chosen private image")
     if length < 1 or length > 21:
         raise BookingLengthException("Booking must be between 1 and 21 days long")
 
