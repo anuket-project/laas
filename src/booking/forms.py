@@ -36,7 +36,7 @@ class QuickBookingForm(forms.Form):
         super(QuickBookingForm, self).__init__(data=data, **kwargs)
 
         self.fields["image"] = forms.ModelChoiceField(
-            Image.objects.filter(public=True) | Image.objects.filter(owner=user)
+            Image.objects.filter(public=True) | Image.objects.filter(owner=user), required=False
         )
 
         self.fields['users'] = SearchableSelectMultipleField(
