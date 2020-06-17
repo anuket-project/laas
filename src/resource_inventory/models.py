@@ -14,6 +14,7 @@ from django.db import models
 from django.db.models import Q
 
 import re
+from collections import Counter
 
 from account.models import Lab
 from dashboard.utils import AbstractModelQuery
@@ -168,6 +169,10 @@ class ResourceTemplate(models.Model):
     def getConfigs(self):
         configs = self.resourceConfigurations.all()
         return list(configs)
+
+    def get_required_resources(self):
+        profiles = Counter([str(config.profile) for config in self.getConfigs()])
+        return dict(profiles)
 
     def __str__(self):
         return self.name

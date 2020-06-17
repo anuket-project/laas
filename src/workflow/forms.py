@@ -1,5 +1,6 @@
 ##############################################################################
 # Copyright (c) 2018 Sawyer Bergeron, Parker Berberian, and others.
+# Copyright (c) 2020 Sawyer Bergeron, Sean Smith, and others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -22,7 +23,7 @@ from account.models import UserProfile
 from resource_inventory.models import (
     OPNFVRole,
     Installer,
-    Scenario,
+    Scenario
 )
 from resource_inventory.resource_manager import ResourceManager
 from booking.lib import get_user_items, get_user_field_opts
@@ -314,8 +315,10 @@ class FormUtils:
                 'selectable': true,
                 'follow': multiple_hosts,
                 'multiple': false,
-                'class': 'lab'
+                'class': 'lab',
+                'available_resources': json.dumps(lab.get_available_resources())
             }
+
             items[lab_node['id']] = lab_node
             neighbors[lab_node['id']] = []
             labs[lab_node['id']] = lab_node
@@ -331,14 +334,19 @@ class FormUtils:
                     'selectable': true,
                     'follow': false,
                     'multiple': multiple_hosts,
-                    'class': 'resource'
+                    'class': 'resource',
+                    'required_resources': json.dumps(template.get_required_resources())
                 }
+
                 if multiple_hosts:
                     resource_node['values'] = []  # place to store multiple values
+
                 items[resource_node['id']] = resource_node
                 neighbors[lab_node['id']].append(resource_node['id'])
+
                 if resource_node['id'] not in neighbors:
                     neighbors[resource_node['id']] = []
+
                 neighbors[resource_node['id']].append(lab_node['id'])
                 resources[resource_node['id']] = resource_node
 
@@ -349,6 +357,7 @@ class FormUtils:
             'neighbors': neighbors,
             'filter_items': items
         }
+
         return context
 
 

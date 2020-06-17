@@ -209,6 +209,8 @@ class MultipleSelectFilterWidget {
         this.inputs = [];
         this.graph_neighbors = neighbors;
         this.filter_items = items;
+        this.currentLab = null;
+        this.available_resources = {};
         this.result = {};
         this.dropdown_count = 0;
 
@@ -220,7 +222,7 @@ class MultipleSelectFilterWidget {
         this.make_selection(initial);
     }
 
-    make_selection( initial_data ){
+    make_selection(initial_data){
         if(!initial_data || jQuery.isEmptyObject(initial_data))
             return;
         for(let item_class in initial_data) {
@@ -257,9 +259,11 @@ class MultipleSelectFilterWidget {
         const toCheck = [root];
         while(toCheck.length > 0){
             const node = toCheck.pop();
+
             if(!node['marked']) {
                 continue; //already visited, just continue
             }
+
             node['marked'] = false; //mark as visited
             if(node['follow'] || node == root){ //add neighbors if we want to follow this node
                 const neighbors = this.graph_neighbors[node.id];
@@ -305,6 +309,10 @@ class MultipleSelectFilterWidget {
         node['selected'] = true;
         elem.classList.remove('bg-white', 'not-allowed', 'bg-light');
         elem.classList.add('selected_node');
+
+        if(node['class'] == 'resource')
+            this.reserveResource(node);
+
     }
 
     clear(node) {
@@ -323,10 +331,95 @@ class MultipleSelectFilterWidget {
         elem.classList.add('not-allowed', 'bg-light');
     }
 
+    labCheck(node){
+        // if lab is not already selected update available resources
+        if(!node['selected']) {
+            this.currentLab = node;
+            this.available_resources = JSON.parse(node['available_resources']);
+            this.updateAvailibility();
+        } else {
+            // a lab is already selected, clear already selected resources 
+            if(confirm('Unselecting a lab will reset all selected resources, are you sure?'))
+                location.reload();
+        }
+    }
+
+    updateAvailibility() {
+        const lab_resources = this.graph_neighbors[this.currentLab.id];
+
+        // need to loop through and update all quantities
+        for(let i in lab_resources) {
+            const resource_node = this.filter_items[lab_resources[i]];
+            const required_resources = JSON.parse(resource_node['required_resources']);
+            let elem = document.getElementById(resource_node.id).getElementsByClassName("grid-item-description")[0];
+            let leastAvailable = 100;
+            let currCount;
+            let quantityDescription;
+            let quantityNode;
+
+            // console.log(this.available_resources);
+            for(let resource in required_resources) {
+                currCount = Math.floor(this.available_resources[resource] / required_resources[resource]);
+                if(currCount < leastAvailable)
+                    leastAvailable = currCount;
+
+                if(!currCount || currCount < 0) {
+                    leastAvailable = 0
+                    break;
+                }
+            }
+
+            if (elem.children[0]){
+                elem.removeChild(elem.children[0]);
+            }
+
+            quantityDescription = '<br> Quantity Currently Available: ' + leastAvailable;
+            quantityNode = document.createElement('P');
+            if (leastAvailable > 0) {
+                quantityDescription = quantityDescription.fontcolor('green');
+            } else {
+                quantityDescription = quantityDescription.fontcolor('red');
+            }
+
+            quantityNode.innerHTML = quantityDescription;
+            elem.appendChild(quantityNode)
+        }
+    }
+
+    reserveResource(node){
+        const required_resources = JSON.parse(node['required_resources']);
+
+        for(let resource in required_resources){
+            this.available_resources[resource] -= required_resources[resource];
+        }
+
+        this.updateAvailibility();
+    }
+
+    releaseResource(node){
+        const required_resources = JSON.parse(node['required_resources']);
+
+        for(let resource in required_resources){
+            this.available_resources[resource] += required_resources[resource];
+        }
+
+        this.updateAvailibility();
+    }
+
     processClick(id){
         const node = this.filter_items[id];
         if(!node['selectable'])
             return;
+
+        // If they are selecting a lab, update accordingly
+        if (node['class'] == 'lab')
+            this.labCheck(node);
+
+        // Can only select a resource if a lab is selected
+        if (!this.currentLab) {
+            alert('You must select a lab before selecting a resource');
+            return;
+        }
 
         if(node['multiple']){
             return this.processClickMultiple(node);
@@ -341,6 +434,7 @@ class MultipleSelectFilterWidget {
             this.select(node);
         } else {
             this.clear(node);
+            this.releaseResource(node); // can't do this in clear since clear removes border
         }
         this.process(node);
         this.updateResult(node);
@@ -423,6 +517,7 @@ class MultipleSelectFilterWidget {
         const parent = div.parentNode;
         div.parentNode.removeChild(div);
         this.result[node.class][node.id]['count']--;
+        this.releaseResource(node); // This can't be done on clear b/c clear removes border
 
         //checks if we have removed last item in class
         if(this.result[node.class][node.id]['count'] == 0){

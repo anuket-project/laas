@@ -10,9 +10,11 @@
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.apps import apps
 import json
 import random
 
+from collections import Counter
 
 class LabStatus(object):
     """
@@ -211,6 +213,12 @@ class Lab(models.Model):
         for i in range(45):
             key += random.choice(alphabet)
         return key
+
+    def get_available_resources(self):
+        # Cannot import model normally due to ciruclar import
+        Server = apps.get_model('resource_inventory', 'Server') # TODO: Find way to import ResourceQuery
+        resources = [str(resource.profile) for resource in Server.objects.filter(lab=self, booked=False)]
+        return dict(Counter(resources))
 
     def __str__(self):
         return self.name
