@@ -26,7 +26,10 @@ def sync_jira_accounts():
         except JIRAError:
             # User can be anonymous (local django admin account)
             continue
-        user.email = user_dict['emailAddress']
+        try:
+            user.email = user_dict['emailAddress']
+        except:
+            pass
         user.userprofile.url = user_dict['self']
         user.userprofile.full_name = user_dict['displayName']
 
