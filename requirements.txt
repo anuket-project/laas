@@ -15,3 +15,4 @@ requests==2.22.0
 django-fernet-fields==0.6
 pyyaml==3.13
 pytz==2018.5
+mozilla-django-oidc==1.2.3
