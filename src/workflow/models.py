@@ -11,6 +11,7 @@
 from django.template.loader import get_template
 from django.http import HttpResponse
 from django.utils import timezone
+from django.db import transaction
 
 import yaml
 import requests
@@ -559,6 +560,7 @@ class Repository():
         self.el[self.RESULT] = bundle
         return False
 
+    @transaction.atomic  # TODO: Rewrite transactions with savepoints at user level for all workflows
     def make_booking(self):
         models = self.el[self.BOOKING_MODELS]
         owner = self.el[self.SESSION_USER]
