@@ -22,23 +22,3 @@
 {% endblock logo %}
 {% block dropDown %}
 {% endblock dropDown %}
-
-{% block login %}
-    <div class="dropdown-menu dropdown-menu-right">
-        {% if user.is_authenticated %}
-        <a href="{% url 'account:settings' %}" class="text-dark dropdown-item">
-            <i class="fas fa-cog"></i>
-                Settings
-        </a>
-        <a href="{% url 'oidc_logout' %}" class="text-dark dropdown-item">
-            <i class="fas fa-sign-out-alt"></i>
-                Logout
-        </a>
-        {% else %}
-        <a href="{% url 'oidc_authentication_init' %}" class="text-dark dropdown-item">
-            <i class="fas fa-sign-in-alt"></i>
-                Login with LFID
-        </a>
-        {% endif %}
-    </div>
-{% endblock login %}

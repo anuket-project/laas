@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     'api',
     'django.contrib.admin',
     'django.contrib.auth',
-    'mozilla_django_oidc',  # needs to be defined after auth
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -38,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'bootstrap4',
     'rest_framework',
-    'rest_framework.authtoken',
+    'rest_framework.authtoken'
 ]
 
 MIDDLEWARE = [
@@ -51,20 +50,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'account.middleware.TimezoneMiddleware',
 ]
-
-AUTHENTICATION_BACKENDS = ['account.views.MyOIDCAB']
-
-
-# OpenID Authentications
-OIDC_RP_CLIENT_ID = os.environ['OIDC_CLIENT_ID']
-OIDC_RP_CLIENT_SECRET = os.environ['OIDC_CLIENT_SECRET']
-
-OIDC_OP_AUTHORIZATION_ENDPOINT = os.environ['OIDC_AUTHORIZATION_ENDPOINT']
-OIDC_OP_TOKEN_ENDPOINT = os.environ['OIDC_TOKEN_ENDPOINT']
-OIDC_OP_USER_ENDPOINT = os.environ['OIDC_USER_ENDPOINT']
-
-LOGIN_REDIRECT_URL = os.environ['DASHBOARD_URL']
-LOGOUT_REDIRECT_URL = os.environ['DASHBOARD_URL']
 
 ROOT_URLCONF = 'laas_dashboard.urls'
 

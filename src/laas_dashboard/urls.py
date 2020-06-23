@@ -41,8 +41,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api/', include('api.urls')),
-    url(r'^messages/', include('notifier.urls', namespace='notifier')),
-    url(r'^oidc/', include('mozilla_django_oidc.urls')),
+    url(r'^messages/', include('notifier.urls', namespace='notifier'))
 ]
 
 if settings.DEBUG is True:

@@ -28,11 +28,9 @@
     <div class="col-12 col-lg-6 mb-4">
         <h2 class="border-bottom">Get Started</h2>
         {% if request.user.is_anonymous %}
-        {% block biglogin %}
         <h4 class="text-center">
             To get started, please log in with your <a href="/accounts/login">Linux Foundation Jira account</a>
         </h4>
-        {% endblock biglogin %}
         {% else %}
         {% block btnGrp %}
         <p>To get started, book a server below:</p>
