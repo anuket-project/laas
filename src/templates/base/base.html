@@ -44,7 +44,6 @@
                             {% endif %}
                             <i class="fas fa-caret-down rotate"></i>
                         </a>
-                        {% block login %}
                         <div class="dropdown-menu dropdown-menu-right">
                             {% if user.is_authenticated %}
                                 <a href="{% url 'account:settings' %}" class="text-dark dropdown-item">
@@ -62,7 +61,6 @@
                                 </a>
                             {% endif %}
                         </div>
-                        {% endblock login %}
                     </li>
                 </ul>
             </div>
