@@ -130,7 +130,7 @@ class JiraAuthenticatedView(RedirectView):
         email = ""
         try:
             email = jira.user(username).emailAddress
-        except:
+        except AttributeError:
             email = ""
         url = '/'
         # Step 3. Lookup the user or create them if they don't exist.

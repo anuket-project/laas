@@ -54,6 +54,6 @@ class Migration(migrations.Migration):
             model_name='vlan',
             name='network',
             field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING,
-                to='resource_inventory.PhysicalNetwork', null=True),
+                                    to='resource_inventory.PhysicalNetwork', null=True),
         ),
     ]

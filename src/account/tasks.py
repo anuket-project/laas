@@ -28,7 +28,7 @@ def sync_jira_accounts():
             continue
         try:
             user.email = user_dict['emailAddress']
-        except:
+        except KeyError:
             pass
         user.userprofile.url = user_dict['self']
         user.userprofile.full_name = user_dict['displayName']

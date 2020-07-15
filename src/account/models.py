@@ -16,6 +16,7 @@ import random
 
 from collections import Counter
 
+
 class LabStatus(object):
     """
     A Poor man's enum for the status of a lab.
@@ -216,7 +217,7 @@ class Lab(models.Model):
 
     def get_available_resources(self):
         # Cannot import model normally due to ciruclar import
-        Server = apps.get_model('resource_inventory', 'Server') # TODO: Find way to import ResourceQuery
+        Server = apps.get_model('resource_inventory', 'Server')  # TODO: Find way to import ResourceQuery
         resources = [str(resource.profile) for resource in Server.objects.filter(lab=self, booked=False)]
         return dict(Counter(resources))
 

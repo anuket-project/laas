@@ -176,12 +176,12 @@ class LabManager(object):
 
     def format_user(self, userprofile):
         return {
-                    "id": userprofile.user.id,
-                    "username": userprofile.user.username,
-                    "email": userprofile.email_addr,
-                    "first_name": userprofile.user.first_name,
-                    "last_name": userprofile.user.last_name,
-                    "company": userprofile.company
+            "id": userprofile.user.id,
+            "username": userprofile.user.username,
+            "email": userprofile.email_addr,
+            "first_name": userprofile.user.first_name,
+            "last_name": userprofile.user.last_name,
+            "company": userprofile.company
         }
 
     def get_users(self):
