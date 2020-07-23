@@ -37,7 +37,7 @@ class PDFTemplater:
         lab = resource_lab.name
         location = resource_lab.location
         pod_type = "development"
-        link = "https://wiki.opnfv.org/display/INF/Laas"
+        link = resource_lab.lab_info_link
 
         try:
             # try to get more specific info that may fail, we dont care if it does

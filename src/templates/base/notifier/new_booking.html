@@ -20,7 +20,7 @@
                 <li>collaborators:
                     <ul>
                         {% for user in booking.collaborators.all %}
-                        <li>user.username</li>
+                        <li>{{user.username}}</li>
                         {% empty %}
                         <li>No collaborators</li>
                         {% endfor %}

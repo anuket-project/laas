@@ -4,11 +4,11 @@
             {% if owner %}
             <h3>Your booking has expired</h3>
             <p>Your booking has ended and the machines have been cleaned up.</p>
-            <p>Thank you for working on OPNFV, and feel free to book more machines if you need them.</p>
+            <p>Thank you for working on {{booking.lab.project}}, and feel free to book more machines if you need them.</p>
             {% else %}
             <h3>A booking that you collaborated on has expired</h3>
             <p>The booking owned by {{booking.owner.username}} that you worked on has ended</p>
-            <p>Thank you for contributing to OPNFV!</p>
+            <p>Thank you for contributing to {{booking.lab.project}}.</p>
             {% endif %}
             <p>Booking information:</p>
             <ul>
@@ -22,7 +22,7 @@
                 <li>collaborators:
                     <ul>
                         {% for user in booking.collaborators.all %}
-                        <li>user.username</li>
+                        <li>{{user.username}}</li>
                         {% empty %}
                         <li>No collaborators</li>
                         {% endfor %}
