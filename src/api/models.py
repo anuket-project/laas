@@ -176,12 +176,12 @@ class LabManager(object):
 
     def format_user(self, userprofile):
         return {
-                    "id": userprofile.user.id,
-                    "username": userprofile.user.username,
-                    "email": userprofile.email_addr,
-                    "first_name": userprofile.user.first_name,
-                    "last_name": userprofile.user.last_name,
-                    "company": userprofile.company
+            "id": userprofile.user.id,
+            "username": userprofile.user.username,
+            "email": userprofile.email_addr,
+            "first_name": userprofile.user.first_name,
+            "last_name": userprofile.user.last_name,
+            "company": userprofile.company
         }
 
     def get_users(self):
@@ -190,7 +190,9 @@ class LabManager(object):
         return json.dumps({"users": userlist})
 
     def get_user(self, user_id):
-        profile = get_object_or_404(UserProfile, pk=user_id)
+        user = User.objects.get(pk=user_id)
+
+        profile = get_object_or_404(UserProfile, user=user)
 
         return json.dumps(self.format_user(profile))
 
