@@ -35,7 +35,7 @@
         {% block btnGrp %}
         <p>To get started, book a server below:</p>
         <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border text-white p-4" href="/booking/quick/">
-            Book a Server
+            Book a Resource
         </a>
         <p class="mt-4">PTLs can use our advanced options to book multi-node pods. If you are a PTL, you may use the options
             below:
@@ -43,7 +43,6 @@
         <div class="btn-group-vertical w-100">
             <button class="btn btn-primary" onclick="create_workflow(0)">Book a Pod</button>
             <button class="btn btn-primary" onclick="create_workflow(1)">Design a Pod</button>
-            <button class="btn btn-primary" onclick="create_workflow(2)">Configure a Pod</button>
         </div>
         {% endblock btnGrp %}
         {% endif %}
