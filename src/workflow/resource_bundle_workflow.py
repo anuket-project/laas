@@ -10,6 +10,7 @@
 
 from django.conf import settings
 from django.forms import formset_factory
+from django.core.exceptions import ValidationError
 
 from typing import List
 
@@ -264,6 +265,10 @@ class Define_Software(WorkflowStep):
                 host.name = hostname
                 host.image = image
                 host.save()
+
+            if not has_headnode:
+                self.set_invalid("No headnode. Please set a headnode.")
+                return
 
             self.set_valid("Completed")
         else:
