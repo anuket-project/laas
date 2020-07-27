@@ -252,15 +252,12 @@ class Define_Software(WorkflowStep):
         # TODO: fix headnode in form, currently doesn't return a selected one
         # models['headnode_index'] = post_data.get("headnode", 1)
         formset = self.create_hostformset(hosts, data=post_data)
-        has_headnode = False
         if formset.is_valid():
             for i, form in enumerate(formset):
                 host = hosts[i]
                 image = form.cleaned_data['image']
                 hostname = form.cleaned_data['host_name']
                 headnode = form.cleaned_data['headnode']
-                if headnode:
-                    has_headnode = True
                 host.is_head_node = headnode
                 host.name = hostname
                 host.image = image
