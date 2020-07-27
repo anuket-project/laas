@@ -1,7 +1,7 @@
 {{user_name|default:"Developer"}},
 
 {% if owner %}
-The booking you requested of the OPNFV Lab as a Service has finished deploying and is ready for you to use.
+The booking you requested of the {{booking.lab.project}} lab has finished deploying and is ready for you to use.
 {% else %}
 A booking you collaborate on is ready for you to use
 {% endif %}
@@ -16,6 +16,6 @@ The lab that fulfilled your booking request has sent you the following messages:
 You may visit the following link for more information:
 {{booking_url}}
 
-Thank you for contributing to the OPNFV platform!
+Thank you for contributing to the {{booking.lab.project}} platform!
 
     - The Lab-as-a-Service team

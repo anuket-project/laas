@@ -205,6 +205,8 @@ class Lab(models.Model):
     # This token must apear in API requests from this lab
     api_token = models.CharField(max_length=50)
     description = models.CharField(max_length=240)
+    lab_info_link = models.URLField(null=True)
+    project = models.CharField(default='LaaS', max_length=100)
 
     @staticmethod
     def make_api_token():

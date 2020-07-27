@@ -1,5 +1,6 @@
 ##############################################################################
 # Copyright (c) 2018 Parker Berberian, Sawyer Bergeron and others.
+# Copyright (c) 2020 Sawyer Bergeron, Sean Smith, and others.
 #
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
@@ -110,7 +111,7 @@ class NotificationHandler(object):
     @classmethod
     def email_booking_over(cls, booking):
         template_name = "notifier/email_ended.txt"
-        hostnames = [host.name for host in booking.resource.getResources()]
+        hostnames = [host.name for host in booking.resource.get_resources()]
         users = list(booking.collaborators.all())
         users.append(booking.owner)
         for user in users:
@@ -134,7 +135,7 @@ class NotificationHandler(object):
     @classmethod
     def email_booking_expiring(cls, booking):
         template_name = "notifier/email_expiring.txt"
-        hostnames = [host.name for host in booking.resource.getResources()]
+        hostnames = [host.name for host in booking.resource.get_resources()]
         users = list(booking.collaborators.all())
         users.append(booking.owner)
         for user in users:
