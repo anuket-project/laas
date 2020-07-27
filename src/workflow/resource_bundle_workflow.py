@@ -259,7 +259,7 @@ class Define_Software(WorkflowStep):
                 image = form.cleaned_data['image']
                 hostname = form.cleaned_data['host_name']
                 headnode = form.cleaned_data['headnode']
-                if headnode:
+                if headnode or not hosts:
                     has_headnode = True
                 host.is_head_node = headnode
                 host.name = hostname
