@@ -122,7 +122,7 @@ class CpuProfile(models.Model):
     ])
     cpus = models.IntegerField()
     host = models.ForeignKey(ResourceProfile, on_delete=models.CASCADE, related_name='cpuprofile')
-    cflags = models.TextField(null=True)
+    cflags = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return str(self.architecture) + " " + str(self.cpus) + "S" + str(self.cores) + " C for " + str(self.host)
