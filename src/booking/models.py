@@ -21,7 +21,7 @@ class Booking(models.Model):
     # All bookings are owned by the user who requested it
     owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='owner')
     # an owner can add other users to the booking
-    collaborators = models.ManyToManyField(User, related_name='collaborators')
+    collaborators = models.ManyToManyField(User, blank=True, related_name='collaborators')
     # start and end time
     start = models.DateTimeField()
     end = models.DateTimeField()
@@ -32,8 +32,8 @@ class Booking(models.Model):
     # bookings can be extended a limited number of times
     ext_count = models.IntegerField(default=2)
     # the hardware that the user has booked
-    resource = models.ForeignKey(ResourceBundle, on_delete=models.SET_NULL, null=True)
-    opnfv_config = models.ForeignKey(OPNFVConfig, on_delete=models.SET_NULL, null=True)
+    resource = models.ForeignKey(ResourceBundle, on_delete=models.SET_NULL, null=True, blank=True)
+    opnfv_config = models.ForeignKey(OPNFVConfig, on_delete=models.SET_NULL, null=True, blank=True)
     project = models.CharField(max_length=100, default="", blank=True, null=True)
     lab = models.ForeignKey(Lab, null=True, on_delete=models.SET_NULL)
     pdf = models.TextField(blank=True, default="")
