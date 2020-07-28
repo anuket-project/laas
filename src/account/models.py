@@ -16,6 +16,8 @@ import random
 
 from collections import Counter
 
+from dashboard.exceptions import ResourceAvailabilityException
+
 
 class LabStatus(object):
     """
@@ -87,13 +89,24 @@ class VlanManager(models.Model):
         """
         allocated = []
         vlans = json.loads(self.vlans)
-        for i in range(count):
-            new_vlan = vlans.index(1)  # will throw if none available
-            vlans[new_vlan] = 0
-            allocated.append(new_vlan)
-        if count == 1:
-            return allocated[0]
-        return allocated
+        reserved = json.loads(self.reserved_vlans)
+
+        for i in range(0, len(vlans) - 1):
+            if len(allocated) >= count:
+                break
+
+            if vlans[i] == 0 and self.allow_overlapping is False:
+                continue
+
+            if reserved[i] == 1:
+                continue
+
+            # vlan is available and not reserved, so safe to add
+            allocated.append(i)
+            continue
+
+        if len(allocated) != count:
+            raise ResourceAvailabilityException("can't allocate the vlans requested")
 
     def get_public_vlan(self):
         """Return reference to an available public network without reserving it."""
@@ -171,6 +184,8 @@ class VlanManager(models.Model):
         """
         my_vlans = json.loads(self.vlans)
 
+        reserved = json.loads(self.reserved_vlans)
+
         try:
             iter(vlans)
         except Exception:
@@ -179,7 +194,7 @@ class VlanManager(models.Model):
         vlans = set(vlans)
 
         for vlan in vlans:
-            if my_vlans[vlan] == 0:
+            if my_vlans[vlan] == 0 or reserved[vlan] == 1:
                 raise ValueError("vlan " + str(vlan) + " is not available")
 
             my_vlans[vlan] = 0

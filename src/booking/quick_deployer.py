@@ -87,7 +87,7 @@ def update_template(old_template, image, hostname, user):
         Network.objects.create(
             name=old_network.name,
             bundle=template,
-            is_public=False
+            is_public=old_network.is_public
         )
     # We are assuming there is only one opnfv config per public resource template
     old_opnfv = template.opnfv_config.first()
