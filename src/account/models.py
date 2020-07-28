@@ -108,6 +108,8 @@ class VlanManager(models.Model):
         if len(allocated) != count:
             raise ResourceAvailabilityException("can't allocate the vlans requested")
 
+        return allocated
+
     def get_public_vlan(self):
         """Return reference to an available public network without reserving it."""
         return PublicNetwork.objects.filter(lab=self.lab_set.first(), in_use=False).first()

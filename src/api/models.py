@@ -384,7 +384,7 @@ class Job(models.Model):
 
 
 class TaskConfig(models.Model):
-    state = models.IntegerField(default=ConfigState.CLEAN)
+    state = models.IntegerField(default=ConfigState.NEW)
 
     keys = set()  # TODO: This needs to be an instance variable, not a class variable
     delta_keys_list = models.CharField(max_length=200, default="[]")
