@@ -173,7 +173,7 @@ def booking_modify_image(request, booking_id):
         if timezone.now() > booking.end:
             return HttpResponse("unauthorized")
         new_image = Image.objects.get(id=form.cleaned_data['image_id'])
-        host = ResourceQuery.get(labid=form.cleaned_data['host_id'])
+        host = ResourceQuery.get(id=form.cleaned_data['host_id'])
         host.config.image = new_image
         host.config.save()
         JobFactory.reimageHost(new_image, booking, host)

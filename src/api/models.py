@@ -880,13 +880,13 @@ class JobFactory(object):
         """Modify an existing job to reimage the given host."""
         job = Job.objects.get(booking=booking)
         # make hardware task new
-        hardware_relation = HostHardwareRelation.objects.get(host=host, job=job)
-        hardware_relation.config.set_image(new_image.lab_id)
+        hardware_relation = HostHardwareRelation.objects.get(resource_id=host, job=job)
+        hardware_relation.config.image = new_image.lab_id
         hardware_relation.config.save()
         hardware_relation.status = JobStatus.NEW
 
         # re-apply networking after host is reset
-        net_relation = HostNetworkRelation.objects.get(host=host, job=job)
+        net_relation = HostNetworkRelation.objects.get(resource_id=host, job=job)
         net_relation.status = JobStatus.NEW
 
         # re-apply ssh access after host is reset
