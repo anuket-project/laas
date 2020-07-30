@@ -525,10 +525,7 @@ class OpnfvApiConfig(models.Model):
         self.delta = '{}'
 
     def get_delta(self):
-        if not self.delta:
-            self.delta = self.to_json()
-            self.save()
-        return json.loads(self.delta)
+        return json.loads(self.to_json())
 
 
 class AccessConfig(TaskConfig):
@@ -550,10 +547,7 @@ class AccessConfig(TaskConfig):
         return d
 
     def get_delta(self):
-        if not self.delta:
-            self.delta = self.to_json()
-            self.save()
-        d = json.loads(self.delta)
+        d = json.loads(self.to_json())
         d["lab_token"] = self.accessrelation.lab_token
 
         return d
@@ -661,10 +655,7 @@ class NetworkConfig(TaskConfig):
         return json.dumps(self.to_dict())
 
     def get_delta(self):
-        if not self.delta:
-            self.delta = self.to_json()
-            self.save()
-        d = json.loads(self.delta)
+        d = json.loads(self.to_json())
         d['lab_token'] = self.hostnetworkrelation.lab_token
         return d
 
@@ -704,11 +695,7 @@ class SnapshotConfig(TaskConfig):
         return json.dumps(self.to_dict())
 
     def get_delta(self):
-        if not self.delta:
-            self.delta = self.to_json()
-            self.save()
-
-        d = json.loads(self.delta)
+        d = json.loads(self.to_json())
         return d
 
     def clear_delta(self):
