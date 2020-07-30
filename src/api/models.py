@@ -649,10 +649,11 @@ class NetworkConfig(TaskConfig):
         d[hid] = {}
         for interface in self.interfaces.all():
             d[hid][interface.mac_address] = []
-            for vlan in interface.config.all():
-                # TODO: should this come from the interface?
-                # e.g. will different interfaces for different resources need different configs?
-                d[hid][interface.mac_address].append({"vlan_id": vlan.vlan_id, "tagged": vlan.tagged})
+            if self.state != ConfigState.CLEAN:
+                for vlan in interface.config.all():
+                    # TODO: should this come from the interface?
+                    # e.g. will different interfaces for different resources need different configs?
+                    d[hid][interface.mac_address].append({"vlan_id": vlan.vlan_id, "tagged": vlan.tagged})
 
         return d
 
