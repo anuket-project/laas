@@ -14,7 +14,6 @@ from django.utils import timezone
 from booking.models import Booking
 from notifier.manager import NotificationHandler
 from api.models import Job, JobStatus, SoftwareRelation, HostHardwareRelation, HostNetworkRelation, AccessRelation
-from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.models import ConfigState
 
 
@@ -75,4 +74,4 @@ def free_hosts():
         resource__isnull=False
     )
     for booking in bookings:
-        ResourceManager.getInstance().deleteResourceBundle(booking.resource)
+        booking.resource.release()

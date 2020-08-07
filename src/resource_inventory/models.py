@@ -199,6 +199,13 @@ class ResourceBundle(models.Model):
         # TODO
         pass
 
+    def release(self):
+        for pn in PhysicalNetwork.objects.filter(bundle=self).all():
+            pn.release()
+
+        for resource in self.get_resources():
+            resource.release()
+
     def get_template_name(self):
         if not self.template:
             return ""
@@ -401,6 +408,7 @@ class Network(models.Model):
 class PhysicalNetwork(models.Model):
     vlan_id = models.IntegerField()
     generic_network = models.ForeignKey(Network, on_delete=models.CASCADE)
+    bundle = models.ForeignKey(ResourceBundle, null=True, on_delete=models.CASCADE)
 
     def get_configuration(self, state):
         """
@@ -412,11 +420,19 @@ class PhysicalNetwork(models.Model):
 
     def reserve(self):
         """Reserve vlan(s) associated with this network."""
-        # vlan_manager = self.bundle.lab.vlan_manager
         return False
 
     def release(self):
-        # vlan_manager = self.bundle.lab.vlan_manager
+        from booking.models import Booking
+
+        booking = Booking.objects.get(resource=self.bundle)
+        lab = booking.lab
+        vlan_manager = lab.vlan_manager
+
+        if self.generic_network.is_public:
+            vlan_manager.release_public_vlan(self.vlan_id)
+        else:
+            vlan_manager.release_vlans([self.vlan_id])
         return False
 
     def __str__(self):

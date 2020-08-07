@@ -102,7 +102,7 @@ class ResourceManager:
                 phys_res.config = config
                 resources.append(phys_res)
 
-                self.configureNetworking(phys_res, vlan_map)
+                self.configureNetworking(resource_bundle, phys_res, vlan_map)
                 phys_res.save()
 
             except Exception as e:
@@ -111,7 +111,7 @@ class ResourceManager:
 
         return resource_bundle
 
-    def configureNetworking(self, resource, vlan_map):
+    def configureNetworking(self, resource_bundle, resource, vlan_map):
         for physical_interface in resource.interfaces.all():
             # assign interface configs
 
@@ -128,7 +128,8 @@ class ResourceManager:
             for connection in iface_config.connections.all():
                 physicalNetwork = PhysicalNetwork.objects.create(
                     vlan_id=vlan_map[connection.network.name],
-                    generic_network=connection.network
+                    generic_network=connection.network,
+                    bundle=resource_bundle,
                 )
                 physical_interface.config.add(
                     Vlan.objects.create(
