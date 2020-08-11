@@ -18,6 +18,7 @@ from django.http.response import JsonResponse, HttpResponse
 from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ObjectDoesNotExist
 
 from api.serializers.booking_serializer import BookingSerializer
 from api.serializers.old_serializers import UserSerializer
@@ -26,6 +27,8 @@ from account.models import UserProfile
 from booking.models import Booking
 from api.models import LabManagerTracker, get_task
 from notifier.manager import NotificationHandler
+from analytics.models import ActiveVPNUser
+import json
 
 """
 API views.
@@ -174,6 +177,23 @@ def current_jobs(request, lab_name=""):
     lab_token = request.META.get('HTTP_AUTH_TOKEN')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
     return JsonResponse(lab_manager.get_current_jobs(), safe=False)
+
+
+@csrf_exempt
+def analytics_job(request, lab_name=""):
+    """ returns all jobs with type booking"""
+    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_manager = LabManagerTracker.get(lab_name, lab_token)
+    if request.method == "GET":
+        return JsonResponse(lab_manager.get_analytics_job(), safe=False)
+    if request.method == "POST":
+        users = json.loads(request.body.decode('utf-8'))['active_users']
+        try:
+            ActiveVPNUser.create(lab_name, users)
+        except ObjectDoesNotExist:
+            return JsonResponse('Lab does not exist!', safe=False)
+        return HttpResponse(status=200)
+    return HttpResponse(status=405)
 
 
 def lab_downtime(request, lab_name=""):

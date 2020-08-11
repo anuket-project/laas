@@ -249,6 +249,15 @@ class LabManager(object):
 
         return self.serialize_jobs(jobs, status=JobStatus.DONE)
 
+    def get_analytics_job(self):
+        """ Get analytics job with status new """
+        jobs = Job.objects.filter(
+            booking__lab=self.lab,
+            job_type='DATA'
+        )
+
+        return self.serialize_jobs(jobs, status=JobStatus.NEW)
+
     def get_job(self, jobid):
         return Job.objects.get(pk=jobid).to_dict()
 
@@ -339,9 +348,19 @@ class Job(models.Model):
     This is the class that is serialized and put into the api
     """
 
+    JOB_TYPES = (
+        ('BOOK', 'Booking'),
+        ('DATA', 'Analytics')
+    )
+
     booking = models.OneToOneField(Booking, on_delete=models.CASCADE, null=True)
     status = models.IntegerField(default=JobStatus.NEW)
     complete = models.BooleanField(default=False)
+    job_type = models.CharField(
+        max_length=4,
+        choices=JOB_TYPES,
+        default='BOOK'
+    )
 
     def to_dict(self):
         d = {}
@@ -447,6 +466,28 @@ class BridgeConfig(models.Model):
 
     def to_json(self):
         return json.dumps(self.to_dict())
+
+
+class ActiveUsersConfig(models.Model):
+    """
+    Task for getting active VPN users
+
+    StackStorm needs no information to run this job
+    so this task is very bare, but neccessary to fit
+    job creation convention.
+    """
+
+    def clear_delta(self):
+        self.delta = '{}'
+
+    def get_delta(self):
+        return json.loads(self.to_json())
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
+        return {}
 
 
 class OpnfvApiConfig(models.Model):
@@ -860,6 +901,14 @@ class SnapshotRelation(TaskRelation):
         return super(self.__class__, self).delete(*args, **kwargs)
 
 
+class ActiveUsersRelation(TaskRelation):
+    config = models.OneToOneField(ActiveUsersConfig, on_delete=models.CASCADE)
+    job_key = "active users task"
+
+    def type_str(self):
+        return "Active Users Task"
+
+
 class JobFactory(object):
     """This class creates all the API models (jobs, tasks, etc) needed to fulfill a booking."""
 
@@ -901,6 +950,44 @@ class JobFactory(object):
         config.clear_delta()
         config.set_host(host)
         config.save()
+
+    @classmethod
+    def makeActiveUsersTask(cls):
+        """ Append active users task to analytics job """
+        config = ActiveUsersConfig()
+        relation = ActiveUsersRelation()
+        job = Job.objects.get(job_type='DATA')
+
+        job.status = JobStatus.NEW
+
+        relation.job = job
+        relation.config = config
+        relation.config.save()
+        relation.config = relation.config
+        relation.save()
+        config.save()
+
+    @classmethod
+    def makeAnalyticsJob(cls, booking):
+        """
+        Create the analytics job
+
+        This will only run once since there will only be one analytics job.
+        All analytics tasks get appended to analytics job.
+        """
+
+        if len(Job.objects.filter(job_type='DATA')) > 0:
+            raise Exception("Cannot have more than one analytics job")
+
+        if booking.resource:
+            raise Exception("Booking is not marker for analytics job, has resoure")
+
+        job = Job()
+        job.booking = booking
+        job.job_type = 'DATA'
+        job.save()
+
+        cls.makeActiveUsersTask()
 
     @classmethod
     def makeCompleteJob(cls, booking):
@@ -1077,7 +1164,8 @@ JOB_TASK_CLASSLIST = [
     AccessRelation,
     HostNetworkRelation,
     SoftwareRelation,
-    SnapshotRelation
+    SnapshotRelation,
+    ActiveUsersRelation
 ]
 
 

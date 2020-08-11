@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'notifier',
     'workflow',
     'api',
+    'analytics',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -209,6 +210,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'notifier.tasks.notify_expiring',
         'schedule': timedelta(hours=1)
     },
+    'query_vpn_users': {
+        'task': 'dashboard.tasks.query_vpn_users',
+        'schedule': timedelta(hours=1)
+    }
 }
 
 # Notifier Settings

@@ -13,7 +13,17 @@ from celery import shared_task
 from django.utils import timezone
 from booking.models import Booking
 from notifier.manager import NotificationHandler
-from api.models import Job, JobStatus, SoftwareRelation, HostHardwareRelation, HostNetworkRelation, AccessRelation
+from api.models import (
+    Job,
+    JobStatus,
+    SoftwareRelation,
+    HostHardwareRelation,
+    HostNetworkRelation,
+    AccessRelation,
+    JobFactory
+)
+
+from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.models import ConfigState
 
 
@@ -74,4 +84,10 @@ def free_hosts():
         resource__isnull=False
     )
     for booking in bookings:
-        booking.resource.release()
+        ResourceManager.getInstance().deleteResourceBundle(booking.resource)
+
+
+@shared_task
+def query_vpn_users():
+    """ get active vpn users """
+    JobFactory.makeActiveUsersTask()
