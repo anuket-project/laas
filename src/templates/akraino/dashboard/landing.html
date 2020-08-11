@@ -18,5 +18,12 @@
 <p>To get started, book a pod below:</p>
 <a class="btn btnAkr btn-lg d-flex flex-column justify-content-center align-content-center border text-white p-4" href="/booking/quick/">Book a Pod</a>
 {% endblock btnGrp %}
+
+{% block biglogin %}
+<h4 class="text-center">
+    To get started, please log in with <a href="{% url 'oidc_authentication_init' %}"> Linux Foundation ID</a>
+</h4>
+{% endblock biglogin %}
+
 {% block returningUsers %}
 {% endblock returningUsers %}
