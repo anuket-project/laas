@@ -44,25 +44,52 @@
                             {% endif %}
                             <i class="fas fa-caret-down rotate"></i>
                         </a>
-                        {% block login %}
                         <div class="dropdown-menu dropdown-menu-right">
-                            {% if user.is_authenticated %}
+                            {% if LFID %}
+                                {% if user.is_authenticated %}
                                 <a href="{% url 'account:settings' %}" class="text-dark dropdown-item">
                                     <i class="fas fa-cog"></i>
-                                    Settings
+                                        Settings
                                 </a>
-                                <a href="{% url 'account:logout' %}?next={{ request.path }}" class="text-dark dropdown-item">
+                                <a id="logout_btn" href="#" method="post" class="text-dark dropdown-item">
                                     <i class="fas fa-sign-out-alt"></i>
-                                    Logout
+                                        Logout
                                 </a>
-                            {% else %}
-                                <a href="{% url 'account:login' %}" class="text-dark dropdown-item">
+                                <form id="logout_form" action="{% url 'oidc_logout' %}" method="post" style="visibility: hidden;">
+                                    {% csrf_token %}
+                                    <input type="submit" value="logout">
+                                </form>
+                                <script>
+                                    const logout_btn = document.getElementById("logout_btn");
+
+                                    const logout_form = document.getElementById("logout_form");
+
+                                    logout_btn.onclick = function() { logout_form.submit(); };
+                                </script>
+                                {% else %}
+                                <a href="{% url 'oidc_authentication_init' %}" class="text-dark dropdown-item">
                                     <i class="fas fa-sign-in-alt"></i>
-                                    Login with Jira
+                                        Login with LFID
                                 </a>
+                                {% endif %}
+                            {% else %}
+                                {% if user.is_authenticated %}
+                                    <a href="{% url 'account:settings' %}" class="text-dark dropdown-item">
+                                        <i class="fas fa-cog"></i>
+                                        Settings
+                                    </a>
+                                    <a href="{% url 'account:logout' %}?next={{ request.path }}" class="text-dark dropdown-item">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        Logout
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'account:login' %}" class="text-dark dropdown-item">
+                                        <i class="fas fa-sign-in-alt"></i>
+                                        Login with Jira
+                                    </a>
+                                {% endif %}
                             {% endif %}
                         </div>
-                        {% endblock login %}
                     </li>
                 </ul>
             </div>

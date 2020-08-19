@@ -61,15 +61,44 @@ class AccountSettingsView(UpdateView):
 
 class MyOIDCAB(OIDCAuthenticationBackend):
     def filter_users_by_claims(self, claims):
-        email = claims.get('email')
-        if not email:
-            return self.User.objects.none()
+        """
+        Checks to see if user exists and create user if not
+
+        Linux foundation does not allow users to change their
+        username, so chose to match users based on their username.
+        If this changes we will need to match users based on some
+        other criterea.
+        """
+        username = claims.get(os.environ['CLAIMS_ENDPOINT'] + 'username')
+
+        if not username:
+            return HttpResponse('No username provided, contact support.')
 
         try:
-            profile = UserProfile.objects.get('email')
-            return profile
-        except UserProfile.DoesNotExist:
-            return self.User.objects.none()
+            # For literally no (good) reason user needs to be a queryset
+            user = User.objects.filter(username=username)
+            return user
+        except User.DoesNotExist:
+            return self.UserModel.objects.none()
+
+    def create_user(self, claims):
+        """ This creates a user and user profile"""
+        user = super(MyOIDCAB, self).create_user(claims)
+        user.username = claims.get(os.environ['CLAIMS_ENDPOINT'] + 'username')
+        user.save()
+
+        up = UserProfile()
+        up.user = user
+        up.email_addr = claims.get('email')
+        up.save()
+        return user
+
+    def update_user(self, user, claims):
+        """ If their account has different email, change the email """
+        up = UserProfile.objects.get(user=user)
+        up.email_addr = claims.get('email')
+        up.save()
+        return user
 
 
 class JiraLoginView(RedirectView):

@@ -53,19 +53,29 @@ MIDDLEWARE = [
     'account.middleware.TimezoneMiddleware',
 ]
 
-AUTHENTICATION_BACKENDS = ['account.views.MyOIDCAB']
+if os.environ['AUTH_SETTING'] == 'LFID':
+    AUTHENTICATION_BACKENDS = ['account.views.MyOIDCAB']
 
+    # OpenID Authentications
+    OIDC_RP_CLIENT_ID = os.environ['OIDC_CLIENT_ID']
+    OIDC_RP_CLIENT_SECRET = os.environ['OIDC_CLIENT_SECRET']
 
-# OpenID Authentications
-OIDC_RP_CLIENT_ID = os.environ['OIDC_CLIENT_ID']
-OIDC_RP_CLIENT_SECRET = os.environ['OIDC_CLIENT_SECRET']
+    OIDC_OP_AUTHORIZATION_ENDPOINT = os.environ['OIDC_AUTHORIZATION_ENDPOINT']
+    OIDC_OP_TOKEN_ENDPOINT = os.environ['OIDC_TOKEN_ENDPOINT']
+    OIDC_OP_USER_ENDPOINT = os.environ['OIDC_USER_ENDPOINT']
 
-OIDC_OP_AUTHORIZATION_ENDPOINT = os.environ['OIDC_AUTHORIZATION_ENDPOINT']
-OIDC_OP_TOKEN_ENDPOINT = os.environ['OIDC_TOKEN_ENDPOINT']
-OIDC_OP_USER_ENDPOINT = os.environ['OIDC_USER_ENDPOINT']
+    LOGIN_REDIRECT_URL = os.environ['DASHBOARD_URL']
+    LOGOUT_REDIRECT_URL = os.environ['DASHBOARD_URL']
 
-LOGIN_REDIRECT_URL = os.environ['DASHBOARD_URL']
-LOGOUT_REDIRECT_URL = os.environ['DASHBOARD_URL']
+    OIDC_RP_SIGN_ALGO = os.environ["OIDC_RP_SIGN_ALGO"]
+
+    if OIDC_RP_SIGN_ALGO == "RS256":
+        OIDC_OP_JWKS_ENDPOINT = os.environ["OIDC_OP_JWKS_ENDPOINT"]
+
+# This is for LFID auth setups w/ an HTTPS proxy
+if os.environ['EXPECT_HOST_FORWARDING'] == 'True':
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', "https")
+    USE_X_FORWARDED_HOST = True
 
 ROOT_URLCONF = 'laas_dashboard.urls'
 
