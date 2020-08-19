@@ -11,6 +11,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.apps import apps
+from django.core.exceptions import ValidationError
+import re
 import json
 import random
 
@@ -50,12 +52,26 @@ class UserProfile(models.Model):
     oauth_token = models.CharField(max_length=1024, blank=False)
     oauth_secret = models.CharField(max_length=1024, blank=False)
 
-    jira_url = models.CharField(max_length=100, default='')
-    full_name = models.CharField(max_length=100, default='')
+    jira_url = models.CharField(max_length=100, null=True, blank=True, default='')
+    full_name = models.CharField(max_length=100, null=True, blank=True, default='')
     booking_privledge = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'user_profile'
+
+    def clean(self, *args, **kwargs):
+        company = self.company
+        regex = r'[a-z\_\-\.\$]*'
+        pattern = re.compile(regex)
+
+        if not pattern.fullmatch(company):
+            raise ValidationError('Company may only include lowercase letters, _, -, . and $')
+
+        super().clean(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.user.username
