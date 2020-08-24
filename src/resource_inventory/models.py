@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+import traceback
 
 import re
 from collections import Counter
@@ -201,10 +202,20 @@ class ResourceBundle(models.Model):
 
     def release(self):
         for pn in PhysicalNetwork.objects.filter(bundle=self).all():
-            pn.release()
+            try:
+                pn.release()
+            except Exception as e:
+                print("Exception occurred while trying to release resource ", pn.valid_id)
+                print(e)
+                traceback.print_exc()
 
         for resource in self.get_resources():
-            resource.release()
+            try:
+                resource.release()
+            except Exception as e:
+                print("Exception occurred while trying to release resource ", resource)
+                print(e)
+                traceback.print_exc()
 
     def get_template_name(self):
         if not self.template:
@@ -343,6 +354,7 @@ class Server(Resource):
         return list(self.interfaces.all().order_by('bus_address'))
 
     def release(self):
+        self.bundle = None
         self.booked = False
         self.save()
 
