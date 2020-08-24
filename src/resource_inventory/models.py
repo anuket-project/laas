@@ -205,7 +205,7 @@ class ResourceBundle(models.Model):
             try:
                 pn.release()
             except Exception as e:
-                print("Exception occurred while trying to release resource ", pn.valid_id)
+                print("Exception occurred while trying to release resource ", pn.vlan_id)
                 print(e)
                 traceback.print_exc()
 
