@@ -420,7 +420,7 @@ class Network(models.Model):
 class PhysicalNetwork(models.Model):
     vlan_id = models.IntegerField()
     generic_network = models.ForeignKey(Network, on_delete=models.CASCADE)
-    bundle = models.ForeignKey(ResourceBundle, null=True, on_delete=models.CASCADE)
+    bundle = models.ForeignKey(ResourceBundle, null=True, blank=True, on_delete=models.CASCADE)
 
     def get_configuration(self, state):
         """
