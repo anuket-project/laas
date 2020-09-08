@@ -225,19 +225,35 @@ class MultipleSelectFilterWidget {
     make_selection(initial_data){
         if(!initial_data || jQuery.isEmptyObject(initial_data))
             return;
-        for(let item_class in initial_data) {
-            const selected_items = initial_data[item_class];
-            for( let node_id in selected_items ){
-                const node = this.filter_items[node_id];
-                const selection_data = selected_items[node_id]
-                if( selection_data.selected ) {
-                    this.select(node);
-                    this.markAndSweep(node);
-                    this.updateResult(node);
-                }
-                if(node['multiple']){
-                    this.make_multiple_selection(node, selection_data);
-                }
+
+        // Need to sort through labs first
+        let initial_lab = initial_data['lab'];
+        let initial_resources = initial_data['resource'];
+
+        for( let node_id in initial_lab) { // This should only be length one
+            const node = this.filter_items[node_id];
+            const selection_data = initial_lab[node_id];
+            if( selection_data.selected ) {
+                this.select(node);
+                this.markAndSweep(node);
+                this.updateResult(node);
+            }
+            if(node['multiple']){
+                this.make_multiple_selection(node, selection_data);
+            }
+            this.currentLab = node;
+        }
+
+        for( let node_id in initial_resources){
+            const node = this.filter_items[node_id];
+            const selection_data = initial_resources[node_id];
+            if( selection_data.selected ) {
+                this.select(node);
+                this.markAndSweep(node);
+                this.updateResult(node);
+            }
+            if(node['multiple']){
+                this.make_multiple_selection(node, selection_data);
             }
         }
     }
@@ -338,10 +354,13 @@ class MultipleSelectFilterWidget {
             this.available_resources = JSON.parse(node['available_resources']);
             this.updateAvailibility();
         } else {
-            // a lab is already selected, clear already selected resources 
-            if(confirm('Unselecting a lab will reset all selected resources, are you sure?'))
+            // a lab is already selected, clear already selected resources
+            if(confirm('Unselecting a lab will reset all selected resources, are you sure?')) {
                 location.reload();
+                return false;
+            }
         }
+        return true;
     }
 
     updateAvailibility() {
@@ -357,7 +376,6 @@ class MultipleSelectFilterWidget {
             let quantityDescription;
             let quantityNode;
 
-            // console.log(this.available_resources);
             for(let resource in required_resources) {
                 currCount = Math.floor(this.available_resources[resource] / required_resources[resource]);
                 if(currCount < leastAvailable)
@@ -407,13 +425,17 @@ class MultipleSelectFilterWidget {
     }
 
     processClick(id){
+        let lab_check;
         const node = this.filter_items[id];
         if(!node['selectable'])
             return;
 
         // If they are selecting a lab, update accordingly
-        if (node['class'] == 'lab')
-            this.labCheck(node);
+        if (node['class'] == 'lab') {
+            lab_check = this.labCheck(node);
+            if (!lab_check)
+                return;
+        }
 
         // Can only select a resource if a lab is selected
         if (!this.currentLab) {
