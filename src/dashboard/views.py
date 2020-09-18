@@ -12,8 +12,12 @@
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django.shortcuts import render
+from django.db.models import Q
+from datetime import datetime
+import pytz
 
 from account.models import Lab
+from booking.models import Booking
 
 from resource_inventory.models import Image, ResourceProfile, ResourceQuery
 from workflow.workflow_manager import ManagerTracker
@@ -65,12 +69,22 @@ def host_profile_detail_view(request):
 
 def landing_view(request):
     manager = ManagerTracker.managers.get(request.session.get('manager_session'))
+    user = request.user
+    if not user.is_anonymous:
+        bookings = Booking.objects.filter(
+            Q(owner=user) | Q(collaborators=user),
+            end__gte=datetime.now(pytz.utc)
+        )
+    else:
+        bookings = None
+
     return render(
         request,
         'dashboard/landing.html',
         {
             'manager': manager is not None,
-            'title': "Welcome to the Lab as a Service Dashboard"
+            'title': "Welcome to the Lab as a Service Dashboard",
+            'bookings': bookings
         }
     )
 

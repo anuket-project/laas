@@ -19,7 +19,7 @@ from django.db.models import Q
 from django.urls import reverse
 
 from resource_inventory.models import ResourceBundle, ResourceProfile, Image, ResourceQuery
-from account.models import Downtime
+from account.models import Downtime, Lab
 from booking.models import Booking
 from booking.stats import StatisticsManager
 from booking.forms import HostReImageForm
@@ -44,6 +44,7 @@ def quick_create(request):
         context['form'] = QuickBookingForm(lab_data=attrs, default_user=request.user.username, user=request.user)
         context['lab_profile_map'] = {}
         context.update(drop_filter(request.user))
+        context['contact_email'] = Lab.objects.filter(name="UNH_IOL").first().contact_email
         return render(request, 'booking/quick_deploy.html', context)
 
     if request.method == 'POST':
@@ -74,9 +75,15 @@ class BookingView(TemplateView):
     def get_context_data(self, **kwargs):
         booking = get_object_or_404(Booking, id=self.kwargs['booking_id'])
         title = 'Booking Details'
+        contact = Lab.objects.filter(name="UNH_IOL").first().contact_email
         downtime = Downtime.objects.filter(lab=booking.lab, start__lt=timezone.now, end__gt=timezone.now()).first()
         context = super(BookingView, self).get_context_data(**kwargs)
-        context.update({'title': title, 'booking': booking, 'downtime': downtime})
+        context.update({
+            'title': title,
+            'booking': booking,
+            'downtime': downtime,
+            'contact_email': contact
+        })
         return context
 
 
