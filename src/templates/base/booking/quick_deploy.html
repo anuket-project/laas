@@ -9,7 +9,10 @@
         <div class="row mx-0 px-0">
             <div class="col-12 mx-0 px-0 mt-2">
                 {% block form-text %}
-                <p class="my-0">Please select a host type you wish to book. Only available types are shown.</p>
+                <p class="my-0">
+                    Please select a host type you wish to book. Only available types are shown.
+                    If something isn't working right, let us know <a href="mailto:{{contact_email}}"> here! </a> 
+                </p>
                 {% endblock form-text %}
                 {% bootstrap_field form.filter_field show_label=False %}
             </div>

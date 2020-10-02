@@ -16,12 +16,27 @@
 {% csrf_token %}
 
 <div class="row">
-    <!-- About us -->
     <div class="col-12 col-lg-6 mb-4">
+        <!-- About us -->
         <h2 class="border-bottom">About Us</h2>
         {% block about_us %}
         <p>Here is some information about us!</p>
         {% endblock about_us %}
+        {% block welcome_back %}
+            {% if user.is_authenticated %}
+            <h2 class="border-bottom">Welcome Back!</h2>
+                {% if bookings %}
+                    <h5> These are your current bookings: </h5>
+                    <ul style="list-style: none;">
+                    {% for book in bookings %}
+                        <li><a href="/booking/detail/{{ book.id }}/">{{ book.purpose }}</a></li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <h5> You have no current bookings <h5>
+                {% endif %}
+            {% endif %}
+        {% endblock welcome_back %}
     </div>
 
     <!-- Get started -->

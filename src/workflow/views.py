@@ -10,6 +10,7 @@
 
 from django.http import HttpResponse
 from django.shortcuts import render
+from account.models import Lab
 
 import uuid
 
@@ -73,7 +74,12 @@ def viewport_view(request):
 
     if request.method != 'GET':
         return HttpResponse(status=405)
-    return render(request, 'workflow/viewport-base.html')
+
+    context = {
+        'contact_email': Lab.objects.get(name="UNH_IOL").contact_email
+    }
+
+    return render(request, 'workflow/viewport-base.html', context)
 
 
 def create_workflow(request):
