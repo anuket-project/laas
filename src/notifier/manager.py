@@ -8,9 +8,8 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 import os
-from notifier.models import Notification, Emailed
+from notifier.models import Notification, Emailed, Email
 
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils import timezone
 
@@ -99,14 +98,8 @@ class NotificationHandler(object):
             # render email template
             message = render_to_string(template_name, context)
 
-            # finally, send the email
-            send_mail(
-                "Your Booking is Ready",
-                message,
-                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@laas-dashboard"),
-                [user.userprofile.email_addr],
-                fail_silently=False
-            )
+            # finally, queue email for sending
+            Email.objects.create(title="Your Booking is Ready", message=message, recipient=user.userprofile.email_addr)
 
     @classmethod
     def email_booking_over(cls, booking):
@@ -124,13 +117,7 @@ class NotificationHandler(object):
 
             message = render_to_string(template_name, context)
 
-            send_mail(
-                "Your Booking has Expired",
-                message,
-                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@laas-dashboard"),
-                [user.userprofile.email_addr],
-                fail_silently=False
-            )
+            Email.objects.create(title="Your Booking has Expired", message=message, recipient=user.userprofile.email_addr)
 
     @classmethod
     def email_booking_expiring(cls, booking):
@@ -148,13 +135,7 @@ class NotificationHandler(object):
 
             message = render_to_string(template_name, context)
 
-            send_mail(
-                "Your Booking is Expiring",
-                message,
-                os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@laas-dashboard"),
-                [user.userprofile.email_addr],
-                fail_silently=False
-            )
+            Email.objects.create(title="Your Booking is Expiring", message=message, recipient=user.userprofile.email_addr)
 
     @classmethod
     def task_updated(cls, task):

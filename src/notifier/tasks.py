@@ -13,8 +13,11 @@ from celery import shared_task
 from django.utils import timezone
 from django.conf import settings
 from booking.models import Booking
-from notifier.models import Emailed
+from notifier.models import Emailed, Email
 from notifier.manager import NotificationHandler
+from django.core.mail import send_mail
+
+import os
 
 
 @shared_task
@@ -33,3 +36,16 @@ def notify_expiring():
             continue
         NotificationHandler.notify_booking_expiring(booking)
         Emailed.objects.create(almost_end_booking=booking)
+
+
+@shared_task
+def dispatch_emails():
+    for email in Email.objects.filter(sent=False):
+        email.sent = True
+        email.save()
+        send_mail(
+            email.title,
+            email.message,
+            os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@laas-dashboard"),
+            email.recipient,
+            fail_silently=False)
