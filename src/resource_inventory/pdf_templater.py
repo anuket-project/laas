@@ -22,7 +22,11 @@ class PDFTemplater:
         template = "dashboard/pdf.yaml"
         info = {}
         info['details'] = cls.get_pdf_details(booking.resource)
-        info['jumphost'] = cls.get_pdf_jumphost(booking)
+        try:
+            info['jumphost'] = cls.get_pdf_jumphost(booking)
+        except Exception:
+            # filling in jumphost info can be optional in some cases, this shouldn't be a hard error
+            info['jumphost'] = {}
         info['nodes'] = cls.get_pdf_nodes(booking)
 
         return render_to_string(template, context=info)
