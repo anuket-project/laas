@@ -58,10 +58,14 @@ def book_host(owner_username, host_labid, lab_username, hostname, image_id, temp
             host.bundle = resource_bundle
             host.config = config
             rmanager.configureNetworking(resource_bundle, host, vlan_map)
+            host.save()
         except Exception:
             host.booked = False
+            host.save()
             print("Failed to book host due to error configuring it")
             return
+
+    new_template.save()
 
     booking = Booking.objects.create(
         purpose=purpose,
@@ -75,6 +79,8 @@ def book_host(owner_username, host_labid, lab_username, hostname, image_id, temp
     )
 
     booking.pdf = PDFTemplater.makePDF(booking)
+
+    booking.save()
 
     for collaborator_username in collaborator_usernames:
         try:
