@@ -96,11 +96,11 @@ def make_network(name, lab, grb, public):
         lab.vlan_manager.reserve_public_vlan(public_net.vlan)
         network.vlan_id = public_net.vlan
     else:
-        private_net = lab.vlan_manager.get_vlan()
-        if not private_net:
+        private_nets = lab.vlan_manager.get_vlans(count=1)
+        if not private_nets:
             raise Exception("No more generic vlans are available")
-        lab.vlan_manager.reserve_vlans([private_net])
-        network.vlan_id = private_net
+        lab.vlan_manager.reserve_vlans(private_nets)
+        network.vlan_id = private_nets[0]
 
     network.save()
     return network

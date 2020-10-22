@@ -77,9 +77,10 @@ class ResourceManager:
                 vlan_manager.reserve_public_vlan(public_net.vlan)
                 networks[network.name] = public_net.vlan
             else:
-                vlan = vlan_manager.get_vlan()
-                vlan_manager.reserve_vlans(vlan)
-                networks[network.name] = vlan
+                # already throws if can't get requested count, so can always index in @ 0
+                vlans = vlan_manager.get_vlans(count=1)
+                vlan_manager.reserve_vlans(vlans[0])
+                networks[network.name] = vlans[0]
         return networks
 
     def instantiateTemplate(self, resource_template):

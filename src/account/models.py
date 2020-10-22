@@ -80,12 +80,12 @@ class VlanManager(models.Model):
     # if they use QinQ or a vxlan overlay, for example
     allow_overlapping = models.BooleanField()
 
-    def get_vlan(self, count=1):
+    def get_vlans(self, count=1):
         """
-        Return the ID of available vlans, but does not reserve them.
+        Return the IDs of available vlans as a list[int], but does not reserve them.
 
         Will throw index exception if not enough vlans are available.
-        If count == 1, the return value is an int. Otherwise, it is a list of ints.
+        Always returns a list of ints
         """
         allocated = []
         vlans = json.loads(self.vlans)

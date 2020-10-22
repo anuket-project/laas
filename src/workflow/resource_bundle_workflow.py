@@ -294,7 +294,7 @@ class Define_Nets(WorkflowStep):
         if lab is None or lab.vlan_manager is None:
             return None
         try:
-            vlans = lab.vlan_manager.get_vlan(count=lab.vlan_manager.block_size)
+            vlans = lab.vlan_manager.get_vlans(count=lab.vlan_manager.block_size)
             self.repo_put(self.repo.VLANS, vlans)
             return vlans
         except Exception:
