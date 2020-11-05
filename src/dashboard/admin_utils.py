@@ -3,6 +3,8 @@ from resource_inventory.models import (
     Image,
     Server,
     ResourceBundle,
+    ResourceProfile,
+    InterfaceProfile
 )
 
 from django.contrib.auth.models import User
@@ -109,3 +111,49 @@ def mark_booked(host_labid, lab_username, booked=True):
     print("changing server booked status from ", server.booked, "to", booked)
     server.booked = booked
     server.save()
+
+
+# returns host filtered by lab and then unique id within lab
+def get_host(host_labid, lab_username):
+    lab = Lab.objects.get(lab_user__username=lab_username)
+    return Server.objects.filter(lab=lab).get(labid=host_labid)
+
+
+def get_info(host_labid, lab_username):
+    info = {}
+    host = get_host(host_labid, lab_username)
+    info['host_labid'] = host_labid
+    info['booked'] = host.booked
+    info['working'] = host.working
+    info['profile'] = str(host.profile)
+    if host.bundle:
+        binfo = {}
+        info['bundle'] = binfo
+    if host.config:
+        cinfo = {}
+        info['config'] = cinfo
+
+    return info
+
+
+def map_cntt_interfaces(labid: str):
+    """
+    Use this during cntt migrations, call it with a host labid and it will change profiles for this host
+    as well as mapping its interfaces across. interface ens1f2 should have the mac address of interface eno50
+    as an invariant before calling this function
+    """
+    host = get_host(labid, "unh_iol")
+    host.profile = ResourceProfile.objects.get(name="HPE x86 CNTT")
+    host.save()
+    host = get_host(labid, "unh_iol")
+
+    for iface in host.interfaces.all():
+        new_ifprofile = None
+        if iface.profile.name == "ens1f2":
+            new_ifprofile = InterfaceProfile.objects.get(host=host.profile, name="eno50")
+        else:
+            new_ifprofile = InterfaceProfile.objects.get(host=host.profile, name=iface.profile.name)
+
+        iface.profile = new_ifprofile
+
+        iface.save()
