@@ -47,3 +47,10 @@ class Emailed(models.Model):
         on_delete=models.CASCADE,
         related_name="over_mail"
     )
+
+
+class Email(models.Model):
+    sent = models.BooleanField(default=False)
+    title = models.CharField(max_length=150)
+    message = models.TextField()
+    recipient = models.CharField(max_length=150)
