@@ -24,13 +24,17 @@ from booking.models import Booking
 from notifier.manager import NotificationHandler
 from api.models import JobFactory
 
+from api.models import JobStatus
 
-"""
-creates a quick booking using the given host
-"""
+
+def print_div():
+    print("====================================================================")
 
 
 def book_host(owner_username, host_labid, lab_username, hostname, image_id, template_name, length_days=21, collaborator_usernames=[], purpose="internal", project="LaaS"):
+    """
+    creates a quick booking using the given host
+    """
     lab = Lab.objects.get(lab_user__username=lab_username)
     host = Server.objects.filter(lab=lab).get(labid=host_labid)
     if host.booked:
@@ -157,3 +161,49 @@ def map_cntt_interfaces(labid: str):
         iface.profile = new_ifprofile
 
         iface.save()
+
+
+def detect_leaked_hosts(labid="unh_iol"):
+    """
+    Use this to try to detect leaked hosts.
+    These hosts may still be in the process of unprovisioning,
+    but if they are not (or unprovisioning is frozen) then
+    these hosts are instead leaked
+    """
+    working_servers = Server.objects.filter(working=True, lab__lab_user__username=labid)
+    booked = working_servers.filter(booked=True)
+    filtered = booked
+    print_div()
+    print("In use now:")
+    for booking in Booking.objects.filter(end__gte=timezone.now()):
+        res_for_booking = booking.resource.get_resources()
+        print(res_for_booking)
+        for resource in res_for_booking:
+            filtered = filtered.exclude(id=resource.id)
+    print_div()
+    print("Possibly leaked:")
+    for host in filtered:
+        print(host)
+    print_div()
+    return filtered
+
+
+def booking_for_host(host_labid: str, labid="unh_iol"):
+    server = Server.objects.get(lab__lab_user__username=labid, labid=host_labid)
+    booking = server.bundle.booking_set.first()
+    print_div()
+    print(booking)
+    print("id:", booking.id)
+    print("owner:", booking.owner)
+    print("job (id):", booking.job, "(" + str(booking.job.id) + ")")
+    print_div()
+    return booking
+
+
+def force_release_booking(booking_id):
+    booking = Booking.objects.get(id=booking_id)
+    job = booking.job
+    tasks = job.get_tasklist()
+    for task in tasks:
+        task.status = JobStatus.DONE
+        task.save()
