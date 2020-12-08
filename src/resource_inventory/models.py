@@ -345,7 +345,7 @@ class Server(Resource):
         return {
             "id": self.labid,
             "image": image,
-            "hostname": self.name,
+            "hostname": self.config.name,
             "power": power,
             "ipmi_create": str(ipmi)
         }
