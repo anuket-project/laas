@@ -666,6 +666,9 @@ class HardwareConfig(TaskConfig):
 
     keys = set(["id", "image", "power", "hostname", "ipmi_create"])
 
+    def to_dict(self):
+        return self.get_delta()
+
     def get_delta(self):
         return self.format_delta(
             self.hosthardwarerelation.get_resource().get_configuration(self.state),
