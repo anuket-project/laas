@@ -233,7 +233,7 @@ class ResourceConfiguration(models.Model):
     image = models.ForeignKey("Image", on_delete=models.PROTECT)
     template = models.ForeignKey(ResourceTemplate, related_name="resourceConfigurations", null=True, on_delete=models.CASCADE)
     is_head_node = models.BooleanField(default=False)
-    name = models.CharField(max_length=3000, default="<Hostname>")
+    name = models.CharField(max_length=3000, default="opnfv_host")
 
     def __str__(self):
         return str(self.name)
