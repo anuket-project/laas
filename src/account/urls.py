@@ -32,6 +32,7 @@ from account.views import (
     AccountSettingsView,
     JiraAuthenticatedView,
     JiraLoginView,
+    OIDCLoginView,
     JiraLogoutView,
     UserListView,
     account_resource_view,
@@ -45,11 +46,21 @@ from account.views import (
     configuration_delete_view
 )
 
+from laas_dashboard import settings
+
+
+def get_login_view():
+    if (settings.AUTH_SETTING == 'LFID'):
+        return OIDCLoginView.as_view()
+    else:
+        return JiraLoginView.as_view()
+
+
 app_name = "account"
 urlpatterns = [
     url(r'^settings/', AccountSettingsView.as_view(), name='settings'),
     url(r'^authenticated/$', JiraAuthenticatedView.as_view(), name='authenticated'),
-    url(r'^login/$', JiraLoginView.as_view(), name='login'),
+    url(r'^login/$', get_login_view(), name='login'),
     url(r'^logout/$', JiraLogoutView.as_view(), name='logout'),
     url(r'^users/$', UserListView.as_view(), name='users'),
     url(r'^my/resources/$', account_resource_view, name="my-resources"),
