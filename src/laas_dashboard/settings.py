@@ -53,7 +53,9 @@ MIDDLEWARE = [
     'account.middleware.TimezoneMiddleware',
 ]
 
-if os.environ['AUTH_SETTING'] == 'LFID':
+AUTH_SETTING = os.environ.get('AUTH_SETTING', 'JIRA')
+
+if AUTH_SETTING == 'LFID':
     AUTHENTICATION_BACKENDS = ['account.views.MyOIDCAB']
 
     # OpenID Authentications
