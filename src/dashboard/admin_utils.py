@@ -12,7 +12,8 @@ from resource_inventory.models import (
     Network,
     DiskProfile,
     CpuProfile,
-    RamProfile
+    RamProfile,
+    Interface
 )
 
 import json
@@ -346,3 +347,38 @@ def make_default_template(resource_profile, image_id=None, template_name=None, c
         print("adding connection to iface ", iface)
         iface.save()
         connection.save()
+
+
+"""
+Note: interfaces should be dict from interface name (eg ens1f0) to dict of schema:
+    {
+        mac_address: <mac addr>,
+        bus_addr: <bus addr>, //this field is optional, "" is default
+    }
+"""
+
+
+def add_server(profile, uname, interfaces, lab_username="unh_iol", vendor="unknown", model="unknown"):
+    server = Server.objects.create(
+        bundle=None,
+        profile=profile,
+        config=None,
+        working=True,
+        vendor=vendor,
+        model=model,
+        labid=uname,
+        lab=Lab.objects.get(lab_user__username=lab_username),
+        name=uname,
+        booked=False)
+
+    for iface_prof in InterfaceProfile.objects.filter(host=profile).all():
+        mac_addr = interfaces[iface_prof.name]["mac_address"]
+        bus_addr = "unknown"
+        if "bus_addr" in interfaces[iface_prof.name].keys():
+            bus_addr = interfaces[iface_prof.name]["bus_addr"]
+
+        iface = Interface.objects.create(acts_as=None, profile=iface_prof, mac_address=mac_addr, bus_address=bus_addr)
+        iface.save()
+
+        server.interfaces.add(iface)
+        server.save()
