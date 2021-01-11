@@ -5,7 +5,14 @@ from resource_inventory.models import (
     ResourceBundle,
     ResourceProfile,
     InterfaceProfile,
-    PhysicalNetwork
+    PhysicalNetwork,
+    ResourceConfiguration,
+    NetworkConnection,
+    InterfaceConfiguration,
+    Network,
+    DiskProfile,
+    CpuProfile,
+    RamProfile
 )
 
 import json
@@ -226,3 +233,116 @@ def get_network_metadata(booking_id: int):
 
 def print_dict_pretty(a_dict):
     print(json.dumps(a_dict, sort_keys=True, indent=4))
+
+
+"""
+schema:
+{
+    "name": str
+    "description": str
+    "labs": [
+        str (lab username)
+    ]
+    "disks": {
+        <diskname> : {
+            capacity: int (GiB)
+            media_type: str ("SSD" or "HDD")
+            interface: str ("sata", "sas", "ssd", "nvme", "scsi", or "iscsi")
+        }
+    }
+    interfaces: {
+        <intname>: {
+            "speed": int (mbit)
+            "nic_type": str ("onboard" or "pcie")
+            "order": int (compared to the other interfaces, indicates the "order" that the ports are laid out)
+        }
+    }
+    cpus: {
+        cores: int (hardware threads count)
+        architecture: str (x86_64" or "aarch64")
+        cpus: int (number of sockets)
+        cflags: str
+    }
+    ram: {
+        amount: int (GiB)
+        channels: int
+    }
+}
+"""
+
+
+def add_profile(data):
+    base_profile = ResourceProfile.objects.create(name=data['name'], description=data['description'])
+    base_profile.save()
+
+    for lab_username in data['labs']:
+        lab = Lab.objects.get(lab_user__username=lab_username)
+
+        base_profile.labs.add(lab)
+        base_profile.save()
+
+    for diskname in data['disks'].keys():
+        disk = data['disks'][diskname]
+
+        disk_profile = DiskProfile.objects.create(name=diskname, size=disk['capacity'], media_type=disk['media_type'], interface=disk['interface'], host=base_profile)
+        disk_profile.save()
+
+    for ifacename in data['interfaces'].keys():
+        iface = data['interfaces'][ifacename]
+
+        iface_profile = InterfaceProfile.objects.create(name=ifacename, speed=iface['speed'], nic_type=iface['nic_type'], order=iface['order'], host=base_profile)
+        iface_profile.save()
+
+    cpu = data['cpus']
+    cpu_prof = CpuProfile.objects.create(cores=cpu['cores'], architecture=cpu['architecture'], cpus=cpu['cpus'], cflags=cpu['cflags'], host=base_profile)
+    cpu_prof.save()
+
+    ram_prof = RamProfile.objects.create(amount=data['ram']['amount'], channels=data['ram']['channels'], host=base_profile)
+    ram_prof.save()
+
+
+def make_default_template(resource_profile, image_id=None, template_name=None, connected_interface_names=None, interfaces_tagged=False, connected_interface_tagged=False, owner_username="root", lab_username="unh_iol", public=True, temporary=False, description=""):
+
+    if not resource_profile:
+        raise Exception("No viable continuation from none resource_profile")
+
+    if not template_name:
+        template_name = resource_profile.name
+
+    if not connected_interface_names:
+        connected_interface_names = [InterfaceProfile.objects.filter(host=resource_profile).first().name]
+        print("setting connected interface names to", connected_interface_names)
+
+    if not image_id:
+        image_id = Image.objects.filter(host_type=resource_profile).first().id
+
+    image = Image.objects.get(id=image_id)
+
+    base = ResourceTemplate.objects.create(
+        name=template_name,
+        xml="",
+        owner=User.objects.get(username=owner_username),
+        lab=Lab.objects.get(lab_user__username=lab_username), description=description,
+        public=public, temporary=temporary, copy_of=None)
+
+    rconf = ResourceConfiguration.objects.create(profile=resource_profile, image=image, template=base, is_head_node=True, name="opnfv_host")
+    rconf.save()
+
+    connected_interfaces = []
+
+    for iface_prof in InterfaceProfile.objects.filter(host=resource_profile).all():
+        iface_conf = InterfaceConfiguration.objects.create(profile=iface_prof, resource_config=rconf)
+
+        if iface_prof.name in connected_interface_names:
+            connected_interfaces.append(iface_conf)
+
+    network = Network.objects.create(name="public", bundle=base, is_public=True)
+
+    for iface in connected_interfaces:
+        connection = NetworkConnection.objects.create(network=network, vlan_is_tagged=interfaces_tagged)
+        connection.save()
+
+        iface.connections.add(connection)
+        print("adding connection to iface ", iface)
+        iface.save()
+        connection.save()
