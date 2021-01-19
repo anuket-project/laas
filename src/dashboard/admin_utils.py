@@ -382,3 +382,9 @@ def add_server(profile, uname, interfaces, lab_username="unh_iol", vendor="unkno
 
         server.interfaces.add(iface)
         server.save()
+
+
+def extend_booking(booking_id, days=0, hours=0, minutes=0, weeks=0):
+    booking = Booking.objects.get(id=booking_id)
+    booking.end = booking.end + timedelta(days=days, hours=hours, minutes=minutes, weeks=weeks)
+    booking.save()
