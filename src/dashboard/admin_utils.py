@@ -20,7 +20,10 @@ import json
 
 from django.contrib.auth.models import User
 
-from account.models import Lab
+from account.models import (
+    Lab,
+    PublicNetwork
+)
 
 from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.pdf_templater import PDFTemplater
@@ -218,6 +221,21 @@ def force_release_booking(booking_id):
     for task in tasks:
         task.status = JobStatus.DONE
         task.save()
+
+
+def free_leaked_public_vlans(safety_buffer_days=2):
+    for lab in Lab.objects.all():
+        current_booking_set = Booking.objects.filter(end__gte=timezone.now() + timedelta(days=safety_buffer_days))
+
+        marked_nets = set()
+
+        for booking in current_booking_set:
+            for network in get_network_metadata(booking.id):
+                marked_nets.add(network["vlan_id"])
+
+        for net in PublicNetwork.objects.filter(lab=lab).filter(in_use=True):
+            if net.vlan not in marked_nets:
+                lab.vlan_manager.release_public_vlan(net.vlan)
 
 
 def get_network_metadata(booking_id: int):
