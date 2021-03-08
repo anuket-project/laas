@@ -67,8 +67,7 @@ class ResourceManager:
         raise NotImplementedError("Resource Bundle Deletion Not Implemented")
 
     def releaseResourceBundle(self, resourceBundle):
-        for resource in resourceBundle.get_resources():
-            resource.release()
+        resourceBundle.release()
 
     def get_vlans(self, resourceTemplate):
         networks = {}

@@ -83,6 +83,7 @@ def free_hosts():
         job__complete=True,
         resource__isnull=False
     )
+
     for booking in bookings:
         ResourceManager.getInstance().releaseResourceBundle(booking.resource)
 
