@@ -36,6 +36,7 @@
             <div class="col-6 col-sm-2 order-3 d-flex">
                 <ul class="nav mx-auto mr-sm-0">
                     <li class="dropdown ml-auto">
+			{% block userDropDownText %}
                         <a class="nav-link p-0 text-dark p-2" data-toggle="dropdown" href="#">
                             {% if request.user.username %}
                                 {{request.user.username}}
@@ -44,6 +45,7 @@
                             {% endif %}
                             <i class="fas fa-caret-down rotate"></i>
                         </a>
+			{% endblock userDropDownText %}
                         <div class="dropdown-menu dropdown-menu-right">
                             {% if LFID %}
                                 {% if user.is_authenticated %}

@@ -1,0 +1,45 @@
+{% extends "base/base.html" %}
+{% load staticfiles %}
+{% block bgColor %}
+<style>
+.LFEdge {
+    background: #0049b0;
+    margin-left: -25px;
+}
+
+.wtext {
+    font-size: 18px;
+    color: #FFFFFF;
+}
+
+.wtext:hover {
+    color: #FFFFFF;
+    text-decoration: none;
+}
+</style>
+<nav class="navbar navbar-light LFEdge navbar-fixed-top border-bottom py-0 mb-0" role="navigation">
+{% endblock bgColor %}
+
+{% block logo %}
+<div class="barClamp col-12 col-sm order-1 order-sm-2 text-center text-lg-left">
+    <a href="https://www.lfedge.org/" class="navbar-brand">
+        <img src="{% static "img/lfedge-logo.png" %}">
+    </a>
+
+    <a class="wtext d-none d-lg-inline" href={% url 'dashboard:index' %}>
+        Dashboard
+    </a>
+</div>
+{% endblock logo %}
+{% block dropDown %}
+{% endblock dropDown %}
+{% block userDropDownText %}
+<a class="nav-link p-0 wtext p-2" data-toggle="dropdown" href="#">
+    {% if request.user.username %}
+        {{request.user.username}}
+    {% else %}
+        <i class="fas fa-user"></i>
+    {% endif %}
+    <i class="fas fa-caret-down rotate"></i>
+</a>
+{% endblock userDropDownText %}
