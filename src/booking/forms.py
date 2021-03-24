@@ -40,7 +40,7 @@ class QuickBookingForm(forms.Form):
         )
 
         self.fields['users'] = SearchableSelectMultipleField(
-            queryset=UserProfile.objects.select_related('user').exclude(user=user),
+            queryset=UserProfile.objects.filter(public_user=True).select_related('user').exclude(user=user),
             items=get_user_items(exclude=user),
             required=False,
             **get_user_field_opts()

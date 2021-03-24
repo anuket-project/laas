@@ -18,11 +18,12 @@ from account.models import UserProfile
 class AccountSettingsForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['company', 'email_addr', 'ssh_public_key', 'pgp_public_key', 'timezone']
+        fields = ['company', 'email_addr', 'public_user', 'ssh_public_key', 'pgp_public_key', 'timezone']
         labels = {
             'email_addr': _('Email Address'),
             'ssh_public_key': _('SSH Public Key'),
-            'pgp_public_key': _('PGP Public Key')
+            'pgp_public_key': _('PGP Public Key'),
+            'public_user': _('Public User')
         }
 
     timezone = forms.ChoiceField(choices=[(x, x) for x in pytz.common_timezones], initial='UTC')
