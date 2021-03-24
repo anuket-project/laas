@@ -388,21 +388,30 @@ class MultipleSelectFilterWidget {
 
     reserveResource(node){
         const required_resources = JSON.parse(node['required_resources']);
+        let hostname = document.getElementById('id_hostname');
+        let cnt = 0
+
 
         for(let resource in required_resources){
             this.available_resources[resource] -= required_resources[resource];
+            cnt += required_resources[resource];
         }
+
+        if (cnt > 1)
+            hostname.readOnly = true;
 
         this.updateAvailibility();
     }
 
     releaseResource(node){
         const required_resources = JSON.parse(node['required_resources']);
+        let hostname = document.getElementById('id_hostname');
 
         for(let resource in required_resources){
             this.available_resources[resource] += required_resources[resource];
         }
 
+        hostname.readOnly = false;
         this.updateAvailibility();
     }
 

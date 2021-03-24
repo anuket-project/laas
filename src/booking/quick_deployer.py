@@ -111,7 +111,8 @@ def update_template(old_template, image, hostname, user):
             profile=old_config.profile,
             image=image_to_set,
             template=template,
-            is_head_node=old_config.is_head_node
+            is_head_node=old_config.is_head_node,
+            name=hostname if len(old_template.getConfigs()) == 1 else old_config.name
         )
 
         for old_iface_config in old_config.interface_configs.all():

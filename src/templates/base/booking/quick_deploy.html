@@ -18,7 +18,7 @@
             </div>
         </div>
         <div class="row justify-content-center">
-            <div class="col-12 col-lg-3 my-2">
+            <div class="col-12 col-lg-4 my-2">
                 <div class="col border rounded py-2 h-100">
                     {% bootstrap_field form.purpose %}
                     {% bootstrap_field form.project %}
@@ -31,28 +31,19 @@
                 </div>
             </div>
             {% block collab %}
-            <div class="col-12 col-lg-3 my-2">
+            <div class="col-12 col-lg-4 my-2">
                 <div class="col border rounded py-2 h-100">
                     <label>Collaborators</label>
                     {{ form.users }}
                 </div>
             </div>
             {% endblock collab %}
-            <div class="col-12 col-lg-3 my-2">
+            <div class="col-12 col-lg-4 my-2">
                 <div class="col border rounded py-2 h-100">
                     {% bootstrap_field form.hostname %}
                     {% bootstrap_field form.image %}
                 </div>
             </div>
-            {% block opnfv %}
-            <div class="col-12 col-lg-3 my-2">
-                <div class="col border rounded py-2 h-100">
-                    <strong>OPNFV: (Optional)</strong>
-                    {% bootstrap_field form.installer %}
-                    {% bootstrap_field form.scenario %}
-                </div>
-            </div>
-            {% endblock opnfv %}
             <div class="col-12 d-flex mt-2 justify-content-end">
                 <button id="quick_booking_confirm" onclick="submit_form();" type="button" class="btn btn-success">Confirm</button>
             </div>
@@ -85,6 +76,10 @@
         }
     }
 
+    $(document).ready(function() {
+        $('.has-popover').popover({'trigger':'hover'});
+    });
+
     var sup_image_dict = {{image_filter | safe}};
     var sup_installer_dict = {{installer_filter | safe}};
     var sup_scenario_dict = {{scenario_filter | safe}};
@@ -108,24 +103,10 @@
     }
 
     imageFilter();
-    $('#id_installer').children().hide();
-    $('#id_scenario').children().hide();
-
 
     Array.from(document.getElementsByClassName("grid-item-select-btn")).forEach(function (element) {
         element.addEventListener('click', imageFilter);
     });
-
-    function installerHider() {
-        dropFilter("id_installer", sup_installer_dict, "id_image");
-        scenarioHider();
-    }
-    document.getElementById('id_image').addEventListener('change', installerHider);
-
-    function scenarioHider() {
-        dropFilter("id_scenario", sup_scenario_dict, "id_installer");
-    }
-    document.getElementById('id_installer').addEventListener('change', scenarioHider);
 
     function dropFilter(target, target_filter, master) {
         var dropdown = document.getElementById(target);
