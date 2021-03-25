@@ -47,5 +47,5 @@ def dispatch_emails():
             email.title,
             email.message,
             os.environ.get("DEFAULT_FROM_EMAIL", "opnfv@laas-dashboard"),
-            email.recipient,
+            [email.recipient],
             fail_silently=False)
