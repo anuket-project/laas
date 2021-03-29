@@ -63,9 +63,12 @@ def quick_create(request):
                 return redirect(reverse('booking:booking_detail', kwargs={'booking_id': booking.id}))
             except Exception as e:
                 messages.error(request, "Whoops, an error occurred: " + str(e))
+                context.update(drop_filter(request.user))
                 return render(request, 'booking/quick_deploy.html', context)
         else:
             messages.error(request, "Looks like the form didn't validate. Check that you entered everything correctly")
+            context['status'] = 'false'
+            context.update(drop_filter(request.user))
             return render(request, 'booking/quick_deploy.html', context)
 
 
