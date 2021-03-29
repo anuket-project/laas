@@ -242,6 +242,7 @@ class MultipleSelectFilterWidget {
                 this.make_multiple_selection(node, selection_data);
             }
             this.currentLab = node;
+            this.available_resources = JSON.parse(node['available_resources']);
         }
 
         for( let node_id in initial_resources){
@@ -256,6 +257,7 @@ class MultipleSelectFilterWidget {
                 this.make_multiple_selection(node, selection_data);
             }
         }
+        this.updateAvailibility();
     }
 
     make_multiple_selection(node, selection_data){
