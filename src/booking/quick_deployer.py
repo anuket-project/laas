@@ -205,7 +205,7 @@ def create_from_form(form, request):
     purpose_field = form.cleaned_data['purpose']
     project_field = form.cleaned_data['project']
     users_field = form.cleaned_data['users']
-    hostname = form.cleaned_data['hostname']
+    hostname = 'opnfv_host' if not form.cleaned_data['hostname'] else form.cleaned_data['hostname']
     length = form.cleaned_data['length']
 
     image = form.cleaned_data['image']
