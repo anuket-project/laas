@@ -195,7 +195,7 @@ def booking_stats_view(request):
     return render(
         request,
         "booking/stats.html",
-        context={"data": StatisticsManager.getContinuousBookingTimeSeries(), "title": "Booking Statistics"}
+        context={"data": StatisticsManager.getContinuousBookingTimeSeries(), "title": ""}
     )
 
 
