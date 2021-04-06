@@ -54,6 +54,8 @@ class UserProfile(models.Model):
     full_name = models.CharField(max_length=100, null=True, blank=True, default='')
     booking_privledge = models.BooleanField(default=False)
 
+    public_user = models.BooleanField(default=False)
+
     class Meta:
         db_table = 'user_profile'
 
