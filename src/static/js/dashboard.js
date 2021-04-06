@@ -409,6 +409,7 @@ class MultipleSelectFilterWidget {
     reserveResource(node){
         const required_resources = JSON.parse(node['required_resources']);
         let hostname = document.getElementById('id_hostname');
+        let image = document.getElementById('id_image');
         let cnt = 0
 
 
@@ -417,8 +418,10 @@ class MultipleSelectFilterWidget {
             cnt += required_resources[resource];
         }
 
-        if (cnt > 1)
+        if (cnt > 1) {
             hostname.readOnly = true;
+            image.disabled = true;
+        }
 
         this.updateAvailibility();
     }
@@ -426,12 +429,14 @@ class MultipleSelectFilterWidget {
     releaseResource(node){
         const required_resources = JSON.parse(node['required_resources']);
         let hostname = document.getElementById('id_hostname');
+        let image = document.getElementById('id_image');
 
         for(let resource in required_resources){
             this.available_resources[resource] += required_resources[resource];
         }
 
         hostname.readOnly = false;
+        image.readOnly = false;
         this.updateAvailibility();
     }
 
