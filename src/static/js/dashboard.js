@@ -418,7 +418,7 @@ class MultipleSelectFilterWidget {
             cnt += required_resources[resource];
         }
 
-        if (cnt > 1) {
+        if (cnt > 1 && hostname && image) {
             hostname.readOnly = true;
             image.disabled = true;
         }
@@ -435,8 +435,11 @@ class MultipleSelectFilterWidget {
             this.available_resources[resource] += required_resources[resource];
         }
 
-        hostname.readOnly = false;
-        image.disabled = false;
+        if (hostname && image) {
+            hostname.readOnly = false;
+            image.disabled = false;
+        }
+
         this.updateAvailibility();
     }
 
