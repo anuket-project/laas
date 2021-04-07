@@ -436,7 +436,7 @@ class MultipleSelectFilterWidget {
         }
 
         hostname.readOnly = false;
-        image.readOnly = false;
+        image.disabled = false;
         this.updateAvailibility();
     }
 
