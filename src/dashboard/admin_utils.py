@@ -281,7 +281,7 @@ def booking_for_host(host_labid: str, lab_username="unh_iol"):
 
     @lab_username: param of the form `unh_iol` or similar
     """
-    server = Server.objects.get(lab__lab_user__username=lab_username, lab_username=host_labid)
+    server = Server.objects.get(lab__lab_user__username=lab_username, labid=host_labid)
     booking = server.bundle.booking_set.first()
     print_div()
     print(booking)
