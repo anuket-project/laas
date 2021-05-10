@@ -1,78 +1,288 @@
 {% extends "base.html" %}
 {% load staticfiles %}
 
-{% block extrahead %}
-{{ block.super }}
-<script src="{% static "node_modules/plotly.js-dist/plotly.js" %}"></script>
-<script>
-
-function drawGraph(data, graph_id, graph_title){
-    var container = document.getElementById(graph_id);
-    var plot_data = { x: data[0],
-        y: data[1],
-        line: {shape: "hv"},
-        type: "scatter",
-        mode: "lines+makers",
-    };
-    var layout = {
-        title: graph_title,
-        yaxis: {
-            rangemode: 'tozero',
-            autorange: true
-        }
-    };
-    Plotly.newPlot(container, [plot_data], layout);
-}
-
-function getData() {
-    var req = new XMLHttpRequest();
-    var url = "/booking/stats/json";
-    var day_input = document.getElementById("number_days");
-    var days = day_input.value;
-    //var days = document.getElementById("number_days").value;
-    if(days){
-        url = url + "?days=" + days;
-    }
-    req.onreadystatechange = function(){
-        if( req.readyState == XMLHttpRequest.DONE) {
-            var data = JSON.parse(req.responseText);
-            drawGraph(data["booking"], "booking_graph_container", "Active Bookings");
-            drawGraph(data["user"], "user_graph_container", "Active Users");
-        }
-    }
-    req.open("GET", url, true);
-    req.send();
-}
-
-</script>
-{% endblock %}
-
 {% block content %}
 <div class="row">
-    <div class="col-auto">
-        <p>Number of days to plot: </p>
-        <div class="form-group d-flex align-content-center">
-            <input id="number_days" type="number" class="form-control d-inline-block w-auto" min="1" step="1"/>
-            <button class="btn btn-primary ml-1" onclick="getData();">Submit</button>
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header no-border-bottom">
+                <h2 class="card-title">Booking Statistics</h2>
+            </div>
+            <div class="card-content">
+                <div class="card-body">
+                    <div class="row justify-content-md-center">
+                        <div class="col-lg-4">
+                            <div class="container">
+                                <canvas id="util-gauge"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-4 border-left border-right">
+                            <div class="container">
+                                <canvas id="resources-time-series"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="container">
+                                <canvas id="project-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row border-top">
+                        <div class="col-6">
+                            <div class="container">
+                                <canvas id="booking-time-series"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="container">
+                                <canvas id="users-time-series"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-<div class="row">
-    <div class="col-12 col-md-10">
-        <!-- These graphs do NOT get redrawn when the browser size is changed -->
-        <div id="all_graph_container border" class="mw-100">
-            <div id="booking_graph_wrapper">
-                <div id="booking_graph_container"/>
-            </div>
-            <div id="user_graph_wrapper">
-                <div id="user_graph_container"/>
-            </div>
-        </div>
-    </div>
-</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
 <script>
-var data = {{data|safe}};
-drawGraph(data["booking"], "booking_graph_container", "Active Bookings");
-drawGraph(data["user"], "user_graph_container", "Active Users");
+
+    function processTimeSeriesData(data_dict, colors) {
+        let output = [];
+        let i = 0;
+
+        for (let key in data_dict) {
+            output.push({
+                label: key,
+                data: data_dict[key][1],
+                steppedLine: true,
+                fill: false,
+                backgroundColor: colors[i],
+                borderColor: colors[i]
+            });
+
+            i += 1;
+        }
+
+        return output
+    }
+
+    let booking_chart = document.getElementById('booking-time-series').getContext('2d');
+    let users_chart = document.getElementById('users-time-series').getContext('2d');
+    let util_chart = document.getElementById('util-gauge').getContext('2d');
+    let project_chart = document.getElementById('project-chart').getContext('2d');
+    let resources_chart = document.getElementById('resources-time-series').getContext('2d');
+
+    let data = {{data | safe}};
+    let booking = data['booking'];
+    let users = data['user'];
+    let projects = data['projects'];
+    let colors = data['colors'];
+
+    let primary_color = colors[0];
+    let secondary_color = colors[1];
+    let accent_color = colors[2];
+
+    let booking_config = {
+        type: 'line',
+        data: {
+            labels: booking[0],
+            datasets: [{
+                label: 'Bookings',
+                data: booking[1],
+                steppedLine: true,
+                fill: false,
+                backgroundColor: primary_color,
+                borderColor: primary_color
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                intersect: false,
+                axis: 'x'
+            },
+            title: {
+                display: true,
+                text: 'Active Bookings'
+            },
+            legend: {
+                display: true
+            },
+            elements: {
+                point: {
+                    radius: 0
+                }
+            }
+        }
+    };
+
+    let resources_config = {
+        type: 'line',
+        data: {
+            labels: booking[0],
+            datasets: processTimeSeriesData(data['resources'], colors)
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                intersect: false,
+                axis: 'x'
+            },
+            title: {
+                display: true,
+                text: 'Booked Resources'
+            },
+            legend: {
+                display: true
+            },
+            transitions: {
+                show: {
+                    animations: {
+                        x: {
+                            from: 100
+                        },
+                        y: {
+                            from: 1
+                        }
+                    }
+                },
+                hide: {
+                    animations: {
+                        x: {
+                            to: 0
+                        },
+                        y: {
+                            to: 100
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 0
+                }
+            }
+        }
+    };
+
+    let users_config = {
+        type: 'line',
+        data: {
+            labels: users[0],
+            datasets: [{
+                label: 'Users',
+                data: users[1],
+                fill: false,
+                steppedLine: true,
+                backgroundColor: primary_color,
+                borderColor: primary_color
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                intersect: false,
+                axis: 'x'
+            },
+            legend: {
+                display: true
+            },
+            title: {
+                display: true,
+                text: 'Active Users'
+            },
+            elements: {
+                point: {
+                    radius: 0
+                }
+            }
+        }
+    };
+
+    let utilization_config = {
+        type:"doughnut",
+        data: {
+            labels : ["In Use","Not In Use","Maitenance"],
+            datasets: [{
+                label: 'Lab Utilization',
+                data : [data['utils'][0], data['utils'][1], data['utils'][2]],
+                backgroundColor: [
+                    primary_color,
+                    secondary_color,
+                    accent_color,
+                ]
+            }]
+        },
+        options: {
+            circumference: Math.PI,
+            rotation : Math.PI,
+            cutoutPercentage : 80,
+            plugins: {
+                datalabels: {
+                    backgroundColor: primary_color,
+                    borderColor: secondary_color,
+                    align: 'start',
+                    anchor: 'start',
+                    offset: 10,
+                    borderRadius: 4,
+                    borderWidth: 1,
+                }
+            },
+            legend: {
+                display: false
+            },
+            tooltips: {
+                enabled: true
+            },
+            title: {
+                display: true,
+                text: "Lab Resources Utilization"
+            }
+        }
+    };
+
+    let project_config = {
+        type: 'bar',
+        data: {
+            labels: projects[0],
+            datasets:[{
+                label: 'Projects',
+                data: projects[1],
+                backgroundColor: primary_color,
+                borderColor: secondary_color
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            },
+            elements: {
+                bar: {
+                    borderWidth: 2,
+                }
+            },
+            responsive: true,
+            legend: {
+                display: false,
+                position: 'right'
+            },
+            title: {
+                display: true,
+                text: 'Top Represented Projects'
+            }
+        }
+    };
+
+    let bookingChart = new Chart(booking_chart, booking_config);
+    let usersChart = new Chart(users_chart, users_config);
+    let utilGauge = new Chart(util_chart, utilization_config);
+    let projectBars = new Chart(project_chart, project_config);
+    let resourceChart = new Chart(resources_chart, resources_config);
 </script>
 {% endblock content %}
