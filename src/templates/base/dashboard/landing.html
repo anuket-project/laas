@@ -2,12 +2,13 @@
 {% load staticfiles %}
 
 {% block content %}
+
 <div class="text-center">
     {% if not request.user.is_anonymous %}
     {% if not request.user.userprofile.ssh_public_key %}
-    <div class="alert alert-danger" role="alert">
-        Warning: you need to upload an ssh key under <a href="/accounts/settings">account settings</a> if you wish to
-        log into the servers you book
+    <div class="alert alert-danger alertAnuket" role="alert">
+        <b>Warning: you need to upload an ssh key under <a href="/accounts/settings" class="inTextLink" >account settings</a> if you wish to
+        log into the servers you book</b>
     </div>
     {% endif %}
     {% else %}
@@ -45,25 +46,25 @@
         {% if request.user.is_anonymous %}
         {% if LFID %}
         <h4 class="text-center">
-            To get started, please log in with <a href="{% url 'oidc_authentication_init' %}">Linux Foundation ID</a>
+            To get started, please log in with <a href="{% url 'oidc_authentication_init' %}" class="inTextLink">Linux Foundation ID</a>
         </h4>
         {% else %}
         <h4 class="text-center">
-            To get started, please log in with your <a href="/accounts/login">Linux Foundation Jira account</a>
+            To get started, please log in with your <a href="/accounts/login" class="inTextLink">Linux Foundation Jira account</a>
         </h4>
         {% endif %}
         {% else %}
         {% block btnGrp %}
         <p>To get started, book a server below:</p>
-        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border text-white p-4" href="/booking/quick/">
+        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border p-4 btnAnuket" href="/booking/quick/" >
             Book a Resource
         </a>
         <p class="mt-4">PTLs can use our advanced options to book multi-node pods. If you are a PTL, you may use the options
             below:
         </p>
         <div class="btn-group-vertical w-100">
-            <button class="btn btn-primary" onclick="create_workflow(0)">Book a Pod</button>
-            <button class="btn btn-primary" onclick="create_workflow(1)">Design a Pod</button>
+            <button class="btn btn-primary btnAnuket" onclick="create_workflow(0)">Book a Pod</button>
+            <button class="btn btn-primary btnAnuket" onclick="create_workflow(1)">Design a Pod</button>
         </div>
         {% endblock btnGrp %}
         {% endif %}
@@ -76,8 +77,8 @@
         <h2 class="ht-4 border-bottom">Returning Users</h2>
         <p>If you're a returning user, some of the following options may be of interest:</p>
         <div class="btn-group-vertical w-100">
-            <button class="btn btn-primary" onclick="create_workflow(3)">Snapshot a Host</button>
-            <a class="btn btn-primary" href="{% url 'account:my-bookings' %}">
+            <button class="btn btn-primary btnAnuket" onclick="create_workflow(3)">Snapshot a Host</button>
+            <a class="btn btn-primary btnAnuket" href="{% url 'account:my-bookings' %}">
                 My Bookings
             </a>
             {% if manager == True %}
