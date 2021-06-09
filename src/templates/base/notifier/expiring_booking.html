@@ -1,35 +1,134 @@
 <html>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro&display=swap" rel="stylesheet">
+
+    <style>
+        h2{
+            font-family: 'Source Sans Pro';
+        }
+        p{
+            font-family: Montserrat;
+        }
+        li{
+            font-family: Montserrat;
+        }
+        a{
+            color: #f8f9fa;
+            text-decoration: none;
+        }
+        button{
+            background-color:#a3c1db;
+            color: #343a40;
+            border: 0px;
+            border-radius: 4mm;
+            height: 25px;
+            width: 310px;
+            text-align: center;
+            margin: 15px;
+            text-decoration: none;
+            font-family: Montserrat;
+            font-size: 16;
+        }
+        button:focus{
+            border: 0px;
+        }
+        .textFormatting{
+            text-align: center;
+            color:#343a40;
+            margin: auto;
+
+        }
+        .content{
+            background-color: #f8f9fa;
+            position: center;
+        }
+        table{
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid #343a40;
+            border-collapse: collapse;
+        }
+        tr{
+            border-bottom: 1px solid #343a40;
+        }
+        td{
+            color:#343a40;
+            padding: 3px;
+            font-family: Montserrat
+        }
+        .row1{
+            background-color: #7598b6;
+        }
+        .row2{
+            background-color: #d7e2f0;
+        }
+        .row3{
+            background-color: #d2e5f3;
+        }
+    </style>
+
+
     <body>
-        <div id="message_content_wrapper">
+        <div id="message_content_wrapper" class="textFormatting content">
             {% if owner %}
-            <h3>Your booking is about to expire</h3>
+            <h2>Your Booking Is About to Expire.</h2>
             <p>Your booking will expire within 48 hours ({{booking.end}}).</p>
             {% else %}
-            <h3>A booking that you collaborate on is about to expire</h3>
-            <p>The booking owned by {{booking.owner.username}} that you work on is about to expire</p>
+            <h2>A Booking That You Collaborate on Is About to Expire.</h2>
+            <p>The booking owned by {{booking.owner.username}} that you work on is about to expire.</p>
             {% endif %}
             <p>Please take the time to backup all data or extend the booking if needed.</p>
-            <p>Booking information:</p>
-            <ul>
-                <li>owner: {{booking.owner.username}}</li>
-                <li>id: {{booking.id}}</li>
-                <li>lab: {{booking.resource.template.lab.lab_user.username}}</li>
-                <li>resource: {{booking.resource.template.name}}</li>
-                <li>start: {{booking.start}}</li>
-                <li>end: {{booking.end}}</li>
-                <li>purpose: {{booking.purpose}}</li>
-                <li>collaborators:
-                    <ul>
-                        {% for user in booking.collaborators.all %}
-                        <li>{{user.username}}</li>
-                        {% empty %}
-                        <li>No collaborators</li>
-                        {% endfor %}
-                    </ul>
-                </li>
-            </ul>
-
-            <p>You can find more detailed information <a href=/booking/detail/{{booking.id}}/>Here</a></p>
+            <br>
+            <table>
+                <tr class="row1">
+                    <td style="text-align: center; font-size: larger;" colspan="2">Booking Information:</td>
+                </tr>
+                <tr class="row2">
+                    <td>Owner:</td>
+                    <td>{{booking.owner.username}}</td>
+                </tr>
+                <tr class="row3">
+                    <td>id:</td>
+                    <td>{{booking.id}}</td>
+                </tr>
+                <tr class="row2">
+                    <td>lab:</td>
+                    <td>{{booking.resource.template.lab.lab_user.username}}</td>
+                </tr>
+                <tr class="row3">
+                    <td>resource:</td>
+                    <td>{{booking.resource.template.name}}</td>
+                </tr>
+                <tr class="row2">
+                    <td>start:</td>
+                    <td>{{booking.start}}</td>
+                </tr>
+                <tr class="row3">
+                    <td>end:</td>
+                    <td>{{booking.end}}</td>
+                </tr>
+                <tr class="row2">
+                    <td>purpose:</td>
+                    <td>{{booking.purpose}}</td>
+                </tr>
+                <tr class="row3">
+                    <td>collaborator{% booking.collaborators.all.count|pluralize:"s" %}:</td>
+                    <td></td>
+                </tr>
+                {% for user in booking.collaborators.all %}
+                <tr class="{% cycle 'row2' 'row3' %}">
+                    <td></td>
+                    <td>{{user.username}}</td>
+                </tr>
+                {% empty %}
+                <tr class="row2">
+                    <td></td>
+                    <td>No collaborators</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <button type="button" onclick="window.location.href='/booking/detail/{{booking.id}}'">You can find more detailed information here</button>
         </div>
     </body>
 </html>
