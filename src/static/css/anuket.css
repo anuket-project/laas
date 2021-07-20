@@ -1,0 +1,115 @@
+nav ,body{
+    background-color:#fff !important;
+    color:#343a40 !important;
+    }
+
+    header{
+        background-color:#f8f9fa !important;
+        color:#343a40 !important;
+    }
+
+    p, h1, h2, h3, h4, h5{
+        color:#343a40 !important;
+    }
+
+    a, .page-link {
+        color: #007473 !important;
+    }
+
+    .page-item.active .page-link{
+        color: #f8f9fa !important;
+        background-color: #007473 !important;
+    }
+
+    .topcrumb.active > span {
+        background: #007473 !important;
+    }
+
+    .nav-bg{
+        background-color:#fff !important;
+        color:#343a40 !important;
+    }
+
+    .nav-bg:hover{
+        background-color:#f8f9fa !important;
+        transition-duration:0.2s;
+    }
+
+    .dropDown-bg{
+        background-color:#d6d8db !important;
+        color:#343a40 !important;
+    }
+
+    .btn-primary{
+        color: #f8f9fa !important;
+        background-color: #007473 !important;
+        border:0px !important;
+        transition-duration:0.2s !important;
+    }
+
+    .btn-primary:hover{
+        color: #343a40 !important;
+        background-color: #6BDAD5 !important;
+        border:0px !important;
+    }
+
+    .btn-primary:focus{
+        color: #343a40 !important;
+        background-color: #6BDAD5 !important;
+        border:0px !important;
+    }
+
+    .btn-success{
+        color: #f8f9fa;
+        background-color: #008852;
+        border:0px !important; 
+    }
+
+    .btn-success:hover{
+        color: #343a40;
+        background-color: #00CE7C;
+        border:0px !important;
+    }
+
+    .btn-success:focus{
+        color: #343a40;
+        background-color: #00CE7C;
+        border:0px !important;
+    }
+
+    .btn-danger {
+        color: #f8f9fa;
+        background-color: #af2b38;
+        border:0px !important;
+    }
+
+    .btn-danger:hover {
+        color: #f8f9fa;
+        background-color: #dc3545;
+        border:0px !important;
+    }
+
+    .alert-danger{
+        background-color: #e6b3c1 !important;
+        color:#820c2c !important;
+        border:0px !important;
+    }
+
+    .Anuket-Text{
+        color:#343a40 !important;
+    }
+
+    .selected_node {
+        border-color: #008852;
+        box-shadow: 0 1px 1px rgb(0 0 0 / 8%), 0 0 8px rgb(109 243 76 / 60%);
+        transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
+    }
+
+    ::selection {
+    background: #BCE194; 
+    color:#343a40;
+    }
+    ::-moz-selection {
+    background: #BCE194;
+    color:#343a40;
+    }

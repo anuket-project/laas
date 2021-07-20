@@ -2,84 +2,11 @@
 {% load staticfiles %}
 {% block logo %}
 
-<style>
-    nav ,body{
-	background-color:#fff !important;
-    color:#343a40 !important;
-	}
-
-    header{
-        background-color:#f8f9fa !important;
-        color:#343a40 !important;
-    }
-
-    .nav-bg{
-        background-color:#fff !important;
-        color:#343a40 !important;
-    }
-
-    .nav-bg:hover{
-        background-color:#f8f9fa !important;
-        transition-duration:0.2s;
-    }
-
-    .dropDown-bg{
-        background-color:#d6d8db !important;
-        color:#343a40 !important;
-    }
-
-    .btnAnuket {
-        color: #343a40;
-        background-color: #6BDAD5;
-        transition-duration:0.2s;
-        border:0px
-    }
-    .btnAnuket:hover{
-        color: #f8f9fa;
-        background-color: #007473;
-        border:0px
-    }
-
-    .btnAnuket:focus{
-        color: #f8f9fa !important;
-        background-color: #007473 !important;
-        border:0px
-    }
-
-    .alertAnuket{
-        background-color: #e6b3c1;
-        color:#820c2c;
-        border:0px;
-    }
-    .inTextLink{
-        text-decoration: underline;
-    }
-
-    .Anuket-Text{
-        color:#343a40 !important;
-    }
-
-    h1, h2{
-        color:#343a40 !important;
-    }
-
-    p, h3, h4, h5{
-        color:#343a40 !important;
-    }
-
-    ::selection {
-    background: #BCE194; 
-    color:#343a40;
-    }
-    ::-moz-selection {
-    background: #BCE194;
-    color:#343a40;
-    }
-    </style>
+<link rel="stylesheet" href="{% static "css/anuket.css" %}">
 
 <div class="col-12 col-sm order-1 order-sm-2 text-center text-lg-left">
     <a href="https://anuket.io/" class="navbar-brand">
-        <img src="{% static "img/Anuket-logo.svg" %}" width="134.2" height="50" style="vertical-align:middle; margin:12px 12px 12px -20px;">
+        <img src="{% static "img/Anuket-logo.svg" %}" alt="Anuket logo" width="134.2" height="50" style="vertical-align:middle; margin:12px 12px 12px -20px;">
     </a>
     <a class="navbar-brand d-none d-lg-inline Anuket-Text" href={% url 'dashboard:index' %} style="margin-left:10px; font-size:26px; vertical-align:middle;">
         LaaS Dashboard

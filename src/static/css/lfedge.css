@@ -1,0 +1,14 @@
+.LFEdge {
+    background: #0049b0;
+    margin-left: -25px;
+}
+
+.wtext {
+    font-size: 18px;
+    color: #FFFFFF;
+}
+
+.wtext:hover {
+    color: #FFFFFF;
+    text-decoration: none;
+}
