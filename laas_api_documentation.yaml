@@ -1,0 +1,401 @@
+swagger: '2.0'
+info:
+  description: |-
+    Details for all endpoints for LaaS automation API. This serves to allow users
+    to create bookings outside of the web UI hosted at labs.lfnetworking.org. 
+    All included setup is referencing the development server hosted while in 
+    beta testing for the API. 
+  version: 1.0.0
+  title: LaaS Automation API
+  termsOfService: 'http://labs.lfnetworking.org'
+  contact:
+    email: opnfv@iol.unh.edu
+  license:
+    name: MIT License
+host: 10.10.30.55
+basePath: /api
+tags:
+  - name: Bookings
+    description: View and edit existing bookings
+  - name: Resource Inventory
+    description: Examine and manage resources in a lab
+  - name: Users
+    description: All actions for referencing 
+schemes:
+  - http
+security:
+  - AutomationAPI: []
+paths:
+  /booking:
+    get:
+      tags:
+        - Bookings
+      summary: Get all bookings belonging to user
+      description: Get all bookings belonging to the user authenticated by API key.
+      operationId: retrieveBookings
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Booking'
+        '401':
+          description: Unauthorized API key
+  /booking/makeBooking:
+    put:
+      tags:
+        - Bookings
+      summary: Make booking by specifying information
+      description: Exposes same functionality as quick booking form from dashboard
+      operationId: makeBooking
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: booking
+          description: the booking to create
+          schema:
+            $ref: '#/definitions/MakeBookingTemplate'
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/Booking'
+        '400':
+          description: Error in booking info
+        '401':
+          description: Unauthorized API key
+  '/booking/{bookingID}':
+    get:
+      tags:
+        - Bookings
+      summary: See all info for specific booking
+      description: ''
+      operationId: specificBooking
+      parameters:
+        - in: path
+          name: bookingID
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/Booking'
+        '404':
+          description: Booking does not exist
+        '401':
+          description: Unauthorized API key
+    delete:
+      tags:
+        - Bookings
+      summary: Cancel booking
+      description: ''
+      operationId: cancelBooking
+      parameters:
+        - in: path
+          name: bookingID
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successfully canceled booking
+        '404':
+          description: Booking does not exist
+        '400':
+          description: Cannnot cancel booking
+        '401':
+          description: Unauthorized API key
+  '/booking/{bookingID}/extendBooking/{days}':
+    post:
+      tags:
+        - Bookings
+      summary: Extend end date of booking
+      description: ''
+      operationId: extendBooking
+      parameters:
+        - in: path
+          name: bookingID
+          required: true
+          type: integer
+        - in: path
+          name: days
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/Booking'
+        '404':
+          description: Booking to extend does not exist
+        '400':
+          description: Cannot extend Booking
+        '401':
+          description: Unauthorized API key
+  '/resource_inventory/{templateLabID}/images':
+    get:
+      tags:
+        - Resource Inventory
+      summary: See valid images for a resource template
+      description: ''
+      operationId: viewImages
+      parameters:
+        - in: path
+          name: templateLabID
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/Image'
+        '404':
+          description: Resource Template does not exist
+        '401':
+          description: Unauthorized API key
+  /resource_inventory/availableTemplates:
+    get:
+      tags:
+        - Resource Inventory
+      summary: All Resource Templates currently available
+      description: ''
+      operationId: listTemplates
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            $ref: '#/definitions/ResourceTemplate'
+        '401':
+          description: Unauthorized API key
+  /users:
+    get:
+      tags:
+        - Users
+      summary: See all public users that can be added to a booking
+      description: ''
+      operationId: getUsers
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/UserProfile'
+        '401':
+          description: Unauthorized API key
+  /labs:
+    get:
+      tags:
+        - Lab
+      summary: List all labs and some of their info
+      description: ''
+      operationId: listLabs
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: successful operation
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Lab'
+        '401':
+          description: Unauthorized API Key
+  /labs/{labID}/users:
+    get:
+      tags:
+        - Lab
+      summary: Get all users that are visible to a lab for operational purposes
+      description: ''
+      operationId: labUsers
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: labID
+          required: true
+          type: string
+      responses:
+        '200':
+          description: successful
+          schema: array
+          items:
+            $ref: '#/definitions/UserProfile'
+        '400':
+          description: invalid lab id
+securityDefinitions:
+  AutomationAPI:
+    type: apiKey
+    in: header
+    name: auth-token
+definitions:
+  Lab:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+  MakeBookingTemplate:
+    type: object
+    required:
+      - templateID
+      - purpose
+      - project
+      - collaborators
+      - hostname
+      - length
+      - imageLabID
+    properties:
+      templateID:
+        type: integer
+      purpose:
+        type: string
+      project:
+        type: string
+      collaborators:
+        type: array
+        items:
+          type: string
+          description: username of the referred user
+      hostname:
+        type: string
+      length:
+        type: integer
+        description: length of the booking in days (max 21, min 1)
+      imageLabID:
+        type: integer
+  Booking:
+    type: object
+    required:
+      - id
+      - owner
+      - collaborators
+      - start
+      - end
+      - lab
+      - purpose
+      - project
+      - resourceBundle
+    properties:
+      id:
+        type: integer
+        format: int64
+      owner:
+        type: string
+      collaborators:
+        type: array
+        items:
+          $ref: '#/definitions/UserProfile'
+      start:
+        type: string
+        format: date-time
+      end:
+        type: string
+        format: date-time
+      lab:
+        $ref: '#/definitions/Lab'
+      purpose:
+        type: string
+      resourceBundle:
+        $ref: '#/definitions/ResourceBundle'
+      project:
+        type: string
+  Image:
+    type: object
+    required:
+      - labID
+      - resources
+    properties:
+      labID:
+        type: integer
+        format: int64
+      name:
+        type: string
+  ResourceBundle:
+    type: object
+    required:
+      - id
+      - resources
+    properties:
+      id:
+        type: integer
+        format: int64
+      resources:
+        type: array
+        items:
+          $ref: '#/definitions/Server'
+  ResourceProfile:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+  UserProfile:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+  ResourceTemplate:
+    type: object
+    required:
+      - id
+      - name
+      - resourceProfiles
+    properties:
+      id:
+        type: integer
+        format: int64
+      name:
+        type: string
+      resourceProfiles:
+        type: array
+        items:
+          $ref: '#/definitions/ResourceProfile'
+  Server:
+    type: object
+    required:
+      - id
+      - labid
+      - profile
+    properties:
+      id:
+        type: integer
+        format: int64
+      profile:
+        $ref: '#/definitions/ResourceProfile'
+      labid:
+        type: string

@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404
+from django.contrib.postgres.fields import JSONField
 from django.http import HttpResponseNotFound
 from django.urls import reverse
 from django.utils import timezone
@@ -37,7 +38,7 @@ from account.models import Downtime, UserProfile
 from dashboard.utils import AbstractModelQuery
 
 
-class JobStatus(object):
+class JobStatus:
     """
     A poor man's enum for a job's status.
 
@@ -52,7 +53,7 @@ class JobStatus(object):
     ERROR = 300
 
 
-class LabManagerTracker(object):
+class LabManagerTracker:
 
     @classmethod
     def get(cls, lab_name, token):
@@ -72,7 +73,7 @@ class LabManagerTracker(object):
         raise PermissionDenied("Lab not authorized")
 
 
-class LabManager(object):
+class LabManager:
     """
     Handles all lab REST calls.
 
@@ -335,6 +336,96 @@ class LabManager(object):
             p['name'] = profile.name
             profile_ser.append(p)
         return profile_ser
+
+
+class APILog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    call_time = models.DateTimeField(auto_now=True)
+    method = models.CharField(null=True, max_length=6)
+    endpoint = models.CharField(null=True, max_length=300)
+    ip_addr = models.GenericIPAddressField(protocol="both", null=True, unpack_ipv4=False)
+    body = JSONField(null=True)
+
+    def __str__(self):
+        return "Call to {} at {} by {}".format(
+            self.endpoint,
+            self.call_time,
+            self.user.username
+        )
+
+
+class AutomationAPIManager:
+    @staticmethod
+    def serialize_booking(booking):
+        sbook = {}
+        sbook['id'] = booking.pk
+        sbook['owner'] = booking.owner.username
+        sbook['collaborators'] = [user.username for user in booking.collaborators.all()]
+        sbook['start'] = booking.start
+        sbook['end'] = booking.end
+        sbook['lab'] = AutomationAPIManager.serialize_lab(booking.lab)
+        sbook['purpose'] = booking.purpose
+        sbook['resourceBundle'] = AutomationAPIManager.serialize_bundle(booking.resource)
+        return sbook
+
+    @staticmethod
+    def serialize_lab(lab):
+        slab = {}
+        slab['id'] = lab.pk
+        slab['name'] = lab.name
+        return slab
+
+    @staticmethod
+    def serialize_bundle(bundle):
+        sbundle = {}
+        sbundle['id'] = bundle.pk
+        sbundle['resources'] = [
+            AutomationAPIManager.serialize_server(server)
+            for server in bundle.get_resources()]
+        return sbundle
+
+    @staticmethod
+    def serialize_server(server):
+        sserver = {}
+        sserver['id'] = server.pk
+        sserver['name'] = server.name
+        return sserver
+
+    @staticmethod
+    def serialize_resource_profile(profile):
+        sprofile = {}
+        sprofile['id'] = profile.pk
+        sprofile['name'] = profile.name
+        return sprofile
+
+    @staticmethod
+    def serialize_template(rec_temp_and_count):
+        template = rec_temp_and_count[0]
+        count = rec_temp_and_count[1]
+
+        stemplate = {}
+        stemplate['id'] = template.pk
+        stemplate['name'] = template.name
+        stemplate['count_available'] = count
+        stemplate['resourceProfiles'] = [
+            AutomationAPIManager.serialize_resource_profile(config.profile)
+            for config in template.getConfigs()
+        ]
+        return stemplate
+
+    @staticmethod
+    def serialize_image(image):
+        simage = {}
+        simage['id'] = image.pk
+        simage['name'] = image.name
+        return simage
+
+    @staticmethod
+    def serialize_userprofile(up):
+        sup = {}
+        sup['id'] = up.pk
+        sup['username'] = up.user.username
+        return sup
 
 
 class Job(models.Model):

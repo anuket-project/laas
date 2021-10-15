@@ -38,7 +38,7 @@ from booking.views import (
     booking_modify_image
 )
 
-app_name = "booking"
+app_name = 'booking'
 urlpatterns = [
     url(r'^detail/(?P<booking_id>[0-9]+)/$', booking_detail_view, name='detail'),
     url(r'^(?P<booking_id>[0-9]+)/$', booking_detail_view, name='booking_detail'),

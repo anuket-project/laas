@@ -6,19 +6,27 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
+from __future__ import annotations
+
 import re
+from typing import Optional
 from django.db.models import Q
 
 from dashboard.exceptions import ResourceAvailabilityException
 
 from resource_inventory.models import (
+    Resource,
     ResourceBundle,
     ResourceTemplate,
+    ResourceConfiguration,
     Network,
     Vlan,
     PhysicalNetwork,
     InterfaceConfiguration,
 )
+
+from account.models import Lab
+from django.contrib.auth.models import User
 
 
 class ResourceManager:
@@ -29,19 +37,19 @@ class ResourceManager:
         pass
 
     @staticmethod
-    def getInstance():
+    def getInstance() -> ResourceManager:
         if ResourceManager.instance is None:
             ResourceManager.instance = ResourceManager()
         return ResourceManager.instance
 
-    def getAvailableResourceTemplates(self, lab, user=None):
+    def getAvailableResourceTemplates(self, lab: Lab, user: Optional[User] = None) -> list[ResourceTemplate]:
         filter = Q(public=True)
         if user:
             filter = filter | Q(owner=user)
         filter = filter & Q(temporary=False) & Q(lab=lab)
         return ResourceTemplate.objects.filter(filter)
 
-    def templateIsReservable(self, resource_template):
+    def templateIsReservable(self, resource_template: ResourceTemplate):
         """
         Check if the required resources to reserve this template is available.
 
@@ -63,13 +71,16 @@ class ResourceManager:
         return True
 
     # public interface
-    def deleteResourceBundle(self, resourceBundle):
+    def deleteResourceBundle(self, resourceBundle: ResourceBundle):
         raise NotImplementedError("Resource Bundle Deletion Not Implemented")
 
-    def releaseResourceBundle(self, resourceBundle):
+    def releaseResourceBundle(self, resourceBundle: ResourceBundle):
         resourceBundle.release()
 
-    def get_vlans(self, resourceTemplate):
+    def get_vlans(self, resourceTemplate: ResourceTemplate) -> dict[str, int]:
+        """
+        returns: dict from network name to the associated vlan number (backend vlan id)
+        """
         networks = {}
         vlan_manager = resourceTemplate.lab.vlan_manager
         for network in resourceTemplate.networks.all():
@@ -84,7 +95,7 @@ class ResourceManager:
                 networks[network.name] = vlans[0]
         return networks
 
-    def instantiateTemplate(self, resource_template):
+    def instantiateTemplate(self, resource_template: ResourceTemplate):
         """
         Convert a ResourceTemplate into a ResourceBundle.
 
@@ -113,16 +124,18 @@ class ResourceManager:
 
         return resource_bundle
 
-    def configureNetworking(self, resource_bundle, resource, vlan_map):
+    def configureNetworking(self, resource_bundle: ResourceBundle, resource: Resource, vlan_map: dict[str, int]):
+        """
+        @vlan_map: dict from network name to the associated vlan number (backend vlan id)
+        """
         for physical_interface in resource.interfaces.all():
-            # assign interface configs
 
-            iface_configs = InterfaceConfiguration.objects.filter(
+            # assign interface configs
+            iface_config = InterfaceConfiguration.objects.get(
                 profile=physical_interface.profile,
                 resource_config=resource.config
             )
 
-            iface_config = iface_configs.first()
             physical_interface.acts_as = iface_config
             physical_interface.acts_as.save()
 
@@ -143,7 +156,7 @@ class ResourceManager:
                 )
 
     # private interface
-    def acquireHost(self, resource_config):
+    def acquireHost(self, resource_config: ResourceConfiguration) -> Resource:
         resources = resource_config.profile.get_resources(
             lab=resource_config.template.lab,
             unreserved=True

@@ -50,7 +50,9 @@ services:
         restart: always
         image: rabbitmq
         container_name: rm01
-        env_file: config.env
+          #env_file: config.env
+        volumes:
+          - ./config/rabbitmq:/etc/rabbitmq
         ports:
             - "5672:5672"
 

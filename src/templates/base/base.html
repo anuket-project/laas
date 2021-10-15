@@ -87,7 +87,7 @@
                                 {% else %}
                                     <a href="{% url 'account:login' %}" class="dropdown-item Anuket-Text">
                                         <i class="fas fa-sign-in-alt"></i>
-                                        Login with Jira
+                                        Login
                                     </a>
                                 {% endif %}
                             {% endif %}
@@ -155,12 +155,6 @@
                                 </a>
                                 <a href="{% url 'account:my-bookings' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
                                     My Bookings
-                                </a>
-                                <a href="{% url 'account:my-configurations' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    My Configurations
-                                </a>
-                                <a href="{% url 'account:my-images' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    My Snapshots
                                 </a>
                             </div>
                             <a href="{% url 'dashboard:all_labs' %}" class="list-group-item list-group-item-action nav-bg">

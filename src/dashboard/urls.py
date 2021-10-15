@@ -33,7 +33,7 @@ from dashboard.views import (
     host_profile_detail_view
 )
 
-app_name = "dashboard"
+app_name = 'dashboard'
 urlpatterns = [
     url(r'^$', landing_view, name='index'),
     url(r'^lab/$', lab_list_view, name='all_labs'),

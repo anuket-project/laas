@@ -104,5 +104,5 @@ class StatisticsManager(object):
             "user": [x, users],
             "utils": [in_use, not_in_use, maintenance],
             "projects": [project_keys, project_counts],
-            "colors": anuket_colors if os.environ['TEMPLATE_OVERRIDE_DIR'] == 'laas' else lfedge_colors
+            "colors": anuket_colors if os.environ.get('TEMPLATE_OVERRIDE_DIR') == 'laas' else lfedge_colors
         }

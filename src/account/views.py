@@ -10,13 +10,10 @@
 
 
 import os
-import urllib
 
-import oauth2 as oauth
-from django.conf import settings
 from django.utils import timezone
 from django.contrib import messages
-from django.contrib.auth import logout, authenticate, login
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
@@ -26,13 +23,11 @@ from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.generic import RedirectView, TemplateView, UpdateView
 from django.shortcuts import render
-from jira import JIRA
 from rest_framework.authtoken.models import Token
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
 
 from account.forms import AccountSettingsForm
-from account.jira_util import SignatureMethod_RSA_SHA1
 from account.models import UserProfile
 from booking.models import Booking
 from resource_inventory.models import ResourceTemplate, Image
@@ -69,7 +64,7 @@ class MyOIDCAB(OIDCAuthenticationBackend):
         If this changes we will need to match users based on some
         other criterea.
         """
-        username = claims.get(os.environ['CLAIMS_ENDPOINT'] + 'username')
+        username = claims.get(os.environ.get('CLAIMS_ENDPOINT') + 'username')
 
         if not username:
             return HttpResponse('No username provided, contact support.')
@@ -101,107 +96,15 @@ class MyOIDCAB(OIDCAuthenticationBackend):
         return user
 
 
-class JiraLoginView(RedirectView):
-    def get_redirect_url(self, *args, **kwargs):
-        consumer = oauth.Consumer(settings.OAUTH_CONSUMER_KEY, settings.OAUTH_CONSUMER_SECRET)
-        client = oauth.Client(consumer)
-        client.set_signature_method(SignatureMethod_RSA_SHA1())
-
-        # Step 1. Get a request token from Jira.
-        try:
-            resp, content = client.request(settings.OAUTH_REQUEST_TOKEN_URL, "POST")
-        except Exception:
-            messages.add_message(self.request, messages.ERROR,
-                                 'Error: Connection to Jira failed. Please contact an Administrator')
-            return '/'
-        if resp['status'] != '200':
-            messages.add_message(self.request, messages.ERROR,
-                                 'Error: Connection to Jira failed. Please contact an Administrator')
-            return '/'
-
-        # Step 2. Store the request token in a session for later use.
-        self.request.session['request_token'] = dict(urllib.parse.parse_qsl(content.decode()))
-        # Step 3. Redirect the user to the authentication URL.
-        url = settings.OAUTH_AUTHORIZE_URL + '?oauth_token=' + \
-            self.request.session['request_token']['oauth_token'] + \
-            '&oauth_callback=' + settings.OAUTH_CALLBACK_URL
-        return url
-
-
 class OIDCLoginView(RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         return reverse('oidc_authentication_init')
 
 
-class JiraLogoutView(LoginRequiredMixin, RedirectView):
+class LogoutView(LoginRequiredMixin, RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         logout(self.request)
         return '/'
-
-
-class JiraAuthenticatedView(RedirectView):
-    def get_redirect_url(self, *args, **kwargs):
-        # Step 1. Use the request token in the session to build a new client.
-        consumer = oauth.Consumer(settings.OAUTH_CONSUMER_KEY, settings.OAUTH_CONSUMER_SECRET)
-        token = oauth.Token(self.request.session['request_token']['oauth_token'],
-                            self.request.session['request_token']['oauth_token_secret'])
-        client = oauth.Client(consumer, token)
-        client.set_signature_method(SignatureMethod_RSA_SHA1())
-
-        # Step 2. Request the authorized access token from Jira.
-        try:
-            resp, content = client.request(settings.OAUTH_ACCESS_TOKEN_URL, "POST")
-        except Exception:
-            messages.add_message(self.request, messages.ERROR,
-                                 'Error: Connection to Jira failed. Please contact an Administrator')
-            return '/'
-        if resp['status'] != '200':
-            messages.add_message(self.request, messages.ERROR,
-                                 'Error: Connection to Jira failed. Please contact an Administrator')
-            return '/'
-
-        access_token = dict(urllib.parse.parse_qsl(content.decode()))
-
-        module_dir = os.path.dirname(__file__)  # get current directory
-        with open(module_dir + '/rsa.pem', 'r') as f:
-            key_cert = f.read()
-
-        oauth_dict = {
-            'access_token': access_token['oauth_token'],
-            'access_token_secret': access_token['oauth_token_secret'],
-            'consumer_key': settings.OAUTH_CONSUMER_KEY,
-            'key_cert': key_cert
-        }
-
-        jira = JIRA(server=settings.JIRA_URL, oauth=oauth_dict)
-        username = jira.current_user()
-        email = ""
-        try:
-            email = jira.user(username).emailAddress
-        except AttributeError:
-            email = ""
-        url = '/'
-        # Step 3. Lookup the user or create them if they don't exist.
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            # Save our permanent token and secret for later.
-            user = User.objects.create_user(username=username,
-                                            password=access_token['oauth_token_secret'])
-            profile = UserProfile()
-            profile.user = user
-            profile.save()
-            user.userprofile.email_addr = email
-            url = reverse('account:settings')
-        user.userprofile.oauth_token = access_token['oauth_token']
-        user.userprofile.oauth_secret = access_token['oauth_token_secret']
-        user.userprofile.save()
-        user.set_password(access_token['oauth_token_secret'])
-        user.save()
-        user = authenticate(username=username, password=access_token['oauth_token_secret'])
-        login(self.request, user)
-        # redirect user to settings page to complete profile
-        return url
 
 
 @method_decorator(login_required, name='dispatch')
@@ -232,9 +135,9 @@ def account_resource_view(request):
     template = "account/resource_list.html"
 
     active_bundles = [book.resource for book in Booking.objects.filter(
-        owner=request.user, end__gte=timezone.now())]
+        owner=request.user, end__gte=timezone.now(), resource__template__temporary=False)]
     active_resources = [bundle.template.id for bundle in active_bundles]
-    resource_list = list(ResourceTemplate.objects.filter(owner=request.user))
+    resource_list = list(ResourceTemplate.objects.filter(owner=request.user, temporary=False))
 
     context = {
         "resources": resource_list,
@@ -262,15 +165,6 @@ def account_booking_view(request):
     return render(request, template, context=context)
 
 
-def account_configuration_view(request):
-    if not request.user.is_authenticated:
-        return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
-    template = "account/configuration_list.html"
-    configs = list(ResourceTemplate.objects.filter(owner=request.user))
-    context = {"title": "Configuration List", "configurations": configs}
-    return render(request, template, context=context)
-
-
 def account_images_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
@@ -290,28 +184,18 @@ def account_images_view(request):
     return render(request, template, context=context)
 
 
-def resource_delete_view(request, resource_id=None):
+def template_delete_view(request, resource_id=None):
     if not request.user.is_authenticated:
-        return HttpResponse('no')  # 403?
-    grb = get_object_or_404(ResourceTemplate, pk=resource_id)
-    if not request.user.id == grb.owner.id:
-        return HttpResponse('no')  # 403?
-    if Booking.objects.filter(resource__template=grb, end__gt=timezone.now()).exists():
-        return HttpResponse('no')  # 403?
-    grb.delete()
-    return HttpResponse('')
-
-
-def configuration_delete_view(request, config_id=None):
-    if not request.user.is_authenticated:
-        return HttpResponse('no')  # 403?
-    config = get_object_or_404(ResourceTemplate, pk=config_id)
-    if not request.user.id == config.owner.id:
-        return HttpResponse('no')  # 403?
-    if Booking.objects.filter(resource__template=config, end__gt=timezone.now()).exists():
-        return HttpResponse('no')
-    config.delete()
-    return HttpResponse('')
+        return HttpResponse(status=403)
+    template = get_object_or_404(ResourceTemplate, pk=resource_id)
+    if not request.user.id == template.owner.id:
+        return HttpResponse(status=403)
+    if Booking.objects.filter(resource__template=template, end__gt=timezone.now()).exists():
+        return HttpResponse(status=403)
+    template.public = False
+    template.temporary = True
+    template.save()
+    return HttpResponse(status=200)
 
 
 def booking_cancel_view(request, booking_id=None):

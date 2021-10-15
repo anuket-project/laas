@@ -22,6 +22,7 @@ from api.models import (
     SoftwareRelation,
     HostHardwareRelation,
     HostNetworkRelation,
+    APILog
 )
 
 
@@ -39,3 +40,4 @@ admin.site.register(AccessRelation)
 admin.site.register(SoftwareRelation)
 admin.site.register(HostHardwareRelation)
 admin.site.register(HostNetworkRelation)
+admin.site.register(APILog)

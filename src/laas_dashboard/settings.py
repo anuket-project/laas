@@ -15,8 +15,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: don't run with debug turned on in production!
 # NOTE: os.environ only returns strings, so making a comparison to
 # 'True' here will convert it to the correct Boolean value.
-DEBUG = os.environ['DEBUG'] == 'True'
-TESTING = os.environ['TEST'] == 'True'
+DEBUG = os.environ.get('DEBUG') == 'True'
+TESTING = os.environ.get('TEST') == 'True'
 
 # Application definition
 
@@ -53,29 +53,34 @@ MIDDLEWARE = [
     'account.middleware.TimezoneMiddleware',
 ]
 
-AUTH_SETTING = os.environ.get('AUTH_SETTING', 'JIRA')
+
+# AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend', 'account.views.MyOIDCAB']
+AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
+
+AUTH_SETTING = os.environ.get('AUTH_SETTING')
 
 if AUTH_SETTING == 'LFID':
-    AUTHENTICATION_BACKENDS = ['account.views.MyOIDCAB']
-
     # OpenID Authentications
-    OIDC_RP_CLIENT_ID = os.environ['OIDC_CLIENT_ID']
-    OIDC_RP_CLIENT_SECRET = os.environ['OIDC_CLIENT_SECRET']
+    AUTHENTICATION_BACKENDS.append('account.views.MyOIDCAB')
+    OIDC_RP_CLIENT_ID = os.environ.get('OIDC_CLIENT_ID')
+    OIDC_RP_CLIENT_SECRET = os.environ.get('OIDC_CLIENT_SECRET')
 
-    OIDC_OP_AUTHORIZATION_ENDPOINT = os.environ['OIDC_AUTHORIZATION_ENDPOINT']
-    OIDC_OP_TOKEN_ENDPOINT = os.environ['OIDC_TOKEN_ENDPOINT']
-    OIDC_OP_USER_ENDPOINT = os.environ['OIDC_USER_ENDPOINT']
+    OIDC_OP_AUTHORIZATION_ENDPOINT = os.environ.get('OIDC_AUTHORIZATION_ENDPOINT')
+    OIDC_OP_TOKEN_ENDPOINT = os.environ.get('OIDC_TOKEN_ENDPOINT')
+    OIDC_OP_USER_ENDPOINT = os.environ.get('OIDC_USER_ENDPOINT')
 
-    LOGIN_REDIRECT_URL = os.environ['DASHBOARD_URL']
-    LOGOUT_REDIRECT_URL = os.environ['DASHBOARD_URL']
+    LOGIN_REDIRECT_URL = os.environ.get('DASHBOARD_URL')
+    LOGOUT_REDIRECT_URL = os.environ.get('DASHBOARD_URL')
 
-    OIDC_RP_SIGN_ALGO = os.environ["OIDC_RP_SIGN_ALGO"]
+    OIDC_RP_SIGN_ALGO = os.environ.get("OIDC_RP_SIGN_ALGO")
 
     if OIDC_RP_SIGN_ALGO == "RS256":
-        OIDC_OP_JWKS_ENDPOINT = os.environ["OIDC_OP_JWKS_ENDPOINT"]
+        OIDC_OP_JWKS_ENDPOINT = os.environ.get("OIDC_OP_JWKS_ENDPOINT")
+else:
+    raise Exception('AUTH_SETTING set to invalid value')
 
 # This is for LFID auth setups w/ an HTTPS proxy
-if os.environ['EXPECT_HOST_FORWARDING'] == 'True':
+if os.environ.get('EXPECT_HOST_FORWARDING') == 'True':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', "https")
     USE_X_FORWARDED_HOST = True
 
@@ -162,7 +167,7 @@ STATICFILES_DIRS = [
 LOGIN_REDIRECT_URL = '/'
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ['SECRET_KEY']
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 BOOTSTRAP3 = {
     'set_placeholder': False,
@@ -175,11 +180,11 @@ ALLOWED_HOSTS = ['*']
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ['DB_NAME'],
-        'USER': os.environ['DB_USER'],
-        'PASSWORD': os.environ['DB_PASS'],
-        'HOST': os.environ['DB_SERVICE'],
-        'PORT': os.environ['DB_PORT']
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASS'),
+        'HOST': os.environ.get('DB_SERVICE'),
+        'PORT': os.environ.get('DB_PORT')
     }
 }
 
@@ -198,27 +203,17 @@ REST_FRAMEWORK = {
 MEDIA_ROOT = '/media'
 STATIC_ROOT = '/static'
 
-# Jira Settings
-CREATE_JIRA_TICKET = False
+OAUTH_CONSUMER_KEY = os.environ.get('OAUTH_CONSUMER_KEY')
+OAUTH_CONSUMER_SECRET = os.environ.get('OAUTH_CONSUMER_SECRET')
 
-JIRA_URL = os.environ['JIRA_URL']
-
-JIRA_USER_NAME = os.environ['JIRA_USER_NAME']
-JIRA_USER_PASSWORD = os.environ['JIRA_USER_PASSWORD']
-
-OAUTH_CONSUMER_KEY = os.environ['OAUTH_CONSUMER_KEY']
-OAUTH_CONSUMER_SECRET = os.environ['OAUTH_CONSUMER_SECRET']
-
-OAUTH_REQUEST_TOKEN_URL = JIRA_URL + '/plugins/servlet/oauth/request-token'
-OAUTH_ACCESS_TOKEN_URL = JIRA_URL + '/plugins/servlet/oauth/access-token'
-OAUTH_AUTHORIZE_URL = JIRA_URL + '/plugins/servlet/oauth/authorize'
-
-OAUTH_CALLBACK_URL = os.environ['DASHBOARD_URL'] + '/accounts/authenticated'
+OAUTH_CALLBACK_URL = os.environ.get('DASHBOARD_URL') + '/accounts/authenticated'
 
 # Celery Settings
 CELERY_TIMEZONE = 'UTC'
 
 RABBITMQ_URL = 'rabbitmq'
+# RABBITMQ_DEFAULT_USER = os.environ['DEFAULT_USER']
+# RABBITMQ_DEFAULT_PASS = os.environ['DEFAULT_PASS']
 RABBITMQ_DEFAULT_USER = os.environ['RABBITMQ_DEFAULT_USER']
 RABBITMQ_DEFAULT_PASS = os.environ['RABBITMQ_DEFAULT_PASS']
 
@@ -248,10 +243,10 @@ CELERYBEAT_SCHEDULE = {
 }
 
 # Notifier Settings
-EMAIL_HOST = os.environ['EMAIL_HOST']
-EMAIL_PORT = os.environ['EMAIL_PORT']
-EMAIL_HOST_USER = os.environ['EMAIL_HOST_USER']
-EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_PORT = os.environ.get('EMAIL_PORT')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
 DEFAULT_EMAIL_FROM = os.environ.get('DEFAULT_EMAIL_FROM', 'webmaster@localhost')
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"

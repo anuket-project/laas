@@ -6,7 +6,7 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-FROM python:3.5
+FROM python:3.9
 ENV PYTHONUNBUFFERED 1
 
 ADD requirements.txt /requirements.txt
