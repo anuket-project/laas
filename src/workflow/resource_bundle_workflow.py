@@ -196,7 +196,7 @@ class Define_Software(WorkflowStep):
         for i, host_data in enumerate(hosts_data):
             host = ResourceConfiguration.objects.get(pk=host_data['host_id'])
             wrong_owner = Image.objects.exclude(owner=user).exclude(public=True)
-            wrong_host = Image.objects.exclude(host_type=host.profile)
+            wrong_host = Image.objects.exclude(architecture=host.profile.architecture)
             wrong_lab = Image.objects.exclude(from_lab=lab)
             excluded_images = wrong_owner | wrong_host | wrong_lab
             filter_data.append([])

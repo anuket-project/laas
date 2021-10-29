@@ -81,11 +81,15 @@ def free_hosts():
     ).filter(
         end__lt=timezone.now(),
         job__complete=True,
-        resource__isnull=False
+        complete=False,
+        resource__isnull=False,
     )
 
     for booking in bookings:
         ResourceManager.getInstance().releaseResourceBundle(booking.resource)
+        booking.complete = True
+        print("Booking", booking.id, "is now completed")
+        booking.save()
 
 
 @shared_task

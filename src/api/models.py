@@ -19,18 +19,22 @@ from django.utils import timezone
 
 import json
 import uuid
+import yaml
 
 from booking.models import Booking
 from resource_inventory.models import (
     Lab,
     ResourceProfile,
     Image,
+    Opsys,
     Interface,
     ResourceOPNFVConfig,
     RemoteInfo,
     OPNFVConfig,
     ConfigState,
-    ResourceQuery
+    ResourceQuery,
+    ResourceConfiguration,
+    CloudInitFile
 )
 from resource_inventory.idf_templater import IDFTemplater
 from resource_inventory.pdf_templater import PDFTemplater
@@ -83,6 +87,18 @@ class LabManager:
 
     def __init__(self, lab):
         self.lab = lab
+
+    def get_opsyss(self):
+        return Opsys.objects.filter(from_lab=self.lab)
+
+    def get_images(self):
+        return Image.objects.filter(from_lab=self.lab)
+
+    def get_image(self, image_id):
+        return Image.objects.filter(from_lab=self.lab, lab_id=image_id)
+
+    def get_opsys(self, opsys_id):
+        return Opsys.objects.filter(from_lab=self.lab, lab_id=opsys_id)
 
     def get_downtime(self):
         return Downtime.objects.filter(start__lt=timezone.now(), end__gt=timezone.now(), lab=self.lab)
@@ -336,6 +352,157 @@ class LabManager:
             p['name'] = profile.name
             profile_ser.append(p)
         return profile_ser
+
+
+class GeneratedCloudConfig(models.Model):
+    resource_id = models.CharField(max_length=200)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
+    rconfig = models.ForeignKey(ResourceConfiguration, on_delete=models.CASCADE)
+    text = models.TextField(null=True, blank=True)
+
+    def _normalize_username(self, username: str) -> str:
+        # TODO: make usernames posix compliant
+        return username
+
+    def _get_ssh_string(self, username: str) -> str:
+        user = User.objects.get(username=username)
+        uprofile = user.userprofile
+
+        ssh_file = uprofile.ssh_public_key
+
+        escaped_file = ssh_file.open().read().decode(encoding="UTF-8").replace("\n", " ")
+
+        return escaped_file
+
+    def _serialize_users(self):
+        """
+        returns the dictionary to be placed behind the `users` field of the toplevel c-i dict
+        """
+        # conserves distro default user
+        user_array = ["default"]
+
+        users = list(self.booking.collaborators.all())
+        users.append(self.booking.owner)
+        for collaborator in users:
+            userdict = {}
+
+            # TODO: validate if usernames are valid as linux usernames (and provide an override potentially)
+            userdict['name'] = self._normalize_username(collaborator.username)
+
+            userdict['groups'] = "sudo"
+            userdict['sudo'] = "ALL=(ALL) NOPASSWD:ALL"
+
+            userdict['ssh_authorized_keys'] = [self._get_ssh_string(collaborator.username)]
+
+            user_array.append(userdict)
+
+        # user_array.append({
+        #    "name": "opnfv",
+        #    "passwd": "$6$k54L.vim1cLaEc4$5AyUIrufGlbtVBzuCWOlA1yV6QdD7Gr2MzwIs/WhuYR9ebSfh3Qlb7djkqzjwjxpnSAonK1YOabPP6NxUDccu.",
+        #    "ssh_redirect_user": True,
+        #    "sudo": "ALL=(ALL) NOPASSWD:ALL",
+        #    "groups": "sudo",
+        #    })
+
+        return user_array
+
+    # TODO: make this configurable
+    def _serialize_sysinfo(self):
+        defuser = {}
+        defuser['name'] = 'opnfv'
+        defuser['plain_text_passwd'] = 'OPNFV_HOST'
+        defuser['home'] = '/home/opnfv'
+        defuser['shell'] = '/bin/bash'
+        defuser['lock_passwd'] = True
+        defuser['gecos'] = 'Lab Manager User'
+        defuser['groups'] = 'sudo'
+
+        return {'default_user': defuser}
+
+    # TODO: make this configurable
+    def _serialize_runcmds(self):
+        cmdlist = []
+
+        # have hosts run dhcp on boot
+        cmdlist.append(['sudo', 'dhclient', '-r'])
+        cmdlist.append(['sudo', 'dhclient'])
+
+        return cmdlist
+
+    def _serialize_netconf_v1(self):
+        # interfaces = {}  # map from iface_name => dhcp_config
+        # vlans = {}  # map from vlan_id => dhcp_config
+
+        config_arr = []
+
+        for interface in self._resource().interfaces.all():
+            interface_name = interface.profile.name
+            interface_mac = interface.mac_address
+
+            iface_dict_entry = {
+                "type": "physical",
+                "name": interface_name,
+                "mac_address": interface_mac,
+            }
+
+            for vlan in interface.config.all():
+                if vlan.tagged:
+                    vlan_dict_entry = {'type': 'vlan'}
+                    vlan_dict_entry['name'] = str(interface_name) + "." + str(vlan.vlan_id)
+                    vlan_dict_entry['vlan_link'] = str(interface_name)
+                    vlan_dict_entry['vlan_id'] = int(vlan.vlan_id)
+                    vlan_dict_entry['mac_address'] = str(interface_mac)
+                    if vlan.public:
+                        vlan_dict_entry["subnets"] = [{"type": "dhcp"}]
+                    config_arr.append(vlan_dict_entry)
+                if (not vlan.tagged) and vlan.public:
+                    iface_dict_entry["subnets"] = [{"type": "dhcp"}]
+
+                # vlan_dict_entry['mtu'] = # TODO, determine override MTU if needed
+
+            config_arr.append(iface_dict_entry)
+
+        ns_dict = {
+            'type': 'nameserver',
+            'address': ['10.64.0.1', '8.8.8.8']
+        }
+
+        config_arr.append(ns_dict)
+
+        full_dict = {'version': 1, 'config': config_arr}
+
+        return full_dict
+
+    @classmethod
+    def get(cls, booking_id: int, resource_lab_id: str, file_id: int):
+        return GeneratedCloudConfig.objects.get(resource_id=resource_lab_id, booking__id=booking_id, file_id=file_id)
+
+    def _resource(self):
+        return ResourceQuery.get(labid=self.resource_id, lab=self.booking.lab)
+
+    # def _get_facts(self):
+        # resource = self._resource()
+
+        # hostname = self.rconfig.name
+        # iface_configs = for_config.interface_configs.all()
+
+    def _to_dict(self):
+        main_dict = {}
+
+        main_dict['users'] = self._serialize_users()
+        main_dict['network'] = self._serialize_netconf_v1()
+        main_dict['hostname'] = self.rconfig.name
+
+        # add first startup commands
+        main_dict['runcmd'] = self._serialize_runcmds()
+
+        # configure distro default user
+        main_dict['system_info'] = self._serialize_sysinfo()
+
+        return main_dict
+
+    def serialize(self) -> str:
+        return yaml.dump(self._to_dict())
 
 
 class APILog(models.Model):
@@ -761,6 +928,7 @@ class HardwareConfig(TaskConfig):
         return self.get_delta()
 
     def get_delta(self):
+        # TODO: grab the GeneratedCloudConfig urls from self.hosthardwarerelation.get_resource()
         return self.format_delta(
             self.hosthardwarerelation.get_resource().get_configuration(self.state),
             self.hosthardwarerelation.lab_token)
@@ -813,7 +981,7 @@ class NetworkConfig(TaskConfig):
 class SnapshotConfig(TaskConfig):
 
     resource_id = models.CharField(max_length=200, default="default_id")
-    image = models.IntegerField(null=True)
+    image = models.CharField(max_length=200, null=True)  # cobbler ID
     dashboard_id = models.IntegerField()
     delta = models.TextField(default="{}")
 
@@ -1104,6 +1272,10 @@ class JobFactory(object):
             booking=booking,
             job=job
         )
+        cls.makeGeneratedCloudConfigs(
+            resources=resources,
+            job=job
+        )
         all_users = list(booking.collaborators.all())
         all_users.append(booking.owner)
         cls.makeAccessConfig(
@@ -1126,6 +1298,18 @@ class JobFactory(object):
                 )
             except Exception:
                 continue
+
+    @classmethod
+    def makeGeneratedCloudConfigs(cls, resources=[], job=Job()):
+        for res in resources:
+            cif = GeneratedCloudConfig.objects.create(resource_id=res.labid, booking=job.booking, rconfig=res.config)
+            cif.save()
+
+            cif = CloudInitFile.create(priority=0, text=cif.serialize())
+            cif.save()
+
+            res.config.cloud_init_files.add(cif)
+            res.config.save()
 
     @classmethod
     def makeHardwareConfigs(cls, resources=[], job=Job()):

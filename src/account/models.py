@@ -83,12 +83,14 @@ class VlanManager(models.Model):
     # if they use QinQ or a vxlan overlay, for example
     allow_overlapping = models.BooleanField()
 
-    def get_vlans(self, count=1):
+    def get_vlans(self, count=1, within=None):
         """
         Return the IDs of available vlans as a list[int], but does not reserve them.
 
         Will throw index exception if not enough vlans are available.
         Always returns a list of ints
+
+        If `within` is not none, will filter against that as a set, requiring that any vlans returned are within that set
         """
         allocated = []
         vlans = json.loads(self.vlans)
@@ -105,17 +107,28 @@ class VlanManager(models.Model):
                 continue
 
             # vlan is available and not reserved, so safe to add
-            allocated.append(i)
+            if within is not None:
+                if i in within:
+                    allocated.append(i)
+            else:
+                allocated.append(i)
             continue
 
         if len(allocated) != count:
-            raise ResourceAvailabilityException("can't allocate the vlans requested")
+            raise ResourceAvailabilityException("There were not enough available private vlans for the allocation. Please contact the administrators.")
 
         return allocated
 
-    def get_public_vlan(self):
+    def get_public_vlan(self, within=None):
         """Return reference to an available public network without reserving it."""
-        return PublicNetwork.objects.filter(lab=self.lab_set.first(), in_use=False).first()
+        r = PublicNetwork.objects.filter(lab=self.lab_set.first(), in_use=False)
+        if within is not None:
+            r = r.filter(vlan__in=within)
+
+        if r.count() < 1:
+            raise ResourceAvailabilityException("There were not enough available public vlans for the allocation. Please contact the administrators.")
+
+        return r.first()
 
     def reserve_public_vlan(self, vlan):
         """Reserves the Public Network that has the given vlan."""

@@ -7,6 +7,12 @@
     <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
 {% endblock %}
 
+<style>
+code {
+    overflow: scroll;
+}
+</style>
+
 {% block content %}
 <div class="row">
     <div class="col-12 col-lg-5">
@@ -151,6 +157,65 @@
                             </table>
                         </div>
                     {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="card my-3">
+            <div class="card-header d-flex">
+                <h4 class="d-inline">Diagnostic Information</h4>
+                <button data-toggle="collapse" data-target="#diagnostics_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
+            </div>
+            <div class="collapse" id="diagnostics_panel">
+                <div class="card-body">
+                    <table class="table m-0">
+                        <tr>
+                            <th>Job ID: </th>
+                            <td>{{booking.job.id}}</td>
+                        </tr>
+                        <tr>
+                            <th>CI Files</th>
+                        </tr>
+                        {% for host in booking.resource.get_resources %}
+                        <tr>
+                            <td>
+                                <table class="table m-0">
+                                    <tr>
+                                        <th>Host:</th>
+                                        <td>{{host.name}}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Configs:</th>
+                                    </tr>
+                                    {% for ci_file in host.config.cloud_init_files.all %}
+                                    <tr>
+                                        <td>{{ci_file.id}}</td>
+                                        <td>
+                                            <div class="modal fade" id="ci_file_modal_{{ci_file.id}}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                <div class="modal-dialog modal-xl" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h4 class="modal-title d-inline float-left">Cloud Config Content</h4>
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <pre class="prettyprint lang-yaml m-0 border-0 text-break pre-wrap">
+{{ci_file.text}}
+                                                            </pre>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button class="btn btn-primary" data-toggle="modal" data-target="#ci_file_modal_{{ci_file.id}}">Show File Content</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </table>
                 </div>
             </div>
         </div>

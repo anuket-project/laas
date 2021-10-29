@@ -80,7 +80,7 @@ class ConfigUtil():
         )
 
         return Image.objects.create(
-            lab_id=0,
+            cobbler_id="profile1",
             from_lab=lab,
             name="an image for testing",
             owner=owner

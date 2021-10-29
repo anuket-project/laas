@@ -28,6 +28,7 @@ from api.models import JobFactory
 from workflow.views import login
 from booking.forms import QuickBookingForm
 from booking.quick_deployer import create_from_form, drop_filter
+import traceback
 
 
 def quick_create_clear_fields(request):
@@ -62,6 +63,9 @@ def quick_create(request):
                                           "Check Account->My Bookings for the status of your new booking")
                 return redirect(reverse('booking:booking_detail', kwargs={'booking_id': booking.id}))
             except Exception as e:
+                print("Error occurred while handling quick deployment:")
+                traceback.print_exc()
+                print(str(e))
                 messages.error(request, "Whoops, an error occurred: " + str(e))
                 context.update(drop_filter(request.user))
                 return render(request, 'booking/quick_deploy.html', context)
@@ -137,7 +141,7 @@ def build_image_mapping(lab, user):
     for profile in ResourceProfile.objects.filter(labs=lab):
         images = Image.objects.filter(
             from_lab=lab,
-            host_type=profile
+            architecture=profile.architecture
         ).filter(
             Q(public=True) | Q(owner=user)
         )

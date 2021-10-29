@@ -6,7 +6,8 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-from __future__ import annotations
+
+from __future__ import annotations  # noqa: F407
 
 import re
 from typing import Optional
@@ -85,12 +86,13 @@ class ResourceManager:
         vlan_manager = resourceTemplate.lab.vlan_manager
         for network in resourceTemplate.networks.all():
             if network.is_public:
-                public_net = vlan_manager.get_public_vlan()
+                # already throws if can't get requested count, so can always expect public_net to be Some
+                public_net = vlan_manager.get_public_vlan(within=resourceTemplate.public_vlan_pool_set())
                 vlan_manager.reserve_public_vlan(public_net.vlan)
                 networks[network.name] = public_net.vlan
             else:
                 # already throws if can't get requested count, so can always index in @ 0
-                vlans = vlan_manager.get_vlans(count=1)
+                vlans = vlan_manager.get_vlans(count=1, within=resourceTemplate.private_vlan_pool_set())
                 vlan_manager.reserve_vlans(vlans[0])
                 networks[network.name] = vlans[0]
         return networks

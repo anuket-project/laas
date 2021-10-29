@@ -20,7 +20,6 @@ services:
             dockerfile: web/Dockerfile
         command: >
             sh -c "cd static && npm install && cd .. &&
-                   ./manage.py migrate &&
                    ./manage.py runserver 0:8000"
         volumes:
             - ./src:/laas_dashboard

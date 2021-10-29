@@ -28,9 +28,9 @@ def get_user_items(exclude=None):
     for up in qs:
         item = {
             'id': up.id,
-            'expanded_name': up.full_name,
+            'expanded_name': up.full_name if up.full_name else up.user.username,
             'small_name': up.user.username,
-            'string': up.email_addr
+            'string': up.email_addr if up.email_addr else up.user.username,
         }
         items[up.id] = item
     return items

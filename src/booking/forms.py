@@ -22,6 +22,7 @@ class QuickBookingForm(forms.Form):
     purpose = forms.CharField(max_length=1000)
     project = forms.CharField(max_length=400)
     hostname = forms.CharField(required=False, max_length=400)
+    global_cloud_config = forms.CharField(widget=forms.Textarea, required=False)
 
     installer = forms.ModelChoiceField(queryset=Installer.objects.all(), required=False)
     scenario = forms.ModelChoiceField(queryset=Scenario.objects.all(), required=False)

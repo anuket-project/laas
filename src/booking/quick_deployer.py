@@ -9,6 +9,7 @@
 
 
 import json
+import yaml
 from django.db.models import Q
 from django.db import transaction
 from datetime import timedelta
@@ -18,7 +19,6 @@ from account.models import Lab, UserProfile
 
 from resource_inventory.models import (
     ResourceTemplate,
-    Installer,
     Image,
     OPNFVRole,
     OPNFVConfig,
@@ -27,6 +27,7 @@ from resource_inventory.models import (
     NetworkConnection,
     InterfaceConfiguration,
     Network,
+    CloudInitFile,
 )
 from resource_inventory.resource_manager import ResourceManager
 from resource_inventory.pdf_templater import PDFTemplater
@@ -61,7 +62,7 @@ def parse_resource_field(resource_json):
     return lab, template
 
 
-def update_template(old_template, image, hostname, user):
+def update_template(old_template, image, hostname, user, global_cloud_config=None):
     """
     Duplicate a template to the users account and update configured fields.
 
@@ -113,8 +114,16 @@ def update_template(old_template, image, hostname, user):
             image=image_to_set,
             template=template,
             is_head_node=old_config.is_head_node,
-            name=hostname if len(old_template.getConfigs()) == 1 else old_config.name
+            name=hostname if len(old_template.getConfigs()) == 1 else old_config.name,
+            # cloud_init_files=old_config.cloud_init_files.set()
         )
+
+        for file in old_config.cloud_init_files.all():
+            config.cloud_init_files.add(file)
+
+        if global_cloud_config:
+            config.cloud_init_files.add(global_cloud_config)
+            config.save()
 
         for old_iface_config in old_config.interface_configs.all():
             iface_config = InterfaceConfiguration.objects.create(
@@ -170,20 +179,11 @@ def generate_resource_bundle(template):
 
 def check_invariants(**kwargs):
     # TODO: This should really happen in the BookingForm validation methods
-    installer = kwargs['installer']
     image = kwargs['image']
-    scenario = kwargs['scenario']
     lab = kwargs['lab']
     length = kwargs['length']
     # check that image os is compatible with installer
     if image:
-        if installer or scenario:
-            if installer in image.os.sup_installers.all():
-                # if installer not here, we can omit that and not check for scenario
-                if not scenario:
-                    raise ValidationError("An OPNFV Installer needs a scenario to be chosen to work properly")
-                if scenario not in installer.sup_scenarios.all():
-                    raise ValidationError("The chosen installer does not support the chosen scenario")
         if image.from_lab != lab:
             raise ValidationError("The chosen image is not available at the chosen hosting lab")
         # TODO
@@ -200,9 +200,21 @@ def create_from_form(form, request):
     Parse data from QuickBookingForm to create booking
     """
     resource_field = form.cleaned_data['filter_field']
+    # users_field = form.cleaned_data['users']
+    hostname = 'opnfv_host' if not form.cleaned_data['hostname'] else form.cleaned_data['hostname']
+
+    global_cloud_config = None if not form.cleaned_data['global_cloud_config'] else form.cleaned_data['global_cloud_config']
+
+    if global_cloud_config:
+        form.cleaned_data['global_cloud_config'] = create_ci_file(global_cloud_config)
+
+    # image = form.cleaned_data['image']
+    # scenario = form.cleaned_data['scenario']
+    # installer = form.cleaned_data['installer']
 
     lab, resource_template = parse_resource_field(resource_field)
     data = form.cleaned_data
+    data['hostname'] = hostname
     data['lab'] = lab
     data['resource_template'] = resource_template
     data['owner'] = request.user
@@ -232,7 +244,24 @@ def create_from_API(body, user):
     data['lab'] = data['resource_template'].lab
     data['owner'] = user
 
+    if 'global_cloud_config' in data.keys():
+        data['global_cloud_config'] = CloudInitFile.objects.get(id=data['global_cloud_config'])
+
     return _create_booking(data)
+
+
+def create_ci_file(data: str) -> CloudInitFile:
+    try:
+        d = yaml.load(data)
+        if not (type(d) is dict):
+            raise Exception("CI file was valid yaml but was not a dict")
+    except Exception:
+        raise ValidationError("The provided Cloud Config is not valid yaml, please refer to the Cloud Init documentation for expected structure")
+    print("about to create global cloud config")
+    config = CloudInitFile.create(text=data, priority=CloudInitFile.objects.count())
+    print("made global cloud config")
+
+    return config
 
 
 @transaction.atomic
@@ -246,8 +275,11 @@ def _create_booking(data):
         raise PermissionError("You do not have permission to have more than 3 bookings at a time.")
 
     ResourceManager.getInstance().templateIsReservable(data['resource_template'])
-    data['resource_template'] = update_template(data['resource_template'], data['image'], 'opnfv_host' if not data['hostname'] else data['hostname'], data['owner'])
-    resource_bundle = generate_resource_bundle(data['resource_template'])
+
+    resource_template = update_template(data['resource_template'], data['image'], data['hostname'], data['owner'], global_cloud_config=data['global_cloud_config'])
+
+    # generate resource bundle
+    resource_bundle = generate_resource_bundle(resource_template)
 
     # generate booking
     booking = Booking.objects.create(
@@ -263,7 +295,7 @@ def _create_booking(data):
 
     booking.pdf = PDFTemplater.makePDF(booking)
 
-    for collaborator in data['users']:  # list of UserProfiles
+    for collaborator in data['users']:   # list of Users (not UserProfile)
         booking.collaborators.add(collaborator.user)
 
     booking.save()
@@ -284,23 +316,14 @@ def drop_filter(user):
     that installer is supported on that image
     """
     installer_filter = {}
-    for image in Image.objects.all():
-        installer_filter[image.id] = {}
-        for installer in image.os.sup_installers.all():
-            installer_filter[image.id][installer.id] = 1
-
     scenario_filter = {}
-    for installer in Installer.objects.all():
-        scenario_filter[installer.id] = {}
-        for scenario in installer.sup_scenarios.all():
-            scenario_filter[installer.id][scenario.id] = 1
 
     images = Image.objects.filter(Q(public=True) | Q(owner=user))
     image_filter = {}
     for image in images:
         image_filter[image.id] = {
             'lab': 'lab_' + str(image.from_lab.lab_user.id),
-            'host_profile': str(image.host_type.id),
+            'architecture': str(image.architecture),
             'name': image.name
         }
 
@@ -308,7 +331,7 @@ def drop_filter(user):
     templates = ResourceTemplate.objects.filter(Q(public=True) | Q(owner=user))
     for rt in templates:
         profiles = [conf.profile for conf in rt.getConfigs()]
-        resource_filter["resource_" + str(rt.id)] = [str(p.id) for p in profiles]
+        resource_filter["resource_" + str(rt.id)] = [str(p.architecture) for p in profiles]
 
     return {
         'installer_filter': json.dumps(installer_filter),

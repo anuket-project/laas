@@ -7,7 +7,7 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import (ObjectDoesNotExist, MultipleObjectsReturned)
 
 
 class AbstractModelQuery():
@@ -38,7 +38,15 @@ class AbstractModelQuery():
 
     @classmethod
     def get(cls, *args, **kwargs):
+        """
+        Gets a single matching resource
+        Throws ObjectDoesNotExist if none found matching, or MultipleObjectsReturned if
+        the query does not narrow to a single object
+        """
         try:
+            ls = cls.filter(*args, **kwargs)
+            if len(ls) > 1:
+                raise MultipleObjectsReturned()
             return cls.filter(*args, **kwargs)[0]
         except IndexError:
             raise ObjectDoesNotExist()

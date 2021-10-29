@@ -39,6 +39,8 @@ class Booking(models.Model):
     pdf = models.TextField(blank=True, default="")
     idf = models.TextField(blank=True, default="")
 
+    complete = models.BooleanField(default=False)
+
     class Meta:
         db_table = 'booking'
 
