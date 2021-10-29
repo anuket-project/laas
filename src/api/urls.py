@@ -46,13 +46,6 @@ from api.views import (
     lab_user,
     GenerateTokenView,
     analytics_job,
-    resource_ci_metadata,
-    resource_ci_userdata,
-    resource_ci_userdata_directory,
-    all_images,
-    all_opsyss,
-    single_image,
-    single_opsys,
     user_bookings,
     specific_booking,
     extend_booking,
@@ -61,6 +54,14 @@ from api.views import (
     all_users,
     images_for_template,
     available_templates,
+    resource_ci_metadata,
+    resource_ci_userdata,
+    resource_ci_userdata_directory,
+    all_images,
+    all_opsyss,
+    single_image,
+    single_opsys,
+    create_ci_file,
 )
 
 urlpatterns = [
@@ -95,6 +96,8 @@ urlpatterns = [
 
     path('resource_inventory/availableTemplates', available_templates),
     path('resource_inventory/<int:template_id>/images', images_for_template),
+
+    path('resource_inventory/cloud/create', create_ci_file),
 
     path('users', all_users),
     path('labs', list_labs),

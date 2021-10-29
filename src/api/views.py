@@ -606,6 +606,25 @@ def all_users(request):
     return JsonResponse(users, safe=False)
 
 
+def create_ci_file(request):
+    token = auth_and_log(request, 'booking/makeCloudConfig')
+
+    if isinstance(token, HttpResponse):
+        return token
+
+    try:
+        cconf = request.body
+        d = yaml.load(cconf)
+        if not (type(d) is dict):
+            raise Exception()
+
+        cconf = CloudInitFile.create(text=cconf, priority=CloudInitFile.objects.count())
+
+        return JsonResponse({"id": cconf.id})
+    except Exception:
+        return JsonResponse({"error": "Provided config file was not valid yaml or was not a dict at the top level"})
+
+
 """
 Lab API Views
 """
