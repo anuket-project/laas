@@ -217,9 +217,9 @@ RABBITMQ_URL = 'rabbitmq'
 RABBITMQ_DEFAULT_USER = os.environ['RABBITMQ_DEFAULT_USER']
 RABBITMQ_DEFAULT_PASS = os.environ['RABBITMQ_DEFAULT_PASS']
 
-BROKER_URL = 'amqp://' + RABBITMQ_DEFAULT_USER + ':' + RABBITMQ_DEFAULT_PASS + '@rabbitmq:5672//'
+CELERY_BROKER_URL = 'amqp://' + RABBITMQ_DEFAULT_USER + ':' + RABBITMQ_DEFAULT_PASS + '@rabbitmq:5672//'
 
-CELERYBEAT_SCHEDULE = {
+CELERY_BEAT_SCHEDULE = {
     'booking_poll': {
         'task': 'dashboard.tasks.booking_poll',
         'schedule': timedelta(minutes=1)
