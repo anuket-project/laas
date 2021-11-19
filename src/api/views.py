@@ -325,7 +325,7 @@ def resource_ci_userdata_directory(request, lab_name="", job_id="", resource_id=
 
     for f in resource.config.cloud_init_files.order_by("priority").all():
         try:
-            other_dict = yaml.load(f.text)
+            other_dict = yaml.safe_load(f.text)
             if not (type(d) is dict):
                 raise Exception("CI file was valid yaml but was not a dict")
 
