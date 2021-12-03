@@ -502,7 +502,7 @@ class GeneratedCloudConfig(models.Model):
         return main_dict
 
     def serialize(self) -> str:
-        return yaml.dump(self._to_dict())
+        return yaml.dump(self._to_dict(), width=float("inf"))
 
 
 class APILog(models.Model):
