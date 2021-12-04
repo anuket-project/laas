@@ -157,6 +157,7 @@ class CloudInitFile(models.Model):
 
     # higher priority is applied later, so "on top" of existing files
     priority = models.IntegerField()
+    generated = models.BooleanField(default=False)
 
     @classmethod
     def merge_strategy(cls):

@@ -295,7 +295,7 @@ def resource_ci_userdata(request, lab_name="", job_id="", resource_id="", file_i
         "datasource_list": ["None"],
     }
 
-    return HttpResponse(yaml.dump(cloud_dict), status=200)
+    return HttpResponse(yaml.dump(cloud_dict, width=float("inf")), status=200)
 
 
 @csrf_exempt
@@ -310,9 +310,9 @@ def resource_ci_userdata_directory(request, lab_name="", job_id="", resource_id=
     files = resource.config.cloud_init_files
     files = [{"id": file.id, "priority": file.priority} for file in files.order_by("priority").all()]
 
-    d = {
-        'merge_failures': []
-    }
+    d = {}
+
+    merge_failures = []
 
     merger = Merger(
         [
@@ -335,9 +335,12 @@ def resource_ci_userdata_directory(request, lab_name="", job_id="", resource_id=
             print("Failed to merge file in, as it had invalid content:", f.id)
             print("File text was:")
             print(f.text)
-            d['merge_failures'].append({f.id: str(e)})
+            merge_failures.append({f.id: str(e)})
 
-    file = CloudInitFile.create(text=yaml.dump(d), priority=0)
+    if len(merge_failures) > 0:
+        d['merge_failures'] = merge_failures
+
+    file = CloudInitFile.create(text=yaml.dump(d, width=float("inf")), priority=0)
 
     return HttpResponse(json.dumps([{"id": file.id, "priority": file.priority}]), status=200)
 
