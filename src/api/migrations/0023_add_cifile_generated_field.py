@@ -2,7 +2,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('api', '0018_cloudinitfile'),
+        ('api', '0022_merge_20211102_2136'),
     ]
 
     operations = [
