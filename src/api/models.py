@@ -20,6 +20,7 @@ from django.utils import timezone
 import json
 import uuid
 import yaml
+import re
 
 from booking.models import Booking
 from resource_inventory.models import (
@@ -362,7 +363,8 @@ class GeneratedCloudConfig(models.Model):
 
     def _normalize_username(self, username: str) -> str:
         # TODO: make usernames posix compliant
-        return username
+        s = re.sub(r'\W+', '', username)
+        return s
 
     def _get_ssh_string(self, username: str) -> str:
         user = User.objects.get(username=username)
