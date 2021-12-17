@@ -82,6 +82,8 @@ def update_template(old_template, image, hostname, user, global_cloud_config=Non
         description=old_template.description,
         public=False,
         temporary=True,
+        private_vlan_pool=old_template.private_vlan_pool,
+        public_vlan_pool=old_template.public_vlan_pool,
         copy_of=old_template
     )
 
