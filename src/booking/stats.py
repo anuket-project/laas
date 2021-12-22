@@ -94,6 +94,7 @@ class StatisticsManager(object):
         proj_count = sorted(Counter(projects).items(), key=lambda x: x[1])
 
         project_keys = [proj[0] for proj in proj_count[-5:]]
+        project_keys = ['None' if x is None else x for x in project_keys]
         project_counts = [proj[1] for proj in proj_count[-5:]]
 
         resources = {key: [x, value] for key, value in profiles.items()}
