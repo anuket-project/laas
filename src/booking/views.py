@@ -24,7 +24,7 @@ from booking.models import Booking
 from booking.stats import StatisticsManager
 from booking.forms import HostReImageForm
 from workflow.forms import FormUtils
-from api.models import JobFactory
+from api.models import JobFactory, GeneratedCloudConfig
 from workflow.views import login
 from booking.forms import QuickBookingForm
 from booking.quick_deployer import create_from_form, drop_filter
@@ -167,7 +167,8 @@ def booking_detail_view(request, booking_id):
         'booking': booking,
         'pdf': booking.pdf,
         'user_id': user.id,
-        'image_mapping': build_image_mapping(booking.lab, user)
+        'image_mapping': build_image_mapping(booking.lab, user),
+        'posix_username': GeneratedCloudConfig._normalize_username(None, user.username)
     }
 
     return render(
