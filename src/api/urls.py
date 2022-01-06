@@ -62,6 +62,7 @@ from api.views import (
     single_image,
     single_opsys,
     create_ci_file,
+    booking_details,
 )
 
 urlpatterns = [
@@ -93,6 +94,7 @@ urlpatterns = [
     path('booking/<int:booking_id>', specific_booking),
     path('booking/<int:booking_id>/extendBooking/<int:days>', extend_booking),
     path('booking/makeBooking', make_booking),
+    path('booking/<int:booking_id>/details', booking_details),
 
     path('resource_inventory/availableTemplates', available_templates),
     path('resource_inventory/<int:template_id>/images', images_for_template),

@@ -33,7 +33,7 @@ from api.forms import DowntimeForm
 from account.models import UserProfile, Lab
 from booking.models import Booking
 from booking.quick_deployer import create_from_API
-from api.models import LabManagerTracker, get_task, Job, AutomationAPIManager, APILog
+from api.models import LabManagerTracker, get_task, Job, AutomationAPIManager, APILog, GeneratedCloudConfig
 from notifier.manager import NotificationHandler
 from analytics.models import ActiveVPNUser
 from resource_inventory.models import (
@@ -654,3 +654,103 @@ def list_labs(request):
         lab_list.append(lab_info)
 
     return JsonResponse(lab_list, safe=False)
+
+
+"""
+Booking Details API Views
+"""
+
+
+def booking_details(request, booking_id=""):
+    token = auth_and_log(request, 'booking/{}/details'.format(booking_id))
+
+    if isinstance(token, HttpResponse):
+        return token
+
+    booking = get_object_or_404(Booking, pk=booking_id, owner=token.user)
+
+    # overview
+    overview = {
+        'username': GeneratedCloudConfig._normalize_username(None, str(token.user)),
+        'purpose': booking.purpose,
+        'project': booking.project,
+        'start_time': booking.start,
+        'end_time': booking.end,
+        'pod_definitions': booking.resource.template,
+        'lab': booking.lab
+    }
+
+    # deployment progress
+    task_list = []
+    for task in booking.job.get_tasklist():
+        task_info = {
+            'name': str(task),
+            'status': 'DONE',
+            'lab_response': 'No response provided (yet)'
+        }
+        if task.status < 100:
+            task_info['status'] = 'PENDING'
+        elif task.status < 200:
+            task_info['status'] = 'IN PROGRESS'
+
+        if task.message:
+            if task.type_str == "Access Task" and request.user.id != task.config.user.id:
+                task_info['lab_response'] = '--secret--'
+            else:
+                task_info['lab_response'] = str(task.message)
+        task_list.append(task_info)
+
+    # pods
+    pod_list = []
+    for host in booking.resource.get_resources():
+        pod_info = {
+            'hostname': host.config.name,
+            'machine': host.name,
+            'role': '',
+            'is_headnode': host.config.is_head_node,
+            'image': host.config.image,
+            'ram': {'amount': str(host.profile.ramprofile.first().amount) + 'G', 'channels': host.profile.ramprofile.first().channels},
+            'cpu': {'arch': host.profile.cpuprofile.first().architecture, 'cores': host.profile.cpuprofile.first().cores, 'sockets': host.profile.cpuprofile.first().cpus},
+            'disk': {'size': str(host.profile.storageprofile.first().size) + 'GiB', 'type': host.profile.storageprofile.first().media_type, 'mount_point': host.profile.storageprofile.first().name},
+            'interfaces': [],
+        }
+        try:
+            pod_info['role'] = host.template.opnfvRole
+        except Exception:
+            pass
+        for intprof in host.profile.interfaceprofile.all():
+            int_info = {
+                'name': intprof.name,
+                'speed': intprof.speed
+            }
+            pod_info['interfaces'].append(int_info)
+        pod_list.append(pod_info)
+
+    # diagnostic info
+    diagnostic_info = {
+        'job_id': booking.job.id,
+        'ci_files': '',
+        'pods': []
+    }
+    for host in booking.resource.get_resources():
+        pod = {
+            'host': host.name,
+            'configs': [],
+
+        }
+        for ci_file in host.config.cloud_init_files.all():
+            ci_info = {
+                'id': ci_file.id,
+                'text': ci_file.text
+            }
+            pod['configs'].append(ci_info)
+        diagnostic_info['pods'].append(pod)
+
+    details = {
+        'overview': overview,
+        'deployment_progress': task_list,
+        'pods': pod_list,
+        'diagnostic_info': diagnostic_info,
+        'pdf': booking.pdf
+    }
+    return JsonResponse(str(details), safe=False)
