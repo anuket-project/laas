@@ -418,9 +418,12 @@ class MultipleSelectFilterWidget {
             cnt += required_resources[resource];
         }
 
-        if (cnt > 1 && hostname && image) {
+        if (cnt > 1 && hostname) {
             hostname.readOnly = true;
-            image.disabled = true;
+            // we only disable hostname modification because there is no sane case where you want all hosts to have the same hostname
+            // image is still allowed to be set across all hosts, but is filtered to the set of images that are commonly applicable still
+            // if no images exist that would apply to all hosts in a pod, then the user is restricted to not setting an image
+            // and the default image for each host is used
         }
 
         this.updateAvailibility();
