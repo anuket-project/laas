@@ -112,7 +112,7 @@
                     <td>{{booking.purpose}}</td>
                 </tr>
                 <tr class="row3">
-                    <td>collaborator{% booking.collaborators.all.count|pluralize:"s" %}:</td>
+                    <td>collaborators:</td>
                     <td></td>
                 </tr>
                 {% for user in booking.collaborators.all %}
