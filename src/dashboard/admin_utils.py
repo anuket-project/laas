@@ -27,6 +27,7 @@ from resource_inventory.models import (
 )
 
 import json
+import yaml
 import sys
 import inspect
 import pydoc
@@ -441,6 +442,125 @@ def print_dict_pretty(a_dict):
     """
 
     print(json.dumps(a_dict, sort_keys=True, indent=4))
+
+
+def import_host(filenames):
+    """
+    Imports host from an array of converted inspection files and if needed creates a new profile for the host.
+    NOTE: CONVERT INSPECTION FILES USING convert_inspect_results(["file", "file"])
+    (original file names not including "-import.yaml" i.e. hpe44) AND FILL IN <NEEDED FIELDS> BEFORE THIS
+    @filenames: array of host import file names to import
+    """
+
+    for filename in filenames:
+
+        # open import file
+        file = open("dashboard/" + filename + "-import.yaml", "r")
+        data = yaml.safe_load(file)
+
+        # if a new profile is needed create one and a matching template
+        if (data["new_profile"]):
+            add_profile(data)
+            print("Profile: " + data["name"] + " created!")
+            make_default_template(
+                ResourceProfile.objects.get(name=data["name"]),
+                Image.objects.get(lab_id=data["image"]).id,
+                None,
+                None,
+                False,
+                False,
+                data["owner"],
+                "unh_iol",
+                True,
+                False,
+                data["temp_desc"]
+            )
+
+            print(" Template: " + data["temp_name"] + " created!")
+
+        # add the server
+        add_server(
+            ResourceProfile.objects.get(name=data["name"]),
+            data["hostname"],
+            data["interfaces"],
+            data["lab"],
+            data["vendor"],
+            data["model"]
+        )
+
+        print(data["hostname"] + " imported!")
+
+
+def convert_inspect_results(files):
+    """
+    Converts an array of inspection result files into templates (filename-import.yaml) to be filled out for importing the servers into the dashboard
+    @files an array of file names (not including the file type. i.e hpe44). Default: []
+    """
+    for filename in files:
+        # open host inspect file
+        file = open("dashboard/" + filename + ".yaml")
+        output = open("dashboard/" + filename + "-import.yaml", "w")
+        data = json.load(file)
+
+        # gather data about disks
+        disk_data = {}
+        for i in data["disk"]:
+
+            # don't include loops in disks
+            if "loop" not in i:
+                disk_data[i["name"]] = {
+                    "capacity": i["size"][:-3],
+                    "media_type": "<\"SSD\" or \"HDD\">",
+                    "interface": "<\"sata\", \"sas\", \"ssd\", \"nvme\", \"scsi\", or \"iscsi\">",
+                }
+
+        # gather interface data
+        interface_data = {}
+        for i in data["interfaces"]:
+            interface_data[data["interfaces"][i]["name"]] = {
+                "speed": data["interfaces"][i]["speed"],
+                "nic_type": "<\"onboard\" or \"pcie\">",
+                "order": "<order in switch>",
+                "mac_address": data["interfaces"][i]["mac"],
+                "bus_addr": data["interfaces"][i]["busaddr"],
+            }
+
+        # gather cpu data
+        cpu_data = {
+            "cores": data["cpu"]["cores"],
+            "architecture": data["cpu"]["arch"],
+            "cpus": data["cpu"]["cpus"],
+            "cflags": "<cflags string>",
+        }
+
+        # gather ram data
+        ram_data = {
+            "amount": data["memory"][:-1],
+            "channels": "<int of ram channels used>",
+        }
+
+        # assemble data for host import file
+        import_data = {
+            "new_profile": "<True or False> (Set to True to create a new profile for the host's type)",
+            "name": "<profile name> (Used to set the profile of a host and for creating a new profile)",
+            "description": "<profile description>",
+            "labs": "<labs using profile>",
+            "temp_name": "<Template name>",
+            "temp_desc": "<template description>",
+            "image": "<image lab_id>",
+            "owner": "<template owner>",
+            "hostname": data["hostname"],
+            "lab": "<lab server is in> (i.e. \"unh_iol\")",
+            "disks": disk_data,
+            "interfaces": interface_data,
+            "cpus": cpu_data,
+            "ram": ram_data,
+            "vendor": "<host vendor>",
+            "model": "<host model>",
+        }
+
+        # export data as yaml
+        yaml.dump(import_data, output)
 
 
 def add_profile(data):
