@@ -116,7 +116,7 @@ class ValidBookingCreatesValidJob(TestCase):
         count = hostprofile.interfaceprofile.all().count()
         for i in range(count):
             network_struct.append([])
-        while(nets):
+        while (nets):
             index = len(nets) % count
             network_struct[index].append(nets.pop())
 

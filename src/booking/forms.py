@@ -19,6 +19,7 @@ from booking.lib import get_user_items, get_user_field_opts
 
 
 class QuickBookingForm(forms.Form):
+    # Django Form class for Express Booking
     purpose = forms.CharField(max_length=1000)
     project = forms.CharField(max_length=400)
     hostname = forms.CharField(required=False, max_length=400)

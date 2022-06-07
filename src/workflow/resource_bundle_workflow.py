@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 
 from typing import List
 
+import re
 import json
 from xml.dom import minidom
 import traceback
@@ -172,7 +173,8 @@ class Define_Hardware(WorkflowStep):
         except Exception as e:
             print("Caught exception: " + str(e))
             traceback.print_exc()
-            self.set_invalid(str(e))
+            self.form = None
+            self.set_invalid("Please select a lab.")
 
 
 class Define_Software(WorkflowStep):
@@ -208,12 +210,15 @@ class Define_Software(WorkflowStep):
         hosts_initial = []
         configs = self.repo_get(self.repo.RESOURCE_TEMPLATE_MODELS, {}).get("resources")
         if configs:
-            for config in configs:
+            for i in range(len(configs)):
+                default_name = 'laas-node'
+                if i > 0:
+                    default_name = default_name + "-" + str(i + 1)
                 hosts_initial.append({
-                    'host_id': config.id,
-                    'host_name': config.name,
-                    'headnode': config.is_head_node,
-                    'image': config.image
+                    'host_id': configs[i].id,
+                    'host_name': default_name,
+                    'headnode': False,
+                    'image': configs[i].image
                 })
         else:
             for host in hostlist:
@@ -248,9 +253,6 @@ class Define_Software(WorkflowStep):
 
     def post(self, post_data, user):
         hosts = self.get_host_list()
-
-        # TODO: fix headnode in form, currently doesn't return a selected one
-        # models['headnode_index'] = post_data.get("headnode", 1)
         formset = self.create_hostformset(hosts, data=post_data)
         has_headnode = False
         if formset.is_valid():
@@ -264,6 +266,17 @@ class Define_Software(WorkflowStep):
                 host.is_head_node = headnode
                 host.name = hostname
                 host.image = image
+                # RFC921: They must start with a letter, end with a letter or digit and have only letters or digits or hyphen as interior characters
+                if bool(re.match("^[A-Za-z0-9-]*$", hostname)) is False:
+                    self.set_invalid("Device names must only contain alphanumeric characters and dashes.")
+                    return
+                if not hostname[0].isalpha() or not hostname[-1].isalnum():
+                    self.set_invalid("Device names must start with a letter and end with a letter or digit.")
+                    return
+                for j in range(i):
+                    if j != i and hostname == hosts[j].name:
+                        self.set_invalid("Devices must have unique names. Please try again.")
+                        return
                 host.save()
 
             if not has_headnode and len(hosts) > 0:
@@ -272,7 +285,7 @@ class Define_Software(WorkflowStep):
 
             self.set_valid("Completed")
         else:
-            self.set_invalid("Please complete all fields")
+            self.set_invalid("Please complete all fields.")
 
 
 class Define_Nets(WorkflowStep):
@@ -598,4 +611,4 @@ class Resource_Meta_Info(WorkflowStep):
             self.repo_put(self.repo.CONFIRMATION, confirm)
             self.set_valid("Step Completed")
         else:
-            self.set_invalid("Please correct the fields highlighted in red to continue")
+            self.set_invalid("Please complete all fields.")

@@ -43,15 +43,9 @@
     {
         select.value = "True";
         submitStepForm();
+        pop_workflow();
     }
     function formcancel()
-    {
-        select.value = "False";
-        submitStepForm();
-    }
-
-    var confirmed = {{confirm_succeeded|default:"false"}};
-    if( confirmed )
     {
         pop_workflow();
     }

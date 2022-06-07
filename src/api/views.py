@@ -430,7 +430,11 @@ def auth_and_log(request, endpoint):
         token = Token.objects.get(key=user_token)
     except Token.DoesNotExist:
         token = None
-        response = HttpResponse('Unauthorized', status=401)
+        # Added logic to detect malformed token
+        if len(str(user_token)) != 40:
+            response = HttpResponse('Malformed Token', status=401)
+        else:
+            response = HttpResponse('Unauthorized', status=401)
 
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:

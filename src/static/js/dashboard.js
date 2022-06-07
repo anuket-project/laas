@@ -41,7 +41,7 @@ function update_side_buttons(meta) {
     const step = meta.active;
     const page_count = meta.steps.length;
 
-    const back_button = document.getElementById("gob");
+    const back_button = document.getElementById("workflow-nav-back");
     if (step == 0) {
         back_button.classList.add("disabled");
         back_button.disabled = true;
@@ -50,7 +50,7 @@ function update_side_buttons(meta) {
         back_button.disabled = false;
     }
 
-    const forward_btn = document.getElementById("gof");
+    const forward_btn = document.getElementById("workflow-nav-next");
     if (step == page_count - 1) {
         forward_btn.classList.add("disabled");
         forward_btn.disabled = true;
@@ -120,9 +120,18 @@ function update_description(title, desc) {
 }
 
 function update_message(message, stepstatus) {
+    let color_code;
+    if (stepstatus == 'valid') {
+        color_code = 'text-success';
+    } else if (stepstatus == 'invalid') {
+        color_code = 'text-danger';
+    } else {
+        color_code = 'none';
+    }
     document.getElementById("view_message").innerText = message;
     document.getElementById("view_message").className = "step_message";
     document.getElementById("view_message").classList.add("message_" + stepstatus);
+    document.getElementById("view_message").classList.add(color_code);
 }
 
 function submitStepForm(next_step = "current"){
@@ -795,6 +804,7 @@ class NetworkStep {
         tagged.type = "radio";
         tagged.name = "tagged";
         tagged.value = "True";
+        tagged.checked = "True";
         form.appendChild(tagged);
         form.appendChild(document.createTextNode(" Tagged"));
         form.appendChild(document.createElement("br"));

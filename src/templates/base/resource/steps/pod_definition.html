@@ -39,27 +39,32 @@
 </form>
 <script>
     //gather context data
-    let debug = false;
-    {% if debug %}
-    debug = true;
-    {% endif %}
+    try {
+        let debug = false;
+        {% if debug %}
+        debug = true;
+        {% endif %}
 
-    const False = false;
-    const True = true;
+        const False = false;
+        const True = true;
 
-    let resources = {{resources|safe}};
-    let networks = {{networks|safe}};
+        let resources = {{resources|safe}};
+        let networks = {{networks|safe}};
 
-    network_step = new NetworkStep(
-        debug,
-        resources,
-        networks,
-        document.getElementById('graphContainer'),
-        document.getElementById('outlineContainer'),
-        document.getElementById('toolbarContainer'),
-        document.getElementById('sidebarContainer')
-    );
-    form_submission_callbacks.push(() => network_step.prepareForm());
+        network_step = new NetworkStep(
+            debug,
+            resources,
+            networks,
+            document.getElementById('graphContainer'),
+            document.getElementById('outlineContainer'),
+            document.getElementById('toolbarContainer'),
+            document.getElementById('sidebarContainer')
+        );
+        form_submission_callbacks.push(() => network_step.prepareForm());
+    } catch (e) {
+        console.log(e)
+    }
+
 </script>
 {% endblock content %}
 {% block onleave %}

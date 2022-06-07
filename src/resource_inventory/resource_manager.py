@@ -176,7 +176,7 @@ class ResourceManager:
         vlan_manager = template.lab.vlan_manager
         for net_name, vlan_id in vlans.items():
             net = Network.objects.get(name=net_name, bundle=template)
-            if(net.is_public):
+            if (net.is_public):
                 vlan_manager.release_public_vlan(vlan_id)
             else:
                 vlan_manager.release_vlans(vlan_id)
