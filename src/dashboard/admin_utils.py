@@ -27,9 +27,11 @@ from resource_inventory.models import (
 )
 
 import json
+import yaml
 import sys
 import inspect
 import pydoc
+import csv
 
 from django.contrib.auth.models import User
 
@@ -43,9 +45,7 @@ from resource_inventory.pdf_templater import PDFTemplater
 
 from booking.quick_deployer import update_template
 
-from datetime import timedelta
-
-from django.utils import timezone
+from datetime import timedelta, date, datetime, timezone
 
 from booking.models import Booking
 from notifier.manager import NotificationHandler
@@ -225,6 +225,99 @@ def get_info(host_labid, lab_username):
     return info
 
 
+class CumulativeData:
+    use_days = 0
+    count_bookings = 0
+    count_extensions = 0
+
+    def __init__(self, file_writer):
+        self.file_writer = file_writer
+
+    def account(self, booking, usage_days):
+        self.count_bookings += 1
+        self.count_extensions += booking.ext_count
+        self.use_days += usage_days
+
+    def write_cumulative(self):
+        self.file_writer.writerow([])
+        self.file_writer.writerow([])
+        self.file_writer.writerow(['Lab Use Days', 'Count of Bookings', 'Total Extensions Used'])
+        self.file_writer.writerow([self.use_days, self.count_bookings, (self.count_bookings * 2) - self.count_extensions])
+
+
+def get_years_booking_data(start_year=None, end_year=None):
+    """
+    Outputs yearly booking information from the past 'start_year' years (default: current year)
+    until the last day of the end year (default current year) as a csv file.
+    """
+    if start_year is None and end_year is None:
+        start = datetime.combine(date(datetime.now().year, 1, 1), datetime.min.time()).replace(tzinfo=timezone.utc)
+        end = datetime.combine(date(start.year + 1, 1, 1), datetime.min.time()).replace(tzinfo=timezone.utc)
+    elif end_year is None:
+        start = datetime.combine(date(start_year, 1, 1), datetime.min.time()).replace(tzinfo=timezone.utc)
+        end = datetime.combine(date(datetime.now().year, 1, 1), datetime.min.time()).replace(tzinfo=timezone.utc)
+    else:
+        start = datetime.combine(date(start_year, 1, 1), datetime.min.time()).replace(tzinfo=timezone.utc)
+        end = datetime.combine(date(end_year + 1, 1, 1), datetime.min.time()).replace(tzinfo=timezone.utc)
+
+    if (start.year == end.year - 1):
+        file_name = "yearly_booking_data_" + str(start.year) + ".csv"
+    else:
+        file_name = "yearly_booking_data_" + str(start.year) + "-" + str(end.year - 1) + ".csv"
+
+    with open(file_name, "w", newline="") as file:
+        file_writer = csv.writer(file)
+        cumulative_data = CumulativeData(file_writer)
+        file_writer.writerow(
+            [
+                'ID',
+                'Project',
+                'Purpose',
+                'User',
+                'Collaborators',
+                'Extensions Left',
+                'Usage Days',
+                'Start',
+                'End'
+            ]
+        )
+
+        for booking in Booking.objects.filter(start__gte=start, start__lte=end):
+            filtered = False
+            booking_filter = [279]
+            user_filter = ["ParkerBerberian", "ssmith", "ahassick", "sbergeron", "jhodgdon", "rhodgdon", "aburch", "jspewock"]
+            user = booking.owner.username if booking.owner.username is not None else "None"
+
+            for b in booking_filter:
+                if b == booking.id:
+                    filtered = True
+
+            for u in user_filter:
+                if u == user:
+                    filtered = True
+            # trims time delta to the the specified year(s) if between years
+            usage_days = ((end if booking.end > end else booking.end) - (start if booking.start < start else booking.start)).days
+            collaborators = []
+
+            for c in booking.collaborators.all():
+                collaborators.append(c.username)
+
+            if (not filtered):
+                cumulative_data.account(booking, usage_days)
+                file_writer.writerow([
+                    str(booking.id),
+                    str(booking.project),
+                    str(booking.purpose),
+                    str(booking.owner.username),
+                    ','.join(collaborators),
+                    str(booking.ext_count),
+                    str(usage_days),
+                    str(booking.start),
+                    str(booking.end)
+                ])
+        cumulative_data.write_cumulative()
+
+
 def map_cntt_interfaces(labid: str):
     """
     Use this during cntt migrations, call it with a host labid and it will change profiles for this host
@@ -349,6 +442,125 @@ def print_dict_pretty(a_dict):
     """
 
     print(json.dumps(a_dict, sort_keys=True, indent=4))
+
+
+def import_host(filenames):
+    """
+    Imports host from an array of converted inspection files and if needed creates a new profile for the host.
+    NOTE: CONVERT INSPECTION FILES USING convert_inspect_results(["file", "file"])
+    (original file names not including "-import.yaml" i.e. hpe44) AND FILL IN <NEEDED FIELDS> BEFORE THIS
+    @filenames: array of host import file names to import
+    """
+
+    for filename in filenames:
+
+        # open import file
+        file = open("dashboard/" + filename + "-import.yaml", "r")
+        data = yaml.safe_load(file)
+
+        # if a new profile is needed create one and a matching template
+        if (data["new_profile"]):
+            add_profile(data)
+            print("Profile: " + data["name"] + " created!")
+            make_default_template(
+                ResourceProfile.objects.get(name=data["name"]),
+                Image.objects.get(lab_id=data["image"]).id,
+                None,
+                None,
+                False,
+                False,
+                data["owner"],
+                "unh_iol",
+                True,
+                False,
+                data["temp_desc"]
+            )
+
+            print(" Template: " + data["temp_name"] + " created!")
+
+        # add the server
+        add_server(
+            ResourceProfile.objects.get(name=data["name"]),
+            data["hostname"],
+            data["interfaces"],
+            data["lab"],
+            data["vendor"],
+            data["model"]
+        )
+
+        print(data["hostname"] + " imported!")
+
+
+def convert_inspect_results(files):
+    """
+    Converts an array of inspection result files into templates (filename-import.yaml) to be filled out for importing the servers into the dashboard
+    @files an array of file names (not including the file type. i.e hpe44). Default: []
+    """
+    for filename in files:
+        # open host inspect file
+        file = open("dashboard/" + filename + ".yaml")
+        output = open("dashboard/" + filename + "-import.yaml", "w")
+        data = json.load(file)
+
+        # gather data about disks
+        disk_data = {}
+        for i in data["disk"]:
+
+            # don't include loops in disks
+            if "loop" not in i:
+                disk_data[i["name"]] = {
+                    "capacity": i["size"][:-3],
+                    "media_type": "<\"SSD\" or \"HDD\">",
+                    "interface": "<\"sata\", \"sas\", \"ssd\", \"nvme\", \"scsi\", or \"iscsi\">",
+                }
+
+        # gather interface data
+        interface_data = {}
+        for i in data["interfaces"]:
+            interface_data[data["interfaces"][i]["name"]] = {
+                "speed": data["interfaces"][i]["speed"],
+                "nic_type": "<\"onboard\" or \"pcie\">",
+                "order": "<order in switch>",
+                "mac_address": data["interfaces"][i]["mac"],
+                "bus_addr": data["interfaces"][i]["busaddr"],
+            }
+
+        # gather cpu data
+        cpu_data = {
+            "cores": data["cpu"]["cores"],
+            "architecture": data["cpu"]["arch"],
+            "cpus": data["cpu"]["cpus"],
+            "cflags": "<cflags string>",
+        }
+
+        # gather ram data
+        ram_data = {
+            "amount": data["memory"][:-1],
+            "channels": "<int of ram channels used>",
+        }
+
+        # assemble data for host import file
+        import_data = {
+            "new_profile": "<True or False> (Set to True to create a new profile for the host's type)",
+            "name": "<profile name> (Used to set the profile of a host and for creating a new profile)",
+            "description": "<profile description>",
+            "labs": "<labs using profile>",
+            "temp_name": "<Template name>",
+            "temp_desc": "<template description>",
+            "image": "<image lab_id>",
+            "owner": "<template owner>",
+            "hostname": data["hostname"],
+            "lab": "<lab server is in> (i.e. \"unh_iol\")",
+            "disks": disk_data,
+            "interfaces": interface_data,
+            "cpus": cpu_data,
+            "ram": ram_data,
+            "vendor": "<host vendor>",
+            "model": "<host model>",
+        }
+
+        # export data as yaml
+        yaml.dump(import_data, output)
 
 
 def add_profile(data):
