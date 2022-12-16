@@ -48,7 +48,7 @@ class SessionManager():
 
     def add_workflow(self, workflow_type=None, **kwargs):
         repo = Repository()
-        if(len(self.workflows) >= 1):
+        if (len(self.workflows) >= 1):
             defaults = self.workflows[-1].repository.get_child_defaults()
             repo.set_defaults(defaults)
             repo.el[repo.HAS_RESULT] = False

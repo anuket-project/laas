@@ -222,7 +222,7 @@ class ResourceSelectorForm(SearchableSelectAbstractForm):
 
 
 class BookingMetaForm(forms.Form):
-
+    # Django Form class for Book a Pod
     length = forms.IntegerField(
         widget=NumberInput(
             attrs={
@@ -380,7 +380,7 @@ class PodDefinitionForm(forms.Form):
 class ResourceMetaForm(forms.Form):
 
     bundle_name = forms.CharField(label="POD Name")
-    bundle_description = forms.CharField(label="POD Description", widget=forms.Textarea)
+    bundle_description = forms.CharField(label="POD Description", widget=forms.Textarea, max_length=1000)
 
 
 class GenericHostMetaForm(forms.Form):
@@ -400,8 +400,12 @@ class NetworkConfigurationForm(forms.Form):
 
 
 class HostSoftwareDefinitionForm(forms.Form):
-
-    host_name = forms.CharField(max_length=200, disabled=False, required=True)
+    # Django Form class for Design a Pod
+    host_name = forms.CharField(
+        max_length=200,
+        disabled=False,
+        required=True
+    )
     headnode = forms.BooleanField(required=False, widget=forms.HiddenInput)
 
     def __init__(self, *args, **kwargs):
@@ -441,8 +445,8 @@ class ConfirmationForm(forms.Form):
 
     confirm = forms.ChoiceField(
         choices=(
-            (True, "Confirm"),
-            (False, "Cancel")
+            (False, "Cancel"),
+            (True, "Confirm")
         )
     )
 

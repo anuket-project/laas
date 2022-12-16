@@ -326,11 +326,15 @@ class Confirmation_Step(WorkflowStep):
     def get_context(self):
         context = super(Confirmation_Step, self).get_context()
         context['form'] = ConfirmationForm()
-        context['confirmation_info'] = yaml.dump(
-            self.repo_get(self.repo.CONFIRMATION),
-            default_flow_style=False
-        ).strip()
-
+        # Summary of submitted form data shown on the 'confirm' step of the workflow
+        confirm_details = "\nPod:\n  Name: '{name}'\n  Description: '{desc}'\nLab: '{lab}'".format(
+            name=self.repo_get(self.repo.CONFIRMATION)['resource']['name'],
+            desc=self.repo_get(self.repo.CONFIRMATION)['resource']['description'],
+            lab=self.repo_get(self.repo.CONFIRMATION)['template']['lab'])
+        confirm_details += "\nResources:"
+        for i, device in enumerate(self.repo_get(self.repo.RESOURCE_TEMPLATE_MODELS)['resources']):
+            confirm_details += "\n  " + str(device) + ": " + str(self.repo_get(self.repo.CONFIRMATION)['template']['resources'][i]['profile'])
+        context['confirmation_info'] = confirm_details
         if self.valid == WorkflowStepStatus.VALID:
             context["confirm_succeeded"] = "true"
 
