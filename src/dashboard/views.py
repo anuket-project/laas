@@ -19,8 +19,6 @@ import pytz
 from account.models import Lab
 from booking.models import Booking
 
-from resource_inventory.models import Image, ResourceProfile, ResourceQuery
-from workflow.workflow_manager import ManagerTracker
 
 from laas_dashboard import settings
 
@@ -33,17 +31,20 @@ def lab_list_view(request):
 
 
 def lab_detail_view(request, lab_name):
+    # todo - LL Integration
     user = None
     if request.user.is_authenticated:
         user = request.user
 
     lab = get_object_or_404(Lab, name=lab_name)
 
-    images = Image.objects.filter(from_lab=lab).filter(public=True)
-    if user:
-        images = images | Image.objects.filter(from_lab=lab).filter(owner=user)
+    # images = Image.objects.filter(from_lab=lab).filter(public=True)
+    images = []
+    # if user:
+    #     images = images | Image.objects.filter(from_lab=lab).filter(owner=user)
 
-    hosts = ResourceQuery.filter(lab=lab)
+    # hosts = ResourceQuery.filter(lab=lab)
+    hosts = []
 
     return render(
         request,
@@ -51,7 +52,7 @@ def lab_detail_view(request, lab_name):
         {
             'title': "Lab Overview",
             'lab': lab,
-            'hostprofiles': ResourceProfile.objects.filter(labs=lab),
+            # 'hostprofiles': ResourceProfile.objects.filter(labs=lab),
             'images': images,
             'hosts': hosts
         }
@@ -70,7 +71,6 @@ def host_profile_detail_view(request):
 
 
 def landing_view(request):
-    manager = ManagerTracker.managers.get(request.session.get('manager_session'))
     user = request.user
     if not user.is_anonymous:
         bookings = Booking.objects.filter(
@@ -85,7 +85,6 @@ def landing_view(request):
         request,
         'dashboard/landing.html',
         {
-            'manager': manager is not None,
             'title': "Welcome to the Lab as a Service Dashboard",
             'bookings': bookings,
             'LFID': LFID
@@ -98,22 +97,5 @@ class LandingView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(LandingView, self).get_context_data(**kwargs)
-
-        hosts = []
-
-        for host_profile in ResourceProfile.objects.all():
-            name = host_profile.name
-            description = host_profile.description
-            in_labs = host_profile.labs
-
-            interfaces = host_profile.interfaceprofile
-            storage = host_profile.storageprofile
-            cpu = host_profile.cpuprofile
-            ram = host_profile.ramprofile
-
-            host = (name, description, in_labs, interfaces, storage, cpu, ram)
-            hosts.append(host)
-
-        context.update({'hosts': hosts})
 
         return context

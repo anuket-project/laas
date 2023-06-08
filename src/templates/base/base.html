@@ -6,7 +6,6 @@
 
 <!-- Custom CSS -->
 <link href="{% static "css/base.css" %}" rel="stylesheet">
-<script src="/static/js/dashboard.js"></script>
 
 {% endblock %}
 {% block basecontent %}
@@ -101,7 +100,7 @@
     <!-- Page Content -->
     <div class="container-fluid d-flex flex-grow-1 px-0 align-items-start flex-column">
         <div class="row flex-grow-1 w-100 mx-0 align-content-start flex-lg-grow-1">
-            <div class="col-12 col-lg-auto px-0 border-right border-left bg-light" role="navigation">
+            <div class="col-12 col-lg-auto px-0 border-right border-left bg-light z-3" role="navigation">
                 <nav class="navbar navbar-expand-lg border-bottom p-0 w-100 sidebar">
                     <div class="collapse navbar-collapse" id="sidebar">
                         <div class="list-group list-group-flush w-100 ">
@@ -114,63 +113,45 @@
                                 Create <i class="fas fa-angle-down rotate"></i>
                             </a>
                             <div class="collapse" id="createList">
-                                <a href="/booking/quick/" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    Express Booking
-                                </a>
-                                <a href="#" onclick="create_workflow(0)" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                <a href="{% url 'workflow:book_a_pod' %}" onclick="" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
                                     Book a Pod
                                 </a>
-                                <a href="#" onclick="create_workflow(1)" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                <a href="{% url 'workflow:design_a_pod' %}" onclick="" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
                                     Design a Pod
-                                </a>
-                                <a href="#" onclick="create_workflow(2)" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    Create a Snapshot
-                                </a>
-                                <a href="#" onclick="create_workflow(3)" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    Configure Anuket
                                 </a>
                             </div>
                             {% endblock dropDown %}
-                            <a href="{% url 'resource:hosts' %}" class="list-group-item list-group-item-action nav-bg">
+                            <a class="list-group-item list-group-item-action nav-bg" data-toggle="collapse"
+                            href="#accountList" role="button">
+                            Account <i class="fas fa-angle-down rotate"></i>
+                            </a>
+                        <div class="collapse" id="accountList">
+                            <a href="{% url 'account:my-resources' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                My Resources
+                            </a>
+                            <a href="{% url 'account:my-bookings' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                My Bookings
+                            </a>
+                        </div>
+                        <a class="list-group-item list-group-item-action nav-bg" data-toggle="collapse"
+                        href="#labInfo" role="button">
+                        Lab Info <i class="fas fa-angle-down rotate"></i>
+                        </a>
+                        <div class="collapse" id="labInfo">
+                            <a href="" class="list-group-item list-group-item-action nav-bg">
                                 Hosts
                             </a>
-                            {% if user.is_authenticated %}
-                                <a href="{% url 'account:users' %}" class="list-group-item list-group-item-action nav-bg">
-                                    User List
-                                </a>
-                            {% endif %}
                             <a href="{% url 'booking:list' %}" class="list-group-item list-group-item-action nav-bg">
                                 Booking List
                             </a>
-                            <a href="{% url 'booking:stats' %}" class="list-group-item list-group-item-action nav-bg">
-                                Booking Statistics
-                            </a>
-                            <a class="list-group-item list-group-item-action nav-bg" data-toggle="collapse"
-                                href="#accountList" role="button">
-                                Account <i class="fas fa-angle-down rotate"></i>
-                            </a>
-                            <div class="collapse" id="accountList">
-                                <a href="{% url 'account:my-resources' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    My Resources
-                                </a>
-                                <a href="{% url 'account:my-bookings' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    My Bookings
-                                </a>
-                                <a href="{% url 'account:my-images' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    My Snapshots
-                                </a>
-                            </div>
-                            <a href="{% url 'dashboard:all_labs' %}" class="list-group-item list-group-item-action nav-bg">
-                                Lab Info
-                            </a>
-                            <a href="{% url 'notifier:messages' %}" class="list-group-item list-group-item-action nav-bg">
-                                Inbox
-                            </a>
                         </div>
+                        <a href="{% url 'dashboard:all_labs' %}" class="list-group-item list-group-item-action nav-bg">
+                            About Us
+                        </a>
                     </div>
                 </nav>
             </div>
-            <div class="col overflow-auto flex-grow-1 d-flex flex-column h-100">
+            <div class="col flex-grow-1 d-flex flex-column h-100 overflow-control">
                 {% if title %}
                 <div class="row flex-shrink-1">
                     <div class="col-lg-12">

@@ -6,8 +6,3 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-
-from django.contrib import admin
-from analytics.models import ActiveVPNUser
-
-admin.site.register(ActiveVPNUser)

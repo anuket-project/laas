@@ -6,14 +6,3 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-
-
-from django.conf.urls import url
-
-from notifier.views import InboxView, NotificationView
-
-app_name = 'notifier'
-urlpatterns = [
-    url(r'^$', InboxView, name='messages'),
-    url(r'^notification/(?P<notification_id>[0-9]+)/$', NotificationView, name='notifier_single')
-]

@@ -6,15 +6,13 @@
         <div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-3">
             <div class="card h-100">
                 <div class="card-header">
-                    <h3>Booking {{booking.id}}</h3>
+                    <h3>{{booking.purpose}} ({{booking.id}})</h3>
                 </div>
                 <ul class="list-group list-group-flush h-100">
-                    <li class="list-group-item">id: {{booking.id}}</li>
-                    <li class="list-group-item">lab: {{booking.lab}}</li>
-                    <li class="list-group-item">resource: {{booking.resource.template.name}}</li>
-                    <li class="list-group-item">start: {{booking.start}}</li>
-                    <li class="list-group-item">end: {{booking.end}}</li>
-                    <li class="list-group-item">purpose: {{booking.purpose}}</li>
+                    <li class="list-group-item">Lab: {{booking.lab}}</li>
+                    <li class="list-group-item">Project: {{booking.project}}</li>
+                    <li class="list-group-item">Start: {{booking.start}}</li>
+                    <li class="list-group-item">End: {{booking.end}}</li>
                 </ul>
                 <div class="card-footer d-flex">
                     <a class="btn btn-primary ml-auto mr-2" href="/booking/detail/{{booking.id}}/">Details</a>
@@ -41,15 +39,14 @@
         <div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-3">
             <div class="card h-100">
                 <div class="card-header">
-                    <h3>Booking {{booking.id}}</h3>
+                    <h3>{{booking.purpose}} ({{booking.id}})</h3>
                 </div>
                 <ul class="list-group list-group-flush h-100">
-                    <li class="list-group-item">id: {{booking.id}}</li>
-                    <li class="list-group-item">lab: {{booking.lab}}</li>
-                    <li class="list-group-item">resource: {{booking.resource.template.name}}</li>
-                    <li class="list-group-item">start: {{booking.start}}</li>
-                    <li class="list-group-item">end: {{booking.end}}</li>
-                    <li class="list-group-item">purpose: {{booking.purpose}}</li>
+                    <li class="list-group-item">Owner: {{booking.owner}}</li>
+                    <li class="list-group-item">Lab: {{booking.lab}}</li>
+                    <li class="list-group-item">Project: {{booking.project}}</li>
+                    <li class="list-group-item">Start: {{booking.start}}</li>
+                    <li class="list-group-item">End: {{booking.end}}</li>
                 </ul>
                 <div class="card-footer d-flex">
                     <a class="btn btn-primary ml-auto" href="/booking/detail/{{booking.id}}/">Details</a>
@@ -72,17 +69,15 @@
         <div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-3">
             <div class="card h-100">
                 <div class="card-header">
-                    <h3>Booking {{booking.id}}</h3>
+                    <h3>{{booking.purpose}} ({{booking.id}})</h3>
                 </div>
                 <ul class="list-group list-group-flush h-100">
-                    <li class="list-group-item">id: {{booking.id}}</li>
-                    <li class="list-group-item">lab: {{booking.lab}}</li>
-                    <li class="list-group-item">resource: {{booking.resource.template.name}}</li>
-                    <li class="list-group-item">start: {{booking.start}}</li>
-                    <li class="list-group-item">end: {{booking.end}}</li>
-                    <li class="list-group-item">purpose: {{booking.purpose}}</li>
-                    <li class="list-group-item">owner: {{booking.owner.userprofile.email_addr}}</li>
-                </ul>
+                    <li class="list-group-item">Owner: {{booking.owner}}</li>
+                    <li class="list-group-item">Lab: {{booking.lab}}</li>
+                    <li class="list-group-item">Project: {{booking.project}}</li>
+                    <li class="list-group-item">Start: {{booking.start}}</li>
+                    <li class="list-group-item">End: {{booking.end}}</li>
+
                 <div class="card-footer d-flex">
                     <a class="btn btn-primary ml-auto" href="/booking/detail/{{booking.id}}/">Details</a>
                 </div>
@@ -101,7 +96,7 @@
         current_booking_id = booking_id;
     }
 
-    function submit_cancel_form() {
+    async function submit_cancel_form() {
         var ajaxForm = $("#booking_cancel_form");
         var formData = ajaxForm.serialize();
         req = new XMLHttpRequest();
@@ -110,6 +105,8 @@
         req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         req.onerror = function() { alert("problem submitting form"); }
         req.send(formData);
+        await new Promise(r => setTimeout(r, 500)); // Quickest solution I could come up with to give liblaas time to mark it as deleted until we do an api rework
+        location.reload();
     }
 </script>
 

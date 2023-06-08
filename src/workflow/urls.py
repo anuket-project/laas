@@ -9,15 +9,10 @@
 
 
 from django.conf.urls import url
-
-from workflow.views import manager_view, viewport_view, add_workflow, remove_workflow, create_workflow
+from workflow.views import design_a_pod_view, book_a_pod_view
 
 app_name = 'workflow'
 urlpatterns = [
-
-    url(r'^manager/$', manager_view, name='manager'),
-    url(r'^add/$', add_workflow, name='add_workflow'),
-    url(r'^create/$', create_workflow, name='create_workflow'),
-    url(r'^pop/$', remove_workflow, name='remove_workflow'),
-    url(r'^$', viewport_view, name='viewport')
+    url(r'^design/$', design_a_pod_view, name='design_a_pod'),
+    url(r'^book/$', book_a_pod_view, name='book_a_pod'),
 ]

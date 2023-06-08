@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load bootstrap4 %}
+{% block extrahead %}
+<script src="/static/js/workflows/common-models.js"></script>
+<script src="/static/js/workflows/workflow.js"></script>
+<script src="/static/js/workflows/book-a-pod.js"></script>
+{% endblock %}
+{% block content %}
+<body>
+<div class="workflow-container">
+    <div id="prev" class="row w-100 m-0">
+        <button class="btn btn-workflow-nav stretched-link m-0 p-0 mt-3" onclick="workflow.goPrev()" id="workflow-prev">
+          <div class="arrow arrow-up"></div>
+        </button>
+      </div>
+    
+      <div id="next" class="row w-100 m-0">
+        <button class="btn btn-workflow-nav stretched-link m-0 p-0 mb-3" onclick="workflow.goNext()" id="workflow-next">
+          <div class="arrow arrow-down"></div>
+        </button>
+      </div>
+
+    <div class="scroll-container w-100 h-100 p-0">
+        <div class="scroll-area pt-5 mx-5" id="select_template">
+            <h1 class="mt-4"><u>Book a Pod</u></h1>
+            <h2 class="mt-4 mb-3">Select Host Or Template:</h2>
+            <div class="card-deck align-items-center">
+      
+              <div class="col-12" id="template_list">
+      
+                <div class="my-5" id="select_template_tab_content">
+                    <ul id="default_templates_list" class="p-0 m-0 row">
+                    </ul>
+                </div>
+      
+              </div>
+            </div>
+        </div>
+
+        <div class="scroll-area pt-5 mx-5" id="cloud_init">
+            <h2 class="mt-4 mb-3">Global Cloud Init Override</h2>
+            <div class="d-flex align-items-center">
+              <textarea name="ci-textarea" id="ci-textarea" rows="15" class="w-50"></textarea>
+            </div>
+        </div>
+
+        <div class="scroll-area pt-5 mx-5" id="booking_details">
+            <h2 class="mt-4 mb-3">Booking Details</h2>
+            <div class="form-group mb-0">
+              <div class="row align-items-center my-4">
+                <div class="col-xl-6 col-md-8 col-11">
+                  <input id="input_project" class="form-control form-control-lg border border-dark p-5" type="text" placeholder="Project">
+                </div>
+              </div>
+              <div class="row align-items-center my-4">
+                <div class="col-xl-6 col-md-8 col-11">
+                  <input id="input_purpose" class="form-control form-control-lg border border-dark p-5" type="text" placeholder = "Purpose">
+                </div>
+              </div>
+              <div class="row align-items-center my-4">
+                <span id="booking_details_error" class="text-danger col-xl-6 col-md-8 col-11"></span>
+              </div>
+              <div class="row align-items-center my-4">
+                <span id="booking_details_day_counter" class="col-md-1 col-2 p-0">Days: 1</span>
+                <input id="input_length" type="range" min="1" max="21" value="1" class="form-control form-control-lg col-xl-5 col-9 p-0" placeholder="Length" oninput="workflow.onchangeDays()">
+              </div>
+            </div>
+        </div>
+
+        <div class="scroll-area pt-5 mx-5" id="add_collabs">
+            <h2 class="mt-4 mb-3">Add Collaborators:</h2>
+            <div class="row">
+              <div class="col-xl-6 col-md-8 col-11 p-0 border border-dark">
+                {% bootstrap_field form.users label="Collaborators" %}
+              </div>
+            </div>
+        </div>
+
+        <div class="scroll-area pt-5 mx-5" id="booking_summary">
+            <h2 class="mt-4 mb-3">Booking Summary</h2>
+            <div class="row align-items-center">
+              <div class="card col-xl-6 col-md-8 col-11 border-0">
+                <ul class="list-group">
+                  <li class="list-group-item">Booking Details
+                    <ul id="booking_summary_booking_details">
+                    </ul>
+                  </li>
+                  <li class="list-group-item">Collaborators
+                    <ul id="booking_summary_collaborators">
+                    </ul>
+                  </li>
+                  <li class="list-group-item">Hosts
+                    <ul id="booking_summary_hosts">
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="row align-items-center mt-5">
+              <button class="btn btn-danger cancel-book-button p-0 mr-2 col-xl-2 col-md-3 col-5" onclick="workflow.onclickCancel()">Cancel</button>
+              <button class="btn btn-success cancel-book-button p-0 ml-2 col-xl-2 col-md-3 col-5" onclick="workflow.onclickConfirm()">Book</button>
+            </div>
+          </div>
+        
+    </div>
+</div> 
+
+<div class="hidden_form d-none">
+  <form id="token">
+      {% csrf_token %}
+  </form>
+</div>
+</body>
+
+<script>
+    const user = "{{user}}"
+    const workflow = new BookingWorkflow();
+    workflow.startWorkflow();
+  </script>
+{% endblock %}

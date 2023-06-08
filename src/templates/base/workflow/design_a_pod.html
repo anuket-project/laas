@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load bootstrap4 %}
+{% block extrahead %}
+<script src="/static/js/workflows/common-models.js"></script>
+<script src="/static/js/workflows/workflow.js"></script>
+<script src="/static/js/workflows/design-a-pod.js"></script>
+{% endblock %}
+{% block content %}
+{% if dashboard == 'laas' %}
+
+<!-- Main Content -->
+<body>
+
+  <div class="workflow-container">
+    <div id="prev" class="row w-100 m-0">
+      <button class="btn btn-workflow-nav stretched-link m-0 p-0 mt-3" onclick="workflow.goPrev()" id="workflow-prev">
+        <div class="arrow arrow-up"></div>
+      </button>
+    </div>
+  
+    <div id="next" class="row w-100 m-0">
+      <button class="btn btn-workflow-nav stretched-link m-0 p-0 mb-3" onclick="workflow.goNext()" id="workflow-next">
+        <div class="arrow arrow-down"></div>
+      </button>
+    </div>
+  
+    <div class="scroll-container w-100 h-100 p-0">
+
+      <!-- Select Lab -->
+      <div class="scroll-area pt-5 mx-5" id="select_lab">
+        <!-- Ideally the 'Design a Pod' header would be anchored to the top of the page below the arrow -->
+        <h1 class="mt-4"><u>Design a Pod</u></h1> 
+        <h2 class="mt-4 mb-3">Select a Lab:</h2>
+        <div class="row card-deck" id="lab_cards">
+        </div>
+      </div>
+
+      <!-- Add Resources -->
+      <div class="scroll-area pt-5 mx-5" id="add_resources">
+        <h2 class="mt-4 mb-3">Add Resources:</h2>
+        <div class="row card-deck align-items-center" id="host_cards">
+          <div class="col-xl-3 col-md-6 col-12" id="add_resource_plus_card">
+            <div class="card align-items-center border-0">
+              <span class="" id="resource-count">0 / 8</span>
+              <button class="btn btn-success add-button p-0" onclick="workflow.onclickAddResource()">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Networks --> 
+    <div class="scroll-area pt-5 mx-5" id="add_networks">
+      <h2 class="mt-4 mb-3">Add Networks:</h2>
+        <div class="row card-deck align-items-center" id="network_card_deck">
+          <div class="col-xl-3 col-md-6 col-12" id="add_network_plus_card">
+            <div class="card align-items-center border-0">
+              <button class="btn btn-success add-button p-0" onclick="workflow.onclickAddNetwork()">+</button>
+            </div>
+          </div>
+        </div>
+    </div>
+
+
+   <!-- Configure Connections-->
+   <div class="scroll-area pt-5 mx-5" id="configure_connections">
+      <h2 class="mt-4 mb-3">Configure Connections:</h2>
+      <div class="row card-deck align-items-center" id="connection_cards">
+      </div>
+  </div>
+
+  <!-- Pod Details-->
+  <div class="scroll-area pt-5 mx-5" id="pod_details">
+    <h2 class="mt-4 mb-3">Pod Details</h2>
+    <div class="form-group">
+      <div class="row align-items-center my-4">
+        <div class="col-xl-6 col-md-8 col-11">
+          <input id="pod-name-input" class="form-control form-control-lg border border-dark p-3" type="text" placeholder="Pod Name">
+        </div>
+      </div>
+      <div class="row align-items-center my-4">
+        <div class="col-xl-6 col-md-8 col-11">
+          <textarea id="pod-desc-input" class="form-control form-control-lg border border-dark pt-3 pl-3" rows="5" placeholder="Pod Description"></textarea>
+        </div>
+      </div>
+      <div class="row align-items-center my-4">
+        <div class="col-xl-6 col-md-8 col-11">
+          <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="pod-public-input">
+            <label class="custom-control-label" for="pod-public-input">Make pod template public?</label>
+          </div>
+        </div>
+      </div>
+      <div class="row align-items-center my-4">
+        <div class="col-xl-6 col-md-8 col-11">
+          <span id="pod_details_error" class="text-danger"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Pod Summary-->
+  <div class="scroll-area pt-5 mx-5" id="pod_summary">
+    <h2 class="mt-4 mb-3">Pod Summary:</h2>
+    <div class="row align-items-center">
+      <div class="col-xl-6 col-md-8 col-11">
+        <div class="card border-0">
+          <ul class="list-group">
+            <li class="list-group-item">Pod Details
+              <ul id="pod_summary_pod_details">
+              </ul>
+            </li>
+            <li class="list-group-item">Resources
+              <ul id="pod_summary_hosts">
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="row align-items-center mt-5">
+      <div class="col-xl-2 col-md-3 col-5"><button class="btn btn-danger cancel-book-button p-0 w-100" onclick="workflow.onclickDiscardTemplate()">Discard</button></div>
+      <div class="col-xl-2 col-md-3 col-5"><button class="btn btn-success cancel-book-button p-0 w-100" onclick = "workflow.onclickSubmitTemplate()">Create</button></div>
+    </div>
+  </div>
+
+
+  <!-- End of workflow container and scroll container -->
+    </div>
+  </div>
+
+
+
+  <!-- Modals -->
+
+  <!-- Add Host Modal -->
+  <div class="modal fade" id="resource_modal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Resource</h5>
+          <button class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body" id="add_resource_modal_body">
+          <h2>Resource</h2>
+          <div id="template-cards" class="row align-items-center justify-content-start">
+          </div>
+
+          <div id="template-config-section">
+            <ul class="nav nav-tabs" role="tablist" id="add_resource_tablist">
+              <!-- add a tab per host in template -->
+            </ul>
+            <!-- tabs -->
+            <div id="resource_config_section">
+              <h2>Image</h2>
+              <div id="image-cards" class="row justify-content-start align-items-center">
+              </div>
+              <div class="form-group">
+                <h2>Hostname</h2>
+                <input type="text" class="form-control" id="hostname-input" placeholder="Enter Hostname">
+                <h2>Cloud Init</h2>
+                <div class="d-flex justify-content-center align-items-center">
+                  <textarea name="ci-textarea" id="ci-textarea" rows="5" class="w-100"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p id="add-host-error-msg" class="text-danger"></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-danger" data-dismiss="modal">Cancel</button>
+          <button class="btn btn-success" onclick="workflow.onclickSubmitHostConfig()">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Configure Connections modal -->
+<div class="modal fade" id="connection_modal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Configure Connections</h5>
+        <button class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body text-center">
+        <ul class="nav nav-tabs" role="tablist" id="configure-connections-tablist">
+        </ul>
+        <table id="connections_widget" class="table table-bordered">
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" data-dismiss="modal" id="connection-modal-submit" onclick="workflow.onclickSubmitConnectionConfig()">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hidden_form d-none">
+  <form id="token">
+      {% csrf_token %}
+  </form>
+</div>
+
+</body>
+
+<script>
+  const user = "{{user}}"
+  const workflow = new DesignWorkflow();
+  workflow.startWorkflow();
+</script>
+{% endif %}
+{% endblock %}

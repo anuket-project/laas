@@ -10,6 +10,7 @@
 
 import json
 import math
+import os
 import traceback
 import sys
 from datetime import timedelta
@@ -21,28 +22,18 @@ from django.utils import timezone
 from django.views import View
 from django.http import HttpResponseNotFound
 from django.http.response import JsonResponse, HttpResponse
+import requests
 from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.contrib.auth.models import User
 
-from api.serializers.booking_serializer import BookingSerializer
-from api.serializers.old_serializers import UserSerializer
 from api.forms import DowntimeForm
 from account.models import UserProfile, Lab
 from booking.models import Booking
-from booking.quick_deployer import create_from_API
-from api.models import LabManagerTracker, get_task, Job, AutomationAPIManager, APILog, GeneratedCloudConfig
-from notifier.manager import NotificationHandler
-from analytics.models import ActiveVPNUser
-from resource_inventory.models import (
-    Image,
-    Opsys,
-    CloudInitFile,
-    ResourceQuery,
-    ResourceTemplate,
-)
+from api.models import LabManagerTracker,AutomationAPIManager, APILog
 
 import yaml
 import uuid
@@ -61,17 +52,6 @@ the correct thing will happen
 """
 
 
-class BookingViewSet(viewsets.ModelViewSet):
-    queryset = Booking.objects.all()
-    serializer_class = BookingSerializer
-    filter_fields = ('resource', 'id')
-
-
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = UserProfile.objects.all()
-    serializer_class = UserSerializer
-
-
 @method_decorator(login_required, name='dispatch')
 class GenerateTokenView(View):
     def get(self, request, *args, **kwargs):
@@ -81,111 +61,6 @@ class GenerateTokenView(View):
             token.delete()
             Token.objects.create(user=user)
         return redirect('account:settings')
-
-
-def lab_inventory(request, lab_name=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    return JsonResponse(lab_manager.get_inventory(), safe=False)
-
-
-@csrf_exempt
-def lab_host(request, lab_name="", host_id=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    if request.method == "GET":
-        return JsonResponse(lab_manager.get_host(host_id), safe=False)
-    if request.method == "POST":
-        return JsonResponse(lab_manager.update_host(host_id, request.POST), safe=False)
-
-# API extension for Cobbler integration
-
-
-def all_images(request, lab_name=""):
-    a = []
-    for i in Image.objects.all():
-        a.append(i.serialize())
-    return JsonResponse(a, safe=False)
-
-
-def all_opsyss(request, lab_name=""):
-    a = []
-    for opsys in Opsys.objects.all():
-        a.append(opsys.serialize())
-
-    return JsonResponse(a, safe=False)
-
-
-@csrf_exempt
-def single_image(request, lab_name="", image_id=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    img = lab_manager.get_image(image_id).first()
-
-    if request.method == "GET":
-        if not img:
-            return HttpResponse(status=404)
-        return JsonResponse(img.serialize(), safe=False)
-
-    if request.method == "POST":
-        # get POST data
-        data = json.loads(request.body.decode('utf-8'))
-        if img:
-            img.update(data)
-        else:
-            # append lab name and the ID from the URL
-            data['from_lab_id'] = lab_name
-            data['lab_id'] = image_id
-
-            # create and save a new Image object
-            img = Image.new_from_data(data)
-
-        img.save()
-
-        # indicate success in response
-        return HttpResponse(status=200)
-    return HttpResponse(status=405)
-
-
-@csrf_exempt
-def single_opsys(request, lab_name="", opsys_id=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    opsys = lab_manager.get_opsys(opsys_id).first()
-
-    if request.method == "GET":
-        if not opsys:
-            return HttpResponse(status=404)
-        return JsonResponse(opsys.serialize(), safe=False)
-
-    if request.method == "POST":
-        data = json.loads(request.body.decode('utf-8'))
-        if opsys:
-            opsys.update(data)
-        else:
-            # only name, available, and obsolete are needed to create an Opsys
-            # other fields are derived from the URL parameters
-            data['from_lab_id'] = lab_name
-            data['lab_id'] = opsys_id
-            opsys = Opsys.new_from_data(data)
-
-        opsys.save()
-        return HttpResponse(status=200)
-    return HttpResponse(status=405)
-
-# end API extension
-
-
-def get_pdf(request, lab_name="", booking_id=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    return HttpResponse(lab_manager.get_pdf(booking_id), content_type="text/plain")
-
-
-def get_idf(request, lab_name="", booking_id=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    return HttpResponse(lab_manager.get_idf(booking_id), content_type="text/plain")
 
 
 def lab_status(request, lab_name=""):
@@ -208,170 +83,11 @@ def lab_user(request, lab_name="", user_id=-1):
     return HttpResponse(lab_manager.get_user(user_id), content_type="text/plain")
 
 
-@csrf_exempt
-def update_host_bmc(request, lab_name="", host_id=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    if request.method == "POST":
-        # update / create RemoteInfo for host
-        return JsonResponse(
-            lab_manager.update_host_remote_info(request.POST, host_id),
-            safe=False
-        )
-
-
 def lab_profile(request, lab_name=""):
     lab_token = request.META.get('HTTP_AUTH_TOKEN')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
     return JsonResponse(lab_manager.get_profile(), safe=False)
 
-
-@csrf_exempt
-def specific_task(request, lab_name="", job_id="", task_id=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    LabManagerTracker.get(lab_name, lab_token)  # Authorize caller, but we dont need the result
-
-    if request.method == "POST":
-        task = get_task(task_id)
-        if 'status' in request.POST:
-            task.status = request.POST.get('status')
-        if 'message' in request.POST:
-            task.message = request.POST.get('message')
-        if 'lab_token' in request.POST:
-            task.lab_token = request.POST.get('lab_token')
-        task.save()
-        NotificationHandler.task_updated(task)
-        d = {}
-        d['task'] = task.config.get_delta()
-        m = {}
-        m['status'] = task.status
-        m['job'] = str(task.job)
-        m['message'] = task.message
-        d['meta'] = m
-        return JsonResponse(d, safe=False)
-    elif request.method == "GET":
-        return JsonResponse(get_task(task_id).config.get_delta())
-
-
-@csrf_exempt
-def specific_job(request, lab_name="", job_id=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    if request.method == "POST":
-        return JsonResponse(lab_manager.update_job(job_id, request.POST), safe=False)
-    return JsonResponse(lab_manager.get_job(job_id), safe=False)
-
-
-@csrf_exempt
-def resource_ci_userdata(request, lab_name="", job_id="", resource_id="", file_id=0):
-    # lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    # lab_manager = LabManagerTracker.get(lab_name, lab_token)
-
-    # job = lab_manager.get_job(job_id)
-    Job.objects.get(id=job_id)  # verify a valid job was given, even if we don't use it
-
-    cifile = None
-    try:
-        cifile = CloudInitFile.objects.get(id=file_id)
-    except ObjectDoesNotExist:
-        return HttpResponseNotFound("Could not find a matching resource by id " + str(resource_id))
-
-    text = cifile.text
-
-    prepended_text = "#cloud-config\n"
-    # mstrat = CloudInitFile.merge_strategy()
-    # prepended_text = prepended_text + yaml.dump({"merge_strategy": mstrat}) + "\n"
-    # print("in cloudinitfile create")
-    text = prepended_text + text
-    cloud_dict = {
-        "datasource": {
-            "None": {
-                "metadata": {
-                    "instance-id": str(uuid.uuid4())
-                },
-                "userdata_raw": text,
-            },
-        },
-        "datasource_list": ["None"],
-    }
-
-    return HttpResponse(yaml.dump(cloud_dict, width=float("inf")), status=200)
-
-
-@csrf_exempt
-def resource_ci_metadata(request, lab_name="", job_id="", resource_id="", file_id=0):
-    return HttpResponse("#cloud-config", status=200)
-
-
-@csrf_exempt
-def resource_ci_userdata_directory(request, lab_name="", job_id="", resource_id=""):
-    # files = [{"id": file.file_id, "priority": file.priority} for file in CloudInitFile.objects.filter(job__id=job_id, resource_id=resource_id).order_by("priority").all()]
-    resource = ResourceQuery.get(labid=resource_id, lab=Lab.objects.get(name=lab_name))
-    files = resource.config.cloud_init_files
-    files = [{"id": file.id, "priority": file.priority} for file in files.order_by("priority").all()]
-
-    d = {}
-
-    merge_failures = []
-
-    merger = Merger(
-        [
-            (list, ["append"]),
-            (dict, ["merge"]),
-        ],
-        ["override"],  # fallback
-        ["override"],  # if types conflict (shouldn't happen in CI, but handle case)
-    )
-
-    for f in resource.config.cloud_init_files.order_by("priority").all():
-        try:
-            other_dict = yaml.safe_load(f.text)
-            if not (type(d) is dict):
-                raise Exception("CI file was valid yaml but was not a dict")
-
-            merger.merge(d, other_dict)
-        except Exception as e:
-            # if fail to merge, then just skip
-            print("Failed to merge file in, as it had invalid content:", f.id)
-            print("File text was:")
-            print(f.text)
-            merge_failures.append({f.id: str(e)})
-
-    if len(merge_failures) > 0:
-        d['merge_failures'] = merge_failures
-
-    file = CloudInitFile.create(text=yaml.dump(d, width=float("inf")), priority=0)
-
-    return HttpResponse(json.dumps([{"id": file.id, "priority": file.priority}]), status=200)
-
-
-def new_jobs(request, lab_name=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    return JsonResponse(lab_manager.get_new_jobs(), safe=False)
-
-
-def current_jobs(request, lab_name=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    return JsonResponse(lab_manager.get_current_jobs(), safe=False)
-
-
-@csrf_exempt
-def analytics_job(request, lab_name=""):
-    """ returns all jobs with type booking"""
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    if request.method == "GET":
-        return JsonResponse(lab_manager.get_analytics_job(), safe=False)
-    if request.method == "POST":
-        users = json.loads(request.body.decode('utf-8'))['active_users']
-        try:
-            ActiveVPNUser.create(lab_name, users)
-        except ObjectDoesNotExist:
-            return JsonResponse('Lab does not exist!', safe=False)
-        return HttpResponse(status=200)
-    return HttpResponse(status=405)
 
 
 def lab_downtime(request, lab_name=""):
@@ -406,12 +122,6 @@ def delete_lab_downtime(lab_manager):
         return JsonResponse(lab_manager.get_downtime_json(), safe=False)
     else:
         return JsonResponse({"error": "Lab is not in downtime"}, status=422)
-
-
-def done_jobs(request, lab_name=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
-    lab_manager = LabManagerTracker.get(lab_name, lab_token)
-    return JsonResponse(lab_manager.get_done_jobs(), safe=False)
 
 
 def auth_and_log(request, endpoint):
@@ -471,37 +181,41 @@ Booking API Views
 
 
 def user_bookings(request):
-    token = auth_and_log(request, 'booking')
+    # token = auth_and_log(request, 'booking')
 
-    if isinstance(token, HttpResponse):
-        return token
+    # if isinstance(token, HttpResponse):
+    #     return token
 
-    bookings = Booking.objects.filter(owner=token.user, end__gte=timezone.now())
-    output = [AutomationAPIManager.serialize_booking(booking)
-              for booking in bookings]
-    return JsonResponse(output, safe=False)
+    # bookings = Booking.objects.filter(owner=token.user, end__gte=timezone.now())
+    # output = [AutomationAPIManager.serialize_booking(booking)
+    #           for booking in bookings]
+    # return JsonResponse(output, safe=False)
+    # todo - LL Integration
+    return HttpResponse(status=404)
 
 
 @csrf_exempt
 def specific_booking(request, booking_id=""):
-    token = auth_and_log(request, 'booking/{}'.format(booking_id))
+    # token = auth_and_log(request, 'booking/{}'.format(booking_id))
 
-    if isinstance(token, HttpResponse):
-        return token
+    # if isinstance(token, HttpResponse):
+    #     return token
 
-    booking = get_object_or_404(Booking, pk=booking_id, owner=token.user)
-    if request.method == "GET":
-        sbooking = AutomationAPIManager.serialize_booking(booking)
-        return JsonResponse(sbooking, safe=False)
+    # booking = get_object_or_404(Booking, pk=booking_id, owner=token.user)
+    # if request.method == "GET":
+    #     sbooking = AutomationAPIManager.serialize_booking(booking)
+    #     return JsonResponse(sbooking, safe=False)
 
-    if request.method == "DELETE":
+    # if request.method == "DELETE":
 
-        if booking.end < timezone.now():
-            return HttpResponse("Booking already over", status=400)
+    #     if booking.end < timezone.now():
+    #         return HttpResponse("Booking already over", status=400)
 
-        booking.end = timezone.now()
-        booking.save()
-        return HttpResponse("Booking successfully cancelled")
+    #     booking.end = timezone.now()
+    #     booking.save()
+    #     return HttpResponse("Booking successfully cancelled")
+    # todo - LL Integration
+    return HttpResponse(status=404)
 
 
 @csrf_exempt
@@ -531,70 +245,82 @@ def extend_booking(request, booking_id="", days=""):
 
 @csrf_exempt
 def make_booking(request):
-    token = auth_and_log(request, 'booking/makeBooking')
+    print("received call to make_booking")
+    data = json.loads(request.body)
+    print("incoming data is ", data)
 
-    if isinstance(token, HttpResponse):
-        return token
+    allowed_users = list(data["allowed_users"])
+    allowed_users.append(str(request.user))
 
+    bookingBlob = {
+        "template_id": data["template_id"],
+        "allowed_users": allowed_users,
+        "global_cifile": data["global_cifile"],
+        "metadata": {
+            "booking_id": None, # fill in after creating django object
+            "owner": str(request.user),
+            "lab": "UNH_IOL",
+            "purpose": data["metadata"]["purpose"],
+            "project": data["metadata"]["project"],
+            "length": data["metadata"]["length"]
+        }
+    }
+    
+    print("allowed users are ", bookingBlob["allowed_users"])
     try:
-        booking = create_from_API(request.body, token.user)
+        booking = Booking.objects.create(
+        purpose=bookingBlob["metadata"]["purpose"],
+        project=bookingBlob["metadata"]['project'],
+        lab=Lab.objects.get(name='UNH_IOL'),
+        owner=request.user,
+        start=timezone.now(),
+        end=timezone.now() + timedelta(days=int(bookingBlob["metadata"]['length'])),
+        )
+        print("successfully created booking object with id ", booking.id)
 
-    except Exception:
-        finalTrace = ''
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        for i in traceback.format_exception(exc_type, exc_value, exc_traceback):
-            finalTrace += '<br>' + i.strip()
-        return HttpResponse(finalTrace, status=400)
+        # Now add collabs
+        for c in bookingBlob["allowed_users"]:
+            if c != bookingBlob["metadata"]["owner"]: # Don't add self as a collab
+                booking.collaborators.add(User.objects.get(username=c))
+        print("successfully added collabs")
 
-    sbooking = AutomationAPIManager.serialize_booking(booking)
-    return JsonResponse(sbooking, safe=False)
+        # Now create it in liblaas
+        bookingBlob["metadata"]["booking_id"] = str(booking.id)
+        liblaas_endpoint = os.environ.get("LIBLAAS_BASE_URL") + 'booking/create'
+        liblaas_response = requests.post(liblaas_endpoint, data=json.dumps(bookingBlob), headers={'Content-Type': 'application/json'})
+        if liblaas_response.status_code != 200:
+            print("received non success from liblaas")
+            return JsonResponse(
+            data={},
+            status=500,
+            safe=False
+        ) 
+        aggregateId = json.loads(liblaas_response.content)
+        print("successfully created aggregate in liblaas")
+
+        # Now update the agg_id
+        booking.aggregateId = aggregateId
+        booking.save()
+        print("sucessfully updated aggreagateId in booking object")
+
+        return JsonResponse(
+            data = {"bookingId": booking.id},
+            status=200,
+            safe=False
+        )
+    except Exception as error:
+        print(error)
+        return JsonResponse(
+            data={},
+            status=500,
+            safe=False
+        ) 
 
 
 """
 Resource Inventory API Views
 """
-
-
-def available_templates(request):
-    token = auth_and_log(request, 'resource_inventory/availableTemplates')
-
-    if isinstance(token, HttpResponse):
-        return token
-
-    # get available templates
-    # mirrors MultipleSelectFilter Widget
-    avt = []
-    for lab in Lab.objects.all():
-        for template in ResourceTemplate.objects.filter(Q(owner=token.user) | Q(public=True), lab=lab, temporary=False):
-            available_resources = lab.get_available_resources()
-            required_resources = template.get_required_resources()
-            least_available = 100
-
-            for resource, count_required in required_resources.items():
-                try:
-                    curr_count = math.floor(available_resources[str(resource)] / count_required)
-                    if curr_count < least_available:
-                        least_available = curr_count
-                except KeyError:
-                    least_available = 0
-
-            if least_available > 0:
-                avt.append((template, least_available))
-
-    savt = [AutomationAPIManager.serialize_template(temp)
-            for temp in avt]
-
-    return JsonResponse(savt, safe=False)
-
-
-def images_for_template(request, template_id=""):
-    _ = auth_and_log(request, 'resource_inventory/{}/images'.format(template_id))
-
-    template = get_object_or_404(ResourceTemplate, pk=template_id)
-    images = [AutomationAPIManager.serialize_image(config.image)
-              for config in template.getConfigs()]
-    return JsonResponse(images, safe=False)
-
+# todo - LL Integration
 
 """
 User API Views
@@ -611,25 +337,6 @@ def all_users(request):
              for up in UserProfile.objects.filter(public_user=True)]
 
     return JsonResponse(users, safe=False)
-
-
-def create_ci_file(request):
-    token = auth_and_log(request, 'booking/makeCloudConfig')
-
-    if isinstance(token, HttpResponse):
-        return token
-
-    try:
-        cconf = request.body
-        d = yaml.load(cconf)
-        if not (type(d) is dict):
-            raise Exception()
-
-        cconf = CloudInitFile.create(text=cconf, priority=CloudInitFile.objects.count())
-
-        return JsonResponse({"id": cconf.id})
-    except Exception:
-        return JsonResponse({"error": "Provided config file was not valid yaml or was not a dict at the top level"})
 
 
 """
@@ -662,95 +369,188 @@ Booking Details API Views
 
 
 def booking_details(request, booking_id=""):
-    token = auth_and_log(request, 'booking/{}/details'.format(booking_id))
+    # token = auth_and_log(request, 'booking/{}/details'.format(booking_id))
 
-    if isinstance(token, HttpResponse):
-        return token
+    # if isinstance(token, HttpResponse):
+    #     return token
 
-    booking = get_object_or_404(Booking, pk=booking_id, owner=token.user)
+    # booking = get_object_or_404(Booking, pk=booking_id, owner=token.user)
 
-    # overview
-    overview = {
-        'username': GeneratedCloudConfig._normalize_username(None, str(token.user)),
-        'purpose': booking.purpose,
-        'project': booking.project,
-        'start_time': booking.start,
-        'end_time': booking.end,
-        'pod_definitions': booking.resource.template,
-        'lab': booking.lab
-    }
+    # # overview
+    # overview = {
+    #     'username': GeneratedCloudConfig._normalize_username(None, str(token.user)),
+    #     'purpose': booking.purpose,
+    #     'project': booking.project,
+    #     'start_time': booking.start,
+    #     'end_time': booking.end,
+    #     'pod_definitions': booking.resource.template,
+    #     'lab': booking.lab
+    # }
 
-    # deployment progress
-    task_list = []
-    for task in booking.job.get_tasklist():
-        task_info = {
-            'name': str(task),
-            'status': 'DONE',
-            'lab_response': 'No response provided (yet)'
-        }
-        if task.status < 100:
-            task_info['status'] = 'PENDING'
-        elif task.status < 200:
-            task_info['status'] = 'IN PROGRESS'
+    # # deployment progress
+    # task_list = []
+    # for task in booking.job.get_tasklist():
+    #     task_info = {
+    #         'name': str(task),
+    #         'status': 'DONE',
+    #         'lab_response': 'No response provided (yet)'
+    #     }
+    #     if task.status < 100:
+    #         task_info['status'] = 'PENDING'
+    #     elif task.status < 200:
+    #         task_info['status'] = 'IN PROGRESS'
 
-        if task.message:
-            if task.type_str == "Access Task" and request.user.id != task.config.user.id:
-                task_info['lab_response'] = '--secret--'
-            else:
-                task_info['lab_response'] = str(task.message)
-        task_list.append(task_info)
+    #     if task.message:
+    #         if task.type_str == "Access Task" and request.user.id != task.config.user.id:
+    #             task_info['lab_response'] = '--secret--'
+    #         else:
+    #             task_info['lab_response'] = str(task.message)
+    #     task_list.append(task_info)
 
-    # pods
-    pod_list = []
-    for host in booking.resource.get_resources():
-        pod_info = {
-            'hostname': host.config.name,
-            'machine': host.name,
-            'role': '',
-            'is_headnode': host.config.is_head_node,
-            'image': host.config.image,
-            'ram': {'amount': str(host.profile.ramprofile.first().amount) + 'G', 'channels': host.profile.ramprofile.first().channels},
-            'cpu': {'arch': host.profile.cpuprofile.first().architecture, 'cores': host.profile.cpuprofile.first().cores, 'sockets': host.profile.cpuprofile.first().cpus},
-            'disk': {'size': str(host.profile.storageprofile.first().size) + 'GiB', 'type': host.profile.storageprofile.first().media_type, 'mount_point': host.profile.storageprofile.first().name},
-            'interfaces': [],
-        }
-        try:
-            pod_info['role'] = host.template.opnfvRole
-        except Exception:
-            pass
-        for intprof in host.profile.interfaceprofile.all():
-            int_info = {
-                'name': intprof.name,
-                'speed': intprof.speed
-            }
-            pod_info['interfaces'].append(int_info)
-        pod_list.append(pod_info)
+    # # pods
+    # pod_list = []
+    # for host in booking.resource.get_resources():
+    #     pod_info = {
+    #         'hostname': host.config.name,
+    #         'machine': host.name,
+    #         'role': '',
+    #         'is_headnode': host.config.is_head_node,
+    #         'image': host.config.image,
+    #         'ram': {'amount': str(host.profile.ramprofile.first().amount) + 'G', 'channels': host.profile.ramprofile.first().channels},
+    #         'cpu': {'arch': host.profile.cpuprofile.first().architecture, 'cores': host.profile.cpuprofile.first().cores, 'sockets': host.profile.cpuprofile.first().cpus},
+    #         'disk': {'size': str(host.profile.storageprofile.first().size) + 'GiB', 'type': host.profile.storageprofile.first().media_type, 'mount_point': host.profile.storageprofile.first().name},
+    #         'interfaces': [],
+    #     }
+    #     try:
+    #         pod_info['role'] = host.template.opnfvRole
+    #     except Exception:
+    #         pass
+    #     for intprof in host.profile.interfaceprofile.all():
+    #         int_info = {
+    #             'name': intprof.name,
+    #             'speed': intprof.speed
+    #         }
+    #         pod_info['interfaces'].append(int_info)
+    #     pod_list.append(pod_info)
 
-    # diagnostic info
-    diagnostic_info = {
-        'job_id': booking.job.id,
-        'ci_files': '',
-        'pods': []
-    }
-    for host in booking.resource.get_resources():
-        pod = {
-            'host': host.name,
-            'configs': [],
+    # # diagnostic info
+    # diagnostic_info = {
+    #     'job_id': booking.job.id,
+    #     'ci_files': '',
+    #     'pods': []
+    # }
+    # for host in booking.resource.get_resources():
+    #     pod = {
+    #         'host': host.name,
+    #         'configs': [],
 
-        }
-        for ci_file in host.config.cloud_init_files.all():
-            ci_info = {
-                'id': ci_file.id,
-                'text': ci_file.text
-            }
-            pod['configs'].append(ci_info)
-        diagnostic_info['pods'].append(pod)
+    #     }
+    #     for ci_file in host.config.cloud_init_files.all():
+    #         ci_info = {
+    #             'id': ci_file.id,
+    #             'text': ci_file.text
+    #         }
+    #         pod['configs'].append(ci_info)
+    #     diagnostic_info['pods'].append(pod)
 
-    details = {
-        'overview': overview,
-        'deployment_progress': task_list,
-        'pods': pod_list,
-        'diagnostic_info': diagnostic_info,
-        'pdf': booking.pdf
-    }
-    return JsonResponse(str(details), safe=False)
+    # details = {
+    #     'overview': overview,
+    #     'deployment_progress': task_list,
+    #     'pods': pod_list,
+    #     'diagnostic_info': diagnostic_info,
+    #     'pdf': booking.pdf
+    # }
+    # return JsonResponse(str(details), safe=False)
+    # todo - LL Integration
+    return HttpResponse(status=404)
+
+
+""" Forwards a request to the LibLaaS API from a workflow """
+def liblaas_request(request) -> JsonResponse:
+    print("handing liblaas request... ", request.method)
+    print(request.body)
+    if request.method != 'POST':
+        return JsonResponse({"error" : "405 Method not allowed"})
+
+    liblaas_base_url = os.environ.get("LIBLAAS_BASE_URL")
+    post_data = json.loads(request.body)
+    print("post data is " + str(post_data))
+    http_method = post_data["method"]
+    liblaas_endpoint = post_data["endpoint"]
+    payload = post_data["workflow_data"]
+    # Fill in actual username
+    liblaas_endpoint = liblaas_endpoint.replace("[username]", str(request.user))
+    liblaas_endpoint = liblaas_base_url + liblaas_endpoint
+    print("processed endpoint is ", liblaas_endpoint)
+
+    if (http_method == "GET"):
+        response = requests.get(liblaas_endpoint, data=json.dumps(payload))
+    elif (http_method == "POST"):
+        response = requests.post(liblaas_endpoint, data=json.dumps(payload), headers={'Content-Type': 'application/json'})
+    elif (http_method == "DELETE"):
+        response = requests.delete(liblaas_endpoint, data=json.dumps(payload))
+    elif (http_method == "PUT"):
+        response = requests.put(liblaas_endpoint, data=json.dumps(payload))
+    else:
+        return JsonResponse(
+            data={},
+            status=405,
+            safe=False
+        )
+    try:
+        return JsonResponse(
+            data=json.loads(response.content.decode('utf8')),
+            status=200,
+            safe=False
+        )
+    except Exception as e:
+        print("fail")
+        print(e)
+        return JsonResponse(
+            data = {},
+            status=500,
+            safe=False
+        )
+
+def liblaas_templates(request):
+    liblaas_url = os.environ.get("LIBLAAS_BASE_URL") + "template/list/" + str(request.user)
+    print("api call to " + liblaas_url)
+    return requests.get(liblaas_url)
+
+def delete_template(request):
+    endpoint = json.loads(request.body)["endpoint"]
+    liblaas_url = os.environ.get("LIBLAAS_BASE_URL") + endpoint
+    print("api call to ", liblaas_url)
+    try:
+        response = requests.delete(liblaas_url)
+        return JsonResponse(
+            data={},
+            status=response.status_code,
+            safe=False
+        )
+    except:
+        return JsonResponse(
+            data={},
+            status=500,
+            safe=False
+        )
+
+def get_booking_status(bookingObject):
+    liblaas_url =  os.environ.get("LIBLAAS_BASE_URL") + "booking/" + bookingObject.aggregateId + "/status"
+    print("Getting booking status at: ", liblaas_url)
+    response = requests.get(liblaas_url)
+    try:
+        return json.loads(response.content)
+    except:
+        print("failed to get status")
+        return []
+    
+def liblaas_end_booking(aggregateId):
+    liblaas_url = os.environ.get('LIBLAAS_BASE_URL') + "booking/" + str(aggregateId) + "/end"
+    print("Ending booking at ", liblaas_url)
+    response = requests.delete(liblaas_url)
+    try:
+        return response
+    except:
+        print("failed to end booking")
+        return HttpResponse(status=500)
