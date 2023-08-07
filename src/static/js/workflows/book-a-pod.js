@@ -71,7 +71,7 @@ const steps = {
     }
 
     isValidCIFile(ci_file) {
-        // todo
+        // todo 
         return true;
     }
 
@@ -232,34 +232,37 @@ const steps = {
         return[passed, message, section];
     }
 
-    onclickCancel() {
-        if (confirm("Are you sure you wish to discard this booking?")) {
-            location.reload();
-        }
-    }
+    // onclickCancel() {
+    //     if (confirm("Are you sure you wish to discard this booking?")) {
+    //         location.reload();
+    //     }
+    // }
 
     /** Async / await is more infectious than I thought, so all functions that rely on an API call will need to be async */
     async onclickConfirm() {
         const complete = this.isCompleteBookingInfo();
         if (!complete[0]) {
-            alert(complete[1]);
+            showError(complete[1]);
             this.step = complete[2]
             document.getElementById(this.sections[complete[2]]).scrollIntoView({behavior: 'smooth'});
             return
         }
-        if (confirm("Are you sure you would like to create this booking?")) {
-            const response = await LibLaaSAPI.makeBooking(this.bookingBlob);
-            if (response.bookingId) {
-                alert("The booking has been successfully created.")
-                window.location.href = "../../";
+
+        const response = await LibLaaSAPI.makeBooking(this.bookingBlob);
+        if (response.bookingId) {
+            showError("The booking has been successfully created.")
+            window.location.href = "../../";
+        } else {
+            if (response.status == 406) {
+                showError("One or more collaborators is missing SSH keys or has not configured their IPA account.")
             } else {
-                alert("The booking could not be created at this time.")
+                showError("The booking could not be created at this time.")
             }
         }
+        // if (confirm("Are you sure you would like to create this booking?")) {
+
+        // }
     }
-    
-
-
   }
 
 

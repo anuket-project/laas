@@ -110,13 +110,13 @@ class DesignWorkflow extends Workflow {
       this.step = steps.ADD_RESOURCES;
 
       if (this.templateBlob.lab_name == null) {
-          alert("Please select a lab before adding resources.");
+          showError("Please select a lab before adding resources.");
           this.goTo(steps.SELECT_LAB);
           return;
       }
 
       if (this.templateBlob.host_list.length >= 8) {
-        alert("You may not add more than 8 hosts to a single pod.")
+        showError("You may not add more than 8 hosts to a single pod.")
         return;
       }
 
@@ -282,7 +282,7 @@ class DesignWorkflow extends Workflow {
         }
       }
 
-      alert("didnt remove");
+      showError("didnt remove");
     }
 
 
@@ -297,13 +297,13 @@ class DesignWorkflow extends Workflow {
       this.step = steps.ADD_NETWORKS;
 
       if (this.templateBlob.lab_name == null) {
-          alert("Please select a lab before adding networks.");
+          showError("Please select a lab before adding networks.");
           this.goTo(steps.SELECT_LAB);
           return;
       }
 
       if (document.querySelector('#new_network_card') != null) {
-        alert("Please finish adding the current network before adding a new one.");
+        showError("Please finish adding the current network before adding a new one.");
         return;
       }
 
@@ -377,7 +377,7 @@ class DesignWorkflow extends Workflow {
         }
       }
 
-      alert("didnt remove");
+      showError("didnt remove");
     }
 
     /** Rebuilds the list without the chosen template */
@@ -407,7 +407,7 @@ class DesignWorkflow extends Workflow {
 
       const host = this.templateBlob.findHost(hostname);
       if (!host) {
-        alert("host not found error");
+        showError("host not found error");
       }
 
       this.connectionTemp = new ConnectionTemp(host, this.templateBlob.networks, this.labFlavors.get(host.flavor).interfaces);
@@ -440,11 +440,11 @@ class DesignWorkflow extends Workflow {
     setPodDetailEventListeners() {
       const pod_name_input = document.getElementById("pod-name-input");
       const pod_desc_input = document.getElementById("pod-desc-input");
-      const pod_public_input = document.getElementById("pod-public-input");
+      // const pod_public_input = document.getElementById("pod-public-input");
 
       pod_name_input.value = "";
       pod_desc_input.value = "";
-      pod_public_input.checked = false;
+      // pod_public_input.checked = false;
 
       pod_name_input.addEventListener('focusout', (event)=> {
         workflow.onFocusOutPodNameInput(pod_name_input);
@@ -466,10 +466,10 @@ class DesignWorkflow extends Workflow {
         GUI.hidePodDetailsError();
       });
 
-      pod_public_input.addEventListener('focusout', (event)=> {
-        this.step = steps.POD_DETAILS;
-        workflow.onFocusOutPodPublicInput(pod_public_input);
-      });
+      // pod_public_input.addEventListener('focusout', (event)=> {
+      //   this.step = steps.POD_DETAILS;
+      //   workflow.onFocusOutPodPublicInput(pod_public_input);
+      // });
     }
 
     onFocusOutPodNameInput(element) {
@@ -524,13 +524,13 @@ class DesignWorkflow extends Workflow {
       return [result, message]
     }
 
-    async onclickDiscardTemplate() {
-      this.step = steps.POD_SUMMARY;
-      if(confirm('Are you sure you wish to delete this Pod?')) {
-        await LibLaaSAPI.deleteTemplate(this.templateBlob);
-        location.reload();
-      }
-    }
+    // async onclickDiscardTemplate() {
+    //   this.step = steps.POD_SUMMARY;
+    //   if(confirm('Are you sure you wish to delete this Pod?')) {
+    //     await LibLaaSAPI.deleteTemplate(this.templateBlob);
+    //     location.reload();
+    //   }
+    // }
 
     simpleStepValidation() {
       let passed = true;
@@ -561,20 +561,21 @@ class DesignWorkflow extends Workflow {
       this.step = steps.POD_SUMMARY;
       const simpleValidation = this.simpleStepValidation();
       if (!simpleValidation[0]) {
-        alert(simpleValidation[1])
+        showError(simpleValidation[1])
         this.goTo(simpleValidation[2]);
         return;
       }
 
       // todo - make sure each host has at least one connection on any network.
 
-      if (confirm("Are you sure you wish to create this pod?")) {
-        let success =  await LibLaaSAPI.makeTemplate(this.templateBlob);
-        if (success) {
-          window.location.href = "../../accounts/my/resources/";
-        } else {
-          alert("Could not create template.")
-        }
+      // if (confirm("Are you sure you wish to create this pod?")) {
+
+      // }
+      let success =  await LibLaaSAPI.makeTemplate(this.templateBlob);
+      if (success) {
+        window.location.href = "../../accounts/my/resources/";
+      } else {
+        showError("Could not create template.")
       }
     }
 }
@@ -1182,5 +1183,5 @@ class ConnectionTemp {
 }
 
 function todo() {
-  alert('todo');
+  showError('todo');
 }

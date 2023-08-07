@@ -20,38 +20,55 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.generic import RedirectView, TemplateView, UpdateView
 from django.shortcuts import render
+from api.utils import ipa_set_ssh, ipa_query_user, ipa_set_company
+from dashboard.forms import SetCompanyForm, SetSSHForm
 from rest_framework.authtoken.models import Token
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
 
-from account.forms import AccountSettingsForm
+from account.forms import AccountPreferencesForm
 from account.models import UserProfile
 from booking.models import Booking
 from api.views import delete_template, liblaas_templates
-@method_decorator(login_required, name='dispatch')
-class AccountSettingsView(UpdateView):
-    model = UserProfile
-    form_class = AccountSettingsForm
-    template_name_suffix = '_update_form'
+from workflow.views import login
 
-    def get_success_url(self):
-        messages.add_message(self.request, messages.INFO,
-                             'Settings saved')
-        return '/'
+def account_settings_view(request):
+    if request.method == "GET":
+        if not request.user.is_authenticated:
+            return login(request)
+        profile = UserProfile.objects.get(user=request.user)
+        if (not profile or profile.ipa_username == "" or profile.ipa_username == None):
+            return redirect("dashboard:index")
+        ipa_user = ipa_query_user(profile.ipa_username)
+        template = "account/settings.html"
+        context = {
+            "preference_form": AccountPreferencesForm(instance=profile),
+            "company_form": SetCompanyForm(initial={'company': ipa_user['ou']}),
+            "existing_keys": ipa_user['ipasshpubkey'] if 'ipasshpubkey' in ipa_user else []
+        }
+        return render(request, template, context)       
 
-    def get_object(self, queryset=None):
-        return self.request.user.userprofile
+    if request.method == 'POST':
+        data = request.POST
 
-    def get_context_data(self, **kwargs):
-        token, created = Token.objects.get_or_create(user=self.request.user)
-        context = super(AccountSettingsView, self).get_context_data(**kwargs)
-        context.update({'title': "Settings", 'token': token})
-        return context
+        print("data is", data)
+        # User profile
+        profile = UserProfile.objects.get(user=request.user)
+        profile.public_user = "public_user" in data
+        profile.timezone = data["timezone"]
+        profile.save()
 
+        # IPA
+        ipa_set_company(profile, data['company'])
+        ipa_set_ssh(profile, data['ssh_key_list'].split(","))
+
+        return redirect("account:settings")
+
+    return HttpResponse(status=405)
 
 class MyOIDCAB(OIDCAuthenticationBackend):
     def filter_users_by_claims(self, claims):
@@ -106,17 +123,6 @@ class LogoutView(LoginRequiredMixin, RedirectView):
         return '/'
 
 
-@method_decorator(login_required, name='dispatch')
-class UserListView(TemplateView):
-    template_name = "account/user_list.html"
-
-    def get_context_data(self, **kwargs):
-        users = UserProfile.objects.filter(public_user=True).select_related('user')
-        context = super(UserListView, self).get_context_data(**kwargs)
-        context.update({'title': "Dashboard Users", 'users': users})
-        return context
-
-
 def account_detail_view(request):
     template = "account/details.html"
     return render(request, template)
@@ -134,10 +140,12 @@ def account_resource_view(request):
     template = "account/resource_list.html"
 
     if request.method == "GET":
-
+        profile = UserProfile.objects.get(user=request.user)
+        if (not profile or profile.ipa_username == "" or profile.ipa_username == None):
+            return redirect("dashboard:index")
         r = liblaas_templates(request)
         usable_templates = r.json()
-        user_templates = [ t for t in usable_templates if t["owner"] == str(request.user)]
+        user_templates = [ t for t in usable_templates if t["owner"] == profile.ipa_username]
         context = {
             "templates": user_templates,
             "title": "My Resources"
@@ -153,6 +161,9 @@ def account_resource_view(request):
 def account_booking_view(request):
     if not request.user.is_authenticated:
         return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
+    profile = UserProfile.objects.get(user=request.user)
+    if (not profile or profile.ipa_username == "" or profile.ipa_username == None):
+        return redirect("dashboard:index")
     template = "account/booking_list.html"
     bookings = list(Booking.objects.filter(owner=request.user, end__gt=timezone.now()).order_by("-start"))
     my_old_bookings = Booking.objects.filter(owner=request.user, end__lt=timezone.now()).order_by("-start")

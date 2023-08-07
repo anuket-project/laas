@@ -34,7 +34,7 @@ class Booking(models.Model):
     pdf = models.TextField(blank=True, default="")
     idf = models.TextField(blank=True, default="")
     # Associated LibLaaS aggregate
-    aggregateId = models.CharField(blank=True, max_length=36, validators=[RegexValidator(regex='^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$', message='aggregate_id must be a valid UUID', code='nomatch')])
+    aggregateId = models.CharField(blank=True, max_length=36)
 
     complete = models.BooleanField(default=False)
 

@@ -242,5 +242,12 @@ class Workflow {
 }
 
 function apiError(info) {
-    alert("Unable to fetch " + info +". Please try again later or contact support.")
+    showError("Unable to fetch " + info +". Please try again later or contact support.")
   }
+
+function showError(message) {
+    const text = document.getElementById('alert_modal_message');
+
+    text.innerText = message;
+    $("#alert_modal").modal('show');
+}

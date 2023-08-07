@@ -39,20 +39,16 @@ class UserProfile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     timezone = models.CharField(max_length=100, blank=False, default='UTC')
-    ssh_public_key = models.FileField(upload_to=upload_to, null=True, blank=True)
-    pgp_public_key = models.FileField(upload_to=upload_to, null=True, blank=True)
     email_addr = models.CharField(max_length=300, blank=False, default='email@mail.com')
-    company = models.CharField(max_length=200, blank=False)
 
     oauth_token = models.CharField(max_length=1024, blank=False)
     oauth_secret = models.CharField(max_length=1024, blank=False)
-
-    jira_url = models.CharField(max_length=100, null=True, blank=True, default='')
 
     full_name = models.CharField(max_length=100, null=True, blank=True, default='')
     booking_privledge = models.BooleanField(default=False)
 
     public_user = models.BooleanField(default=False)
+    ipa_username = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = 'user_profile'

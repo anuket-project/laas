@@ -29,24 +29,22 @@ from django.conf.urls import url
 from django.urls import path
 
 from account.views import (
-    AccountSettingsView,
     OIDCLoginView,
     LogoutView,
-    UserListView,
     account_resource_view,
     account_booking_view,
     account_detail_view,
     template_delete_view,
     booking_cancel_view,
+    account_settings_view
 )
 
 app_name = 'account'
 
 urlpatterns = [
-    url(r'^settings/', AccountSettingsView.as_view(), name='settings'),
+    url(r'^settings/', account_settings_view, name='settings'),
     url(r'^login/$', OIDCLoginView.as_view(), name='login'),
     url(r'^logout/$', LogoutView.as_view(), name='logout'),
-    url(r'^users/$', UserListView.as_view(), name='users'),
     url(r'^my/resources/$', account_resource_view, name='my-resources'),
     path('my/resources/delete/<int:resource_id>', template_delete_view),
     url(r'^my/bookings/$', account_booking_view, name='my-bookings'),

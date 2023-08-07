@@ -42,6 +42,11 @@ from api.views import (
     list_labs,
     all_users,
     booking_details,
+    ipa_create_account,
+    ipa_confirm_account,
+    ipa_set_company_from_workflow,
+    ipa_add_ssh_from_workflow,
+    ipa_conflict_account
 )
 
 urlpatterns = [
@@ -60,5 +65,10 @@ urlpatterns = [
     path('users', all_users),
     path('labs', list_labs),
 
+    path('ipa/create', ipa_create_account),
+    path('ipa/confirm', ipa_confirm_account),
+    path('ipa/conflict', ipa_conflict_account),
+    path('ipa/workflow-company', ipa_set_company_from_workflow),
+    path('ipa/workflow-ssh', ipa_add_ssh_from_workflow),
     url(r'^token$', GenerateTokenView.as_view(), name='generate_token'),
 ]

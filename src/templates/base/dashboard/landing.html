@@ -1,16 +1,10 @@
 {% extends "base.html" %}
 {% load staticfiles %}
-
+{% load bootstrap4 %}
 {% block content %}
 
 <div class="text-center">
     {% if not request.user.is_anonymous %}
-    {% if not request.user.userprofile.ssh_public_key %}
-    <div class="alert alert-danger alertAnuket" role="alert">
-        <b>Warning: you need to upload an ssh key under <a href="/accounts/settings" class="inTextLink" >account settings</a> if you wish to
-        log into the servers you book</b>
-    </div>
-    {% endif %}
     {% else %}
     {% endif %}
 </div>
@@ -67,10 +61,37 @@
     </div>
 </div>
 
-<div class="hidden_form d-none" id="form_div">
-    <form method="post" action="" class="form" id="wf_selection_form">
-        {% csrf_token %}
-    </form>
-</div>
+<!-- IPA Modal -->
+<div class="modal fade" id="ipa-modal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Welcome to LaaS 3.0</h5>
+        </div>
+        <div class="modal-body" id="add_resource_modal_body">
+            <p>We have made large scale improvements to the dashboard and our host provisioning service to improve your user experience.</p>
+            <p>{{ ipa_migrator.message }}</p>
+            <form action="{{ipa_migrator.action}}" method="post">
+                {% csrf_token %}
+                <p class="text-danger">{{error}}</p>
+                {{ ipa_migrator.form }}
+                <div class="form-group">
+                    <input class="btn btn-success" name="submitButton" type="submit" value="{{ipa_migrator.button}}">
+                </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+
+$(window).on('load', function() {
+    if ({{ipa_migrator.exists}}) {
+        $('#ipa-modal').modal({backdrop: 'static', keyboard: false});
+        $('#ipa-modal').modal('show');
+    }
+    });
+</script>
 
 {% endblock content %}

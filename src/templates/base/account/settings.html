@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load bootstrap4 %}
+{% block content %}
+<h1>Settings</h1>
+    <form action="/accounts/settings/" method="post">
+        {% csrf_token %}
+        <input id="hidden_key_list" type="hidden" name="ssh_key_list" value="">
+        <div class="form-group">
+        {{ company_form }}
+        {{ preference_form }}
+        <br>
+        <label>SSH Keys:</label>
+        <ul class="list-group" id="key_ul">
+            {% for key in existing_keys %}
+            <li class="card w-25 mb-1">
+                <div class="card-body" style="height: 150px; overflow-y: auto;">
+                    {{key}}
+                </div>
+                <div class="card-footer d-flex flex-row-reverse">
+                    <div class="btn btn-danger" onclick="remove_key('{{key}}', this.parentNode.parentNode)">Delete</div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        <li class="card w-25 text-truncate mb-1">
+            <div class="card-body">
+                <textarea id="new_key_area" placeholder="New SSH Public Key" class="form-control" id="new_key_input"></textarea>            </div>
+            <div class="card-footer d-flex flex-row-reverse">
+                <div class="btn btn-success" onclick="add_key(this.parentNode.parentNode.childNodes[1].childNodes[1].value)">Add</div>
+            </div>
+        </li>
+        <input class="btn btn-success mt-5" style="width: 100px" name="submitButton" type="submit" value="Save">
+        </div>
+    </form>
+
+<script>
+let key_list = []
+$(window).on('load', function() {
+    document.getElementById('new_key_area').value = "";
+    {% for key in existing_keys %}
+    key_list.push('{{key}}')
+    {% endfor %}
+    update_json_list()
+    console.log(key_list)
+});
+
+
+function remove_key(target_key, node) {
+    key_list = key_list.filter(key => key != target_key);
+    node.setAttribute("hidden", "true");
+    update_json_list()
+}
+
+function add_key(key_string) {
+    console.log(key_string)
+    if (key_list.indexOf(key_string) != -1) {
+        alert('This key has already been added');
+        return;
+    }
+    key_list.push(key_string)
+    create_key_card(key_string)
+    update_json_list()
+}
+
+function create_key_card(key_string) {
+    const elem = document.createElement('li');
+    elem.classList.add('card', 'w-25', 'mb-1');
+    elem.innerHTML = `
+    <div class="card-body" style="height: 150px; overflow-y: auto;">
+        ` + key_string + `
+    </div>
+    <div class="card-footer d-flex flex-row-reverse">
+        <div class="btn btn-danger" onclick="remove_key('` + key_string +`', this.parentNode.parentNode)">Delete</div>
+    </div>
+    `
+
+    document.getElementById('key_ul').appendChild(elem);
+    document.getElementById('new_key_area').value = "";
+
+}
+
+function update_json_list() {
+    document.getElementById("hidden_key_list").value = key_list.toString()
+}
+</script>
+{% endblock content %}
+
