@@ -96,7 +96,8 @@ def get_booking_prereqs_validator(user_profile):
         return {
             "form": None,
             "exists": "false",
-            "action": "no user"
+            "action": "no user",
+            "result": 0
         }
 
     if (not "ou" in ipa_user) or (ipa_user["ou"] == ""):
@@ -104,7 +105,8 @@ def get_booking_prereqs_validator(user_profile):
         return {
             "form": SetCompanyForm(),
             "exists": "true",
-            "action": "/api/ipa/workflow-company"
+            "action": "/api/ipa/workflow-company",
+            "result": 1
         }
     
     if (not "ipasshpubkey" in ipa_user) or (ipa_user["ipasshpubkey"] == []):
@@ -112,11 +114,13 @@ def get_booking_prereqs_validator(user_profile):
         return {
             "form": SetSSHForm(),
             "exists": "true",
-            "action": "/api/ipa/workflow-ssh"
+            "action": "/api/ipa/workflow-ssh",
+            "result": 2,
         }
 
     return {
         "form": None,
         "exists": "false",
-        "action": ""
+        "action": "",
+        "result": -1
     }

@@ -7,3 +7,13 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
+
+from django.conf.urls import url
+from django.urls import path
+
+from resource_inventory.views import host_list_view, profile_view
+app_name = 'resource'
+urlpatterns = [
+    url(r'^list/$', host_list_view, name='host-list'),
+    path('profile/<str:resource_id>', profile_view),
+]

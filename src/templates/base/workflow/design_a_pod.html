@@ -31,14 +31,14 @@
       <div class="scroll-area pt-5 mx-5" id="select_lab">
         <!-- Ideally the 'Design a Pod' header would be anchored to the top of the page below the arrow -->
         <h1 class="mt-4"><u>Design a Pod</u></h1> 
-        <h2 class="mt-4 mb-3">Select a Lab:</h2>
+        <h2 class="mt-4 mb-3">Select a Lab<span class="text-danger">*</span></h2>
         <div class="row card-deck" id="lab_cards">
         </div>
       </div>
 
       <!-- Add Resources -->
       <div class="scroll-area pt-5 mx-5" id="add_resources">
-        <h2 class="mt-4 mb-3">Add Resources:</h2>
+        <h2 class="mt-4 mb-3">Add Resources<span class="text-danger">*</span></h2>
         <div class="row card-deck align-items-center" id="host_cards">
           <div class="col-xl-3 col-md-6 col-12" id="add_resource_plus_card">
             <div class="card align-items-center border-0">
@@ -51,7 +51,7 @@
 
       <!-- Add Networks --> 
     <div class="scroll-area pt-5 mx-5" id="add_networks">
-      <h2 class="mt-4 mb-3">Add Networks:</h2>
+      <h2 class="mt-4 mb-3">Add Networks<span class="text-danger">*</span></h2>
         <div class="row card-deck align-items-center" id="network_card_deck">
           <div class="col-xl-3 col-md-6 col-12" id="add_network_plus_card">
             <div class="card align-items-center border-0">
@@ -64,14 +64,14 @@
 
    <!-- Configure Connections-->
    <div class="scroll-area pt-5 mx-5" id="configure_connections">
-      <h2 class="mt-4 mb-3">Configure Connections:</h2>
+      <h2 class="mt-4 mb-3">Configure Connections<span class="text-danger">*</span></h2>
       <div class="row card-deck align-items-center" id="connection_cards">
       </div>
   </div>
 
   <!-- Pod Details-->
   <div class="scroll-area pt-5 mx-5" id="pod_details">
-    <h2 class="mt-4 mb-3">Pod Details</h2>
+    <h2 class="mt-4 mb-3">Pod Details<span class="text-danger">*</span></h2>
     <div class="form-group">
       <div class="row align-items-center my-4">
         <div class="col-xl-6 col-md-8 col-11">
@@ -208,7 +208,7 @@
         <h5 id="alert_modal_message"></h5>
       </div>
       <div class="modal-footer d-flex justify-content-center">
-        <button class="btn btn-success" data-dismiss="modal" id="alert-modal-submit" onclick="">Confirm</button>
+        <button class="btn btn-success" data-dismiss="modal" id="alert-modal-submit" onclick="workflow.goTo(alert_destination)">Confirm</button>
       </div>
     </div>
   </div>

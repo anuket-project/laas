@@ -41,6 +41,7 @@ urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api/', include('api.urls')),
     url(r'^oidc/', include('mozilla_django_oidc.urls')),
+    url(r'^resource/', include('resource_inventory.urls', namespace='resource')),
 ]
 
 if settings.DEBUG is True:

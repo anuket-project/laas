@@ -6,13 +6,13 @@ const steps = {
     SELECT_TEMPLATE: 0,
     CLOUD_INIT: 1,
     BOOKING_DETAILS: 2,
-    ADD_COLLABS: 3,
-    BOOKING_SUMMARY: 4
+    ADD_COLLABS: 2,
+    BOOKING_SUMMARY: 3
   }
 
   class BookingWorkflow extends Workflow {
     constructor(savedBookingBlob) {
-        super(["select_template", "cloud_init", "booking_details" ,"add_collabs", "booking_summary"])
+        super(["select_template", "cloud_init", "booking_details" , "booking_summary"])
 
         // if (savedBookingBlob) {
         //     this.resume_workflow()
@@ -24,7 +24,12 @@ const steps = {
 
     async startWorkflow() {
         this.userTemplates = await LibLaaSAPI.getTemplatesForUser() // List<TemplateBlob>
-        GUI.displayTemplates(this.userTemplates);
+        const flavorsList = await LibLaaSAPI.getLabFlavors("UNH_IOL")
+        this.labFlavors = new Map(); // Map<UUID, FlavorBlob>
+        for (const fblob of flavorsList) {
+            this.labFlavors.set(fblob.flavor_id, fblob);
+        }
+        GUI.displayTemplates(this.userTemplates, this.labFlavors);
         GUI.modifyCollabWidget();
         this.setEventListeners();
         document.getElementById(this.sections[0]).scrollIntoView({behavior: 'smooth'});
@@ -240,28 +245,35 @@ const steps = {
 
     /** Async / await is more infectious than I thought, so all functions that rely on an API call will need to be async */
     async onclickConfirm() {
+        // disable button
+        const button = document.getElementById("booking-confirm-button");
+        $("html").css("cursor", "wait");
+        button.setAttribute('disabled', 'true');
         const complete = this.isCompleteBookingInfo();
         if (!complete[0]) {
-            showError(complete[1]);
-            this.step = complete[2]
-            document.getElementById(this.sections[complete[2]]).scrollIntoView({behavior: 'smooth'});
+            showError(complete[1], complete[2]);
+            $("html").css("cursor", "default");
+            button.removeAttribute('disabled');
             return
         }
 
         const response = await LibLaaSAPI.makeBooking(this.bookingBlob);
+        if (!response) {
+            showError("The selected resources for this booking are unavailable at this time. Please select a different resource or try again later.", -1)
+        }
         if (response.bookingId) {
-            showError("The booking has been successfully created.")
-            window.location.href = "../../";
+            showError("The booking has been successfully created.", -1)
+            window.location.href = "../../booking/detail/" + response.bookingId + "/"; // todo
+            return;
         } else {
-            if (response.status == 406) {
-                showError("One or more collaborators is missing SSH keys or has not configured their IPA account.")
+            if (response.error == true) {
+                showError(response.message, -1)
             } else {
-                showError("The booking could not be created at this time.")
+                showError("The booking could not be created at this time.", -1)
             }
         }
-        // if (confirm("Are you sure you would like to create this booking?")) {
-
-        // }
+        $("html").css("cursor", "default");
+        button.removeAttribute('disabled');
     }
   }
 
@@ -288,16 +300,45 @@ class GUI {
     }
 
     /** Takes a list of templateBlobs and creates a selectable card for each of them */
-    static displayTemplates(templates) {
+    static displayTemplates(templates, flavor_map) {
         const templates_list = document.getElementById("default_templates_list");
 
         for (const t of templates) {
-            const newCard = this.makeTemplateCard(t);
+            const newCard = this.makeTemplateCard(t, this.calculateAvailability(t, flavor_map));
             templates_list.appendChild(newCard);
         }
     }
 
-    static makeTemplateCard(templateBlob) {
+    static calculateAvailability(templateBlob, flavor_map) {
+        const local_map = new Map()
+  
+        // Map flavor uuid to amount in template
+        for (const host of templateBlob.host_list) {
+            const existing_count = local_map.get(host.flavor)
+            if (existing_count) {
+                local_map.set(host.flavor, existing_count + 1)
+            } else {
+                local_map.set(host.flavor, 1)
+            }
+        }
+  
+        let lowest_count = Number.POSITIVE_INFINITY;
+        for (const [key, val] of local_map) {
+            const curr_count =  Math.floor(flavor_map.get(key).available_count / val)
+            if (curr_count < lowest_count) {
+                lowest_count = curr_count;
+            }
+        }
+  
+        return lowest_count;
+      }
+
+    static makeTemplateCard(templateBlob, available_count) {
+        const isAvailable = available_count > 0;
+        let availability_text = isAvailable ? 'Resources Available' : 'Resources Unavailable';
+        let color = isAvailable ? 'text-success' : 'text-danger';
+        let disabled = !isAvailable ? 'disabled = "true"' : '';
+
         const col = document.createElement('div');
         col.classList.add('col-3', 'my-1');
         col.innerHTML=  `
@@ -307,9 +348,10 @@ class GUI {
             </div>
             <div class="card-body">
                 <p class="grid-item-description">` + templateBlob.pod_desc +`</p>
+                <p class="grid-item-description ` + color + `">` + availability_text + `</p>
             </div>
             <div class="card-footer">
-                <button type="button" class="btn btn-success grid-item-select-btn w-100 stretched-link" 
+                <button type="button"` + disabled + ` class="btn btn-success grid-item-select-btn w-100 stretched-link" 
                 onclick="workflow.onclickSelectTemplate(this.parentNode.parentNode, '` + templateBlob.id +`')">Select</button>
             </div>
           </div>

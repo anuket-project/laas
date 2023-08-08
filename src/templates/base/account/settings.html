@@ -7,6 +7,9 @@
         {% csrf_token %}
         <input id="hidden_key_list" type="hidden" name="ssh_key_list" value="">
         <div class="form-group">
+        <label>Your IPA Username</label>
+        <input type="text" class="form-control" disabled="true" style="width: 300px;" value="{{ ipa_username }}">
+        <p>To change your password and access advanced account management, please go <a href="http://os-passwd.iol.unh.edu">here</a></p>
         {{ company_form }}
         {{ preference_form }}
         <br>
@@ -42,7 +45,6 @@ $(window).on('load', function() {
     key_list.push('{{key}}')
     {% endfor %}
     update_json_list()
-    console.log(key_list)
 });
 
 

@@ -26,6 +26,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url
+from django.urls import path
 
 from booking.views import (
     booking_detail_view,
@@ -34,9 +35,12 @@ from booking.views import (
     BookingListView,
 )
 
+from api.views import booking_status
+
 app_name = 'booking'
 urlpatterns = [
     url(r'^detail/(?P<booking_id>[0-9]+)/$', booking_detail_view, name='detail'),
+    url(r'^detail/(?P<booking_id>[0-9]+)/status$', booking_status, name='detail'),
     url(r'^(?P<booking_id>[0-9]+)/$', booking_detail_view, name='booking_detail'),
     url(r'^delete/$', BookingDeleteView.as_view(), name='delete_prefix'),
     url(r'^delete/(?P<booking_id>[0-9]+)/$', BookingDeleteView.as_view(), name='delete'),

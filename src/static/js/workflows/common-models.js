@@ -169,10 +169,15 @@ class FlavorBlob {
         this.flavor_id = incomingBlob.flavor_id; // UUID (String)
         this.name = incomingBlob.name; // String
         this.interfaces = []; // List<String>
-        // images are added after
+        this.images = []; // List<ImageBlob>
+        this.available_count = incomingBlob.available_count;
 
         if (incomingBlob.interfaces) {
             this.interfaces = incomingBlob.interfaces;
+        }
+
+        if (incomingBlob.images) {
+            this.images = incomingBlob.images;
         }
     }
 

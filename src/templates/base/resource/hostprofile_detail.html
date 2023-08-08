@@ -2,51 +2,46 @@
 {% load staticfiles %}
 
 {% block content %}
+<h1>{{ flavor.name }}</h1>
 <div class="row">
     <div class="col-lg-6">
         <div class="card mb-4">
             <div class="card-header d-flex">
                 <h4 class="d-inline">Available at</h4>
-                <button data-toggle="collapse" data-target="#availableAt" class="btn ml-auto btn-outline-secondary">Expand</button>
             </div>
             <div class="collapse show" id="availableAt">
                 <ul class="list-group list-group-flush">
-                    {% for lab in hostprofile.labs.all %}
-                        <li class="list-group-item">{{lab.name}}</li>
-                    {% endfor %}
+                    <li class="list-group-item">UNH IOL</li>
                 </ul>
             </div>
         </div>
         <div class="card mb-4">
             <div class="card-header d-flex">
                 <h4 class="d-inline">RAM</h4>
-                <button data-toggle="collapse" data-target="#ramPanel" class="btn ml-auto btn-outline-secondary">Expand</button>
             </div>
             <div id="ramPanel" class="collapse show">
                 <div class="card-body">
-                    {{hostprofile.ramprofile.first.amount}}G,
-                    {{hostprofile.ramprofile.first.channels}} channels
+                    {{flavor.ram.value}} {{flavor.ram.unit}}
                 </div>
             </div>
         </div>
         <div class="card mb-4">
             <div class="card-header d-flex">
                 <h4 class="d-inline">CPU</h4>
-                <button data-toggle="collapse" data-target="#cpuPanel" class="btn ml-auto btn-outline-secondary">Expand</button>
             </div>
             <div class="collapse show" id="cpuPanel">
                 <table class="table">
                     <tr>
                         <td>Arch:</td>
-                        <td>{{hostprofile.cpuprofile.first.architecture}}</td>
+                        <td>{{ flavor.arch }}</td>
                     </tr>
                     <tr>
                         <td>Cores:</td>
-                        <td>{{hostprofile.cpuprofile.first.cores}}</td>
+                        <td>{{ flavor.cpu_count }}</td>
                     </tr>
                     <tr>
                         <td>Sockets:</td>
-                        <td>{{hostprofile.cpuprofile.first.cpus}}</td>
+                        <td>{{ flavor.sockets }}</td>
                     </tr>
                 </table>
             </div>
@@ -54,31 +49,29 @@
         <div class="card mb-4">
             <div class="card-header d-flex">
                 <h4 class="d-inline">Disk</h4>
-                <button data-toggle="collapse" data-target="#diskPanel" class="btn ml-auto btn-outline-secondary">Expand</button>
             </div>
             <div class="collapse show" id="diskPanel">
                 <table class="table">
                     <tr>
-                        <td>Size:</td>
-                        <td>{{hostprofile.storageprofile.first.size}} GiB</td>
+                        <td>Disk Size:</td>
+                        <td>{{flavor.disk_size.value}} {{flavor.disk_size.unit}}</td>
                     </tr>
                     <tr>
-                        <td>Type:</td>
-                        <td>{{hostprofile.storageprofile.first.media_type}}</td>
+                        <td>Root Size:</td>
+                        <td>{{flavor.root_size.value}} {{flavor.root_size.unit}}</td>
                     </tr>
                     <tr>
-                        <td>Mount Point:</td>
-                        <td>{{hostprofile.storageprofile.first.name}}</td>
+                        <td>Swap Size:</td>
+                        <td>{{flavor.swap_size.value}} {{flavor.swap_size.unit}}</td>
                     </tr>
                 </table>
             </div>
         </div>
     </div>
     <div class="col-lg-6">
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header d-flex">
                 <h4 class="d-inline">Interfaces</h4>
-                <button data-toggle="collapse" data-target="#interfacePanel" class="btn ml-auto btn-outline-secondary">Expand</button>
             </div>
             <div class="collapse show" id="interfacePanel">
                 <table class="table">
@@ -89,10 +82,31 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for intprof in hostprofile.interfaceprofile.all %}
+                        {% for interface in flavor.interfaces %}
                         <tr>
-                            <td>{{intprof.name}}</td>
-                            <td>{{intprof.speed}}</td>
+                            <td>{{interface.name}}</td>
+                            <td>{{interface.speed.value}} {{interface.speed.unit}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+                <div class="card">
+            <div class="card-header d-flex">
+                <h4 class="d-inline">Images</h4>
+            </div>
+            <div class="collapse show" id="interfacePanel">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for image in flavor.images %}
+                        <tr>
+                            <td>{{image.name}}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

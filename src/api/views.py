@@ -34,6 +34,7 @@ from api.forms import DowntimeForm
 from account.models import UserProfile, Lab
 from booking.models import Booking
 from api.models import LabManagerTracker,AutomationAPIManager, APILog
+from api.utils import  get_booking_prereqs_validator
 
 import yaml
 import uuid
@@ -250,18 +251,32 @@ def make_booking(request):
     print("incoming data is ", data)
 
     # todo - test this
-    ipa_users = list(UserProfile.objects.get(user=request.user).ipa_username) # add owner's ipa username to list of allowed users to be sent to liblaas
+    ipa_users = []
+    ipa_users.append(UserProfile.objects.get(user=request.user).ipa_username) # add owner's ipa username to list of allowed users to be sent to liblaas
 
-    for user in list(data["allowed_users"]):
+    for user in data["allowed_users"]:
         collab_profile = UserProfile.objects.get(user=User.objects.get(username=user))
-        if (collab_profile.ipa_username == "" or collab_profile.ipa_username == None):
-            return JsonResponse(
-            data={},
-            status=406, # Not good practice but a quick solution until blob validation is fully supported within django instead of the frontend
-            safe=False
-        )
-        else:
+        prereq_validator = get_booking_prereqs_validator(collab_profile)
+
+        if prereq_validator["result"] == -1:
+            # All good
             ipa_users.append(collab_profile.ipa_username)
+        else:
+            message = "There is an issue with one of your chosen collaborators."
+            if prereq_validator["result"] == 0:
+                # No IPA username
+                message = str(collab_profile) + " has not linked their IPA account yet. Please ask them to log into the LaaS dashboard, or remove them from the booking to continue."
+            elif prereq_validator["result"] == 1:
+                # No Company
+                message = str(collab_profile) + " has not set their company yet. Please ask them to log into the LaaS dashboard, go to the settings page and add it. Otherwise, remove them from the booking to continue."
+            elif prereq_validator["result"] == 2:
+                # No SSH
+                message = str(collab_profile) + " has not added an SSH public key yet. Please ask them to log into the LaaS dashboard, go to the settings page and add it. Otherwise, remove them from the booking to continue."
+            return JsonResponse(
+                data={"message": message, "error": True},
+                status=200,
+                safe=False
+            )
 
     bookingBlob = {
         "template_id": data["template_id"],
@@ -274,7 +289,8 @@ def make_booking(request):
             "purpose": data["metadata"]["purpose"],
             "project": data["metadata"]["project"],
             "length": int(data["metadata"]["length"])
-        }
+        },
+        "origin": "anuket" if os.environ.get("TEMPLATE_OVERRIDE_DIR") == 'laas' else "lfedge"
     }
     
     print("allowed users are ", bookingBlob["allowed_users"])
@@ -296,10 +312,12 @@ def make_booking(request):
 
         # Now create it in liblaas
         bookingBlob["metadata"]["booking_id"] = str(booking.id)
-        liblaas_endpoint = os.environ.get("LIBLAAS_BASE_URL") + 'booking/create'
+        liblaas_endpoint = liblaas_base_url + 'booking/create'
         liblaas_response = requests.post(liblaas_endpoint, data=json.dumps(bookingBlob), headers={'Content-Type': 'application/json'})
+        print("response from liblaas is", vars(liblaas_response))
         if liblaas_response.status_code != 200:
-            print("received non success from liblaas")
+            print("received non success from liblaas, deleting booking from dashboard")
+            booking.delete()
             return JsonResponse(
             data={},
             status=500,
@@ -482,7 +500,6 @@ def liblaas_request(request) -> JsonResponse:
     if request.method != 'POST':
         return JsonResponse({"error" : "405 Method not allowed"})
 
-    liblaas_base_url = os.environ.get("LIBLAAS_BASE_URL")
     post_data = json.loads(request.body)
     print("post data is " + str(post_data))
     http_method = post_data["method"]
@@ -523,13 +540,13 @@ def liblaas_request(request) -> JsonResponse:
         )
 
 def liblaas_templates(request):
-    liblaas_url = os.environ.get("LIBLAAS_BASE_URL") + "template/list/" + UserProfile.objects.get(user=request.user).ipa_username
+    liblaas_url = liblaas_base_url + "template/list/" + UserProfile.objects.get(user=request.user).ipa_username
     print("api call to " + liblaas_url)
     return requests.get(liblaas_url)
 
 def delete_template(request):
     endpoint = json.loads(request.body)["endpoint"]
-    liblaas_url = os.environ.get("LIBLAAS_BASE_URL") + endpoint
+    liblaas_url = liblaas_base_url + endpoint
     print("api call to ", liblaas_url)
     try:
         response = requests.delete(liblaas_url)
@@ -544,9 +561,14 @@ def delete_template(request):
             status=500,
             safe=False
         )
+    
+def booking_status(request, booking_id):
+    print("booking id is", booking_id)
+    statuses = get_booking_status(Booking.objects.get(id=booking_id))
+    return HttpResponse(json.dumps(statuses))
 
 def get_booking_status(bookingObject):
-    liblaas_url =  os.environ.get("LIBLAAS_BASE_URL") + "booking/" + bookingObject.aggregateId + "/status"
+    liblaas_url =  liblaas_base_url + "booking/" + bookingObject.aggregateId + "/status"
     print("Getting booking status at: ", liblaas_url)
     response = requests.get(liblaas_url)
     try:
@@ -556,7 +578,7 @@ def get_booking_status(bookingObject):
         return []
     
 def liblaas_end_booking(aggregateId):
-    liblaas_url = os.environ.get('LIBLAAS_BASE_URL') + "booking/" + str(aggregateId) + "/end"
+    liblaas_url = liblaas_base_url + "booking/" + str(aggregateId) + "/end"
     print("Ending booking at ", liblaas_url)
     response = requests.delete(liblaas_url)
     try:
@@ -646,3 +668,45 @@ def ipa_add_ssh_from_workflow(request):
     key_as_list.append(request.POST["ssh_public_key"])
     ipa_set_ssh(profile, key_as_list)
     return redirect("workflow:book_a_pod")
+
+def list_hosts(request):
+    if request.method != "GET":
+        return HttpResponse(status=405)
+    
+    dashboard = 'lfedge' if liblaas_base_url == 'lfedge' else 'anuket'
+    
+    liblaas_url = os.environ.get('LIBLAAS_BASE_URL') + "flavor/hosts/" + dashboard
+    print("Listing hosts at ", liblaas_url)
+    response = requests.get(liblaas_url)
+    try:
+        return JsonResponse(
+            data = json.loads(response.content),
+            status=200,
+            safe=False
+        )
+    except Exception as e:
+        print("Failed to list hosts!", e)
+        return JsonResponse(
+            data = {},
+            status=500,
+            safe=False
+        )
+
+def list_flavors(request):
+  if (request.method) != "GET":
+    return HttpResponse(status=405) 
+  
+  response = requests.get(liblaas_base_url + "flavor")
+  try:
+    return JsonResponse(
+        data = json.loads(response.content),
+        status=200,
+        safe=False
+    )
+  except Exception as e:
+    print("Failed to list flavors!", e)
+    return JsonResponse(
+        data = {},
+        status=500,
+        safe=False
+    )

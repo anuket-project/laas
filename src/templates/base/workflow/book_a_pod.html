@@ -24,7 +24,7 @@
     <div class="scroll-container w-100 h-100 p-0">
         <div class="scroll-area pt-5 mx-5" id="select_template">
             <h1 class="mt-4"><u>Book a Pod</u></h1>
-            <h2 class="mt-4 mb-3">Select Host Or Template:</h2>
+            <h2 class="mt-4 mb-3">Select Host Or Template<span class="text-danger">*</span></h2>
             <div class="card-deck align-items-center">
       
               <div class="col-12" id="template_list">
@@ -46,7 +46,7 @@
         </div>
 
         <div class="scroll-area pt-5 mx-5" id="booking_details">
-            <h2 class="mt-4 mb-3">Booking Details</h2>
+            <h2 class="mt-4 mb-3">Booking Details<span class="text-danger">*</span></h2>
             <div class="form-group mb-0">
               <div class="row align-items-center my-4">
                 <div class="col-xl-6 col-md-8 col-11">
@@ -66,9 +66,6 @@
                 <input id="input_length" type="range" min="1" max="21" value="1" class="form-control form-control-lg col-xl-5 col-9 p-0" placeholder="Length" oninput="workflow.onchangeDays()">
               </div>
             </div>
-        </div>
-
-        <div class="scroll-area pt-5 mx-5" id="add_collabs">
             <h2 class="mt-4 mb-3">Add Collaborators:</h2>
             <div class="row">
               <div class="col-xl-6 col-md-8 col-11 p-0 border border-dark">
@@ -99,7 +96,7 @@
             </div>
             <div class="row align-items-center mt-5">
               <!-- <button class="btn btn-danger cancel-book-button p-0 mr-2 col-xl-2 col-md-3 col-5" onclick="workflow.onclickCancel()">Cancel</button> -->
-              <button class="btn btn-success cancel-book-button p-0 ml-2 col-xl-2 col-md-3 col-5" onclick="workflow.onclickConfirm()">Book</button>
+              <button id="booking-confirm-button"  class="btn btn-success cancel-book-button p-0 ml-2 col-xl-2 col-md-3 col-5" onclick="workflow.onclickConfirm()">Book</button>
             </div>
           </div>
         
@@ -144,7 +141,7 @@
         <h5 id="alert_modal_message"></h5>
       </div>
       <div class="modal-footer d-flex justify-content-center">
-        <button class="btn btn-success" data-dismiss="modal" id="alert-modal-submit" onclick="">Confirm</button>
+        <button class="btn btn-success" data-dismiss="modal" id="alert-modal-submit" onclick="workflow.goTo(alert_destination)">Confirm</button>
       </div>
     </div>
   </div>

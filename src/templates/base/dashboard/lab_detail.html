@@ -12,7 +12,6 @@
         <div class="card mb-3">
             <div class="card-header d-flex">
                 <h4>Lab Profile</h4>
-                <button class="btn btn-outline-secondary ml-auto" data-toggle="collapse" data-target="#panel_overview">Expand</button>
             </div>
             <div class="collapse show" id="panel_overview">
                 <div class="overflow-auto">
@@ -61,16 +60,15 @@
         <div class="card my-3">
             <div class="card-header d-flex">
                 <h4 class="d-inline-block">Host Profiles</h4>
-                <button data-toggle="collapse" data-target="#profile_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
             <div class="collapse show" id="profile_panel">
                 <div class="overflow-auto">
                     <table class="table m-0">
-                        {% for profile in hostprofiles %}
+                        {% for flavor in flavors %}
                             <tr>
-                                <td>{{profile.name}}</td>
-                                <td>{{profile.description}}</td>
-                                <td><a href="/resource/profiles/{{ profile.id }}" class="btn btn-info">Profile</a></td>
+                                <td>{{flavor.name}}</td>
+                                <td>{{flavor.description}}</td>
+                                <td><a href="/resource/profile/{{ flavor.flavor_id }}" class="btn btn-info">Profile</a></td>
                             </tr>
                         {% endfor %}
                     </table>
@@ -81,7 +79,6 @@
         <div class="card my-3">
             <div class="card-header d-flex">
                 <h4 class="d-inline">Networking Capabilities</h4>
-                <button data-toggle="collapse" data-target="#network_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
 
             <div class="collapse show" id="network_panel">
@@ -96,63 +93,50 @@
                 </table>
             </div>
         </div>
-        <div class="card my-3">
-            <div class="card-header d-flex">
-                <h4>Images</h4>
-                <button data-toggle="collapse" data-target="#image_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
-            </div>
-            <div class="collapse show" id="image_panel">
-                <div class="overflow-auto">
-                    <table class="table m-0">
-                        <tr>
-                            <th>Name</th>
-                            <th>Owner</th>
-                            <th>For Host Type</th>
-                            <th>Description</th>
-                        </tr>
-                        {% for image in images %}
-                            <tr>
-                                <td>{{image.name}}</td>
-                                <td>{{image.owner}}</td>
-                                <td>{{image.host_type}}</td>
-                                <td>{{image.description}}</td>
-                            </tr>
-                        {% endfor %}
-                    </table>
-                </div>
-            </div>
-        </div>
 
     </div>
     <div class="col-lg-8">
         <div class="card mb-3">
             <div class="card-header d-flex">
                 <h4>Lab Hosts</h4>
-                <button data-toggle="collapse" data-target="#lab_hosts_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
             </div>
 
             <div class="collapse show" id="lab_hosts_panel">
                 <table class="table m-0">
                     <tr>
                         <th>Name</th>
+                        <th>Architecture</th>
                         <th>Profile</th>
                         <th>Booked</th>
                         <th>Working</th>
-                        <th>Vendor</th>
                     </tr>
                     {% for host in hosts %}
-                        <tr>
-                            <td>{{host.name}}</td>
-                            <td>{{host.profile}}</td>
-                            <td>{{host.booked|yesno:"Yes,No"}}</td>
-                            {% if host.working %}
-                                <td class="bg-success text-white">Yes</td>
-                            {% else %}
-                                <td class="bg-danger text-white">No</td>
-                            {% endif %}
-                            <td>{{host.vendor}}</td>
-                        </tr>
-                    {% endfor %}
+                    <tr>
+                        <td>
+                            {{ host.name }}
+                        </td>
+                        <td>
+                            {{ host.arch }}
+                        </td>
+                        <td>
+                            <a href="../../resource/profile/{{ host.flavor.id }}">{{ host.flavor.name }}</a>
+                        </td>
+                        <td>
+                        {% if host.allocation != null %}
+                        Yes
+                        {% else %}
+                        No
+                        {% endif %}
+                        </td>
+                        <td>
+                        {% if host.allocation.reason == "maintenance" %}
+                        No
+                        {% else %}
+                        Yes
+                        {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
                 </table>
             </div>
         </div>

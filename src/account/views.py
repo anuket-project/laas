@@ -48,7 +48,8 @@ def account_settings_view(request):
         context = {
             "preference_form": AccountPreferencesForm(instance=profile),
             "company_form": SetCompanyForm(initial={'company': ipa_user['ou']}),
-            "existing_keys": ipa_user['ipasshpubkey'] if 'ipasshpubkey' in ipa_user else []
+            "existing_keys": ipa_user['ipasshpubkey'] if 'ipasshpubkey' in ipa_user else [],
+            "ipa_username": profile.ipa_username
         }
         return render(request, template, context)       
 

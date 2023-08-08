@@ -61,8 +61,7 @@ code {
         <div class="card mb-3">
             <div class="card-header d-flex">
                 <h4 class="d-inline">Deployment Progress</h4>
-                <p>These are the different tasks that have to be completed before your deployment is ready.
-                If this is taking a really long time, let us know <a href="mailto:{{contact_email}}">here!</a></p>
+                <p class="mx-3">Your resources are being prepared. If this is taking a really long time, please contact us <a href="mailto:{{contact_email}}">here!</a></p>
                 <!-- <button data-toggle="collapse" data-target="#panel_tasks" class="btn btn-outline-secondary ml-auto">Expand</button> -->
             </div>
             <div class="collapse show" id="panel_tasks">
@@ -75,23 +74,18 @@ code {
                     {% for host in statuses %}
                     <tr>
                         <td>
-                            <!-- Success,
-                            Reimage,
-                            InProgress,
-                            Failure,
-                            Import, -->
-                            {% if host.status is 'Success' %}
+                            {% if 'Success' in host.status  %}
                             <div class="rounded-circle bg-success square-20"></div>
-                            {% elif host.status is 'InProgress' %}
-                            <div class="spinner-border text-primary square-20"></div>
+                            {% elif 'Fail' in host.status %}
+                            <div class="rounded-circle bg-danger square-20"></div>
                             {% else %}
-                            <div class="rounded-circle bg-secondary square-20"></div>
+                            <div class="spinner-border text-primary square-20"></div>
                             {% endif %}
                         </td>
                         <td>
                             {{ host.hostname }}
                         </td>
-                        <td>
+                        <td id="{{host.instance_id}}">
                             {{ host.status }}
                         </td>
                     </tr>
@@ -101,5 +95,51 @@ code {
         </div>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-5">
+        <div class="card mb-3">
+            <div class="card-header d-flex">
+                Diagnostic Information
+            </div>
+            <div>
+                <table class="table m-0">
+                    <tr>
+                        <th></th>
+                        <th>Aggregate ID</th>
+                        <td>{{booking.aggregateId}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+setInterval(function(){
+   fetchBookingStatus();
+}, 5000);
+
+
+async function fetchBookingStatus() {
+        req = new XMLHttpRequest();
+        var url = "status";
+        req.open("GET", url, true);
+        req.onerror = function() { alert("oops"); }
+        req.onreadystatechange = function() {
+            if(req.readyState === 4) {
+            statuses = JSON.parse(req.responseText)
+            updateStatuses(statuses)
+            }
+        }
+        req.send();
+}
+
+async function updateStatuses(statuses) {
+    for (const s of statuses) {
+        document.getElementById(s.instance_id).innerText = s.status
+    }
+}
+</script>
 
 {% endblock content %}

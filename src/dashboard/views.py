@@ -8,7 +8,7 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-
+import json
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django.shortcuts import render
@@ -21,7 +21,7 @@ from api.utils import get_ipa_migration_form, ipa_query_user
 from api.views import ipa_conflict_account
 from booking.models import Booking
 from dashboard.forms import *
-
+from api.views import list_flavors, list_hosts
 
 from laas_dashboard import settings
 
@@ -40,14 +40,18 @@ def lab_detail_view(request, lab_name):
         user = request.user
 
     lab = get_object_or_404(Lab, name=lab_name)
+    flavors_list = json.loads(list_flavors(request).content)
+    host_list = json.loads(list_hosts(request).content)
+    flavor_map = {}
+    for flavor in flavors_list:
+        flavor_map[flavor['flavor_id']] = flavor['name']
+        
 
-    # images = Image.objects.filter(from_lab=lab).filter(public=True)
-    images = []
-    # if user:
-    #     images = images | Image.objects.filter(from_lab=lab).filter(owner=user)
-
-    # hosts = ResourceQuery.filter(lab=lab)
-    hosts = []
+    # Apparently Django Templating lacks many features that regular Jinja offers, so I need to get creative
+    for host in host_list:
+        id = host["flavor"]
+        name = flavor_map[id]
+        host["flavor"] = {"id": id, "name": name}
 
     return render(
         request,
@@ -56,8 +60,8 @@ def lab_detail_view(request, lab_name):
             'title': "Lab Overview",
             'lab': lab,
             # 'hostprofiles': ResourceProfile.objects.filter(labs=lab),
-            'images': images,
-            'hosts': hosts
+            'flavors': flavors_list,
+            'hosts': host_list
         }
     )
 
