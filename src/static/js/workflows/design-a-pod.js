@@ -68,7 +68,7 @@ class DesignWorkflow extends Workflow {
 
     /** Takes an HTML element */
     async onclickSelectLab(lab_card) {
-        this.step = steps.SELECT_LAB;
+        this.goTo(steps.SELECT_LAB)
 
         if (this.templateBlob.lab_name == null) { // Lab has not been selected yet
             this.templateBlob.lab_name = lab_card.id;
@@ -106,7 +106,7 @@ class DesignWorkflow extends Workflow {
       // Generate template cards
       // Show modal
 
-      this.step = steps.ADD_RESOURCES;
+      this.goTo(steps.ADD_RESOURCES)
 
       if (this.templateBlob.lab_name == null) {
           showError("Please select a lab before adding resources.", steps.SELECT_LAB);
@@ -269,7 +269,7 @@ class DesignWorkflow extends Workflow {
      * @param {String} hostname 
      */
     onclickDeleteHost(hostname) {
-      this.step = steps.ADD_RESOURCES;
+      this.goTo(steps.ADD_RESOURCES);
       for (let existing_host of this.templateBlob.host_list) {
         if (hostname == existing_host.hostname) {
           this.removeHostFromTemplateBlob(existing_host);
@@ -294,8 +294,7 @@ class DesignWorkflow extends Workflow {
       // Prerequisite step checks
       // GUI stuff
 
-      this.step = steps.ADD_NETWORKS;
-
+      this.goTo(steps.ADD_NETWORKS)
       if (this.templateBlob.lab_name == null) {
           showError("Please select a lab before adding networks.", steps.SELECT_LAB);
           return;
@@ -311,7 +310,7 @@ class DesignWorkflow extends Workflow {
 
     /** onclick handler for the adding_network_confirm button */
     onclickConfirmNetwork() {
-      this.step = steps.ADD_NETWORKS;
+      this.goTo(steps.ADD_NETWORKS)
 
       // Add the network
       // call the GUI to make the card (refresh the whole view to make it easier)
@@ -364,7 +363,7 @@ class DesignWorkflow extends Workflow {
      * Takes a network name as a parameter.
     */
     onclickDeleteNetwork(network_name) {
-      this.step = steps.ADD_NETWORKS;
+      this.goTo(steps.ADD_NETWORKS)
 
       for (let existing_network of this.templateBlob.networks) {
         if (network_name == existing_network.name) {
@@ -402,7 +401,7 @@ class DesignWorkflow extends Workflow {
     }
 
     onclickConfigureConnection(hostname) {
-      this.step = steps.CONFIGURE_CONNECTIONS;
+      this.goTo(steps.CONFIGURE_CONNECTIONS)
 
       const host = this.templateBlob.findHost(hostname);
       if (!host) {
@@ -450,7 +449,7 @@ class DesignWorkflow extends Workflow {
       });
 
       pod_name_input.addEventListener('focusin', (event)=> {
-        this.step = steps.POD_DETAILS;
+        this.goTo(steps.POD_DETAILS)
         GUI.unhighlightError(pod_name_input);
         GUI.hidePodDetailsError();
       });
@@ -460,7 +459,7 @@ class DesignWorkflow extends Workflow {
       });
 
       pod_desc_input.addEventListener('focusin', (event)=> {
-        this.step = steps.POD_DETAILS;
+        this.goTo(steps.POD_DETAILS)
         GUI.unhighlightError(pod_desc_input);
         GUI.hidePodDetailsError();
       });
@@ -515,9 +514,6 @@ class DesignWorkflow extends Workflow {
       else if (input.length > maxCharCount) {
         message = form_name + ' cannot exceed ' + maxCharCount + ' characters.';
         result = false;
-      } else if (!(input.match(/^[a-z0-9~@#$^*()_+=[\]{}|,.?': -!]+$/i))) {
-        message = form_name + ' contains invalid characters.';
-        result = false;
       }
 
       return [result, message]
@@ -557,7 +553,7 @@ class DesignWorkflow extends Workflow {
     }
 
     async onclickSubmitTemplate() {
-      this.step = steps.POD_SUMMARY;
+      this.goTo(steps.POD_SUMMARY)
       const simpleValidation = this.simpleStepValidation();
       if (!simpleValidation[0]) {
         showError(simpleValidation[1], simpleValidation[2])
@@ -632,8 +628,10 @@ class GUI {
     */
     static refreshAddHostModal(template_list, flavor_map) {
       document.getElementById('add_resource_modal_body').innerHTML = `
-      <h2>Resource</h2>
-      <div id="template-cards" class="row align-items-center justify-content-start">
+      <p>Select a resource, then configure the image, hostname and cloud-init (optional).</p>
+      <p>For multi-node resources, select a tab to modify each individual node.</p>
+      <h2>Resource<span class="text-danger">*</span></h2>
+      <div id="template-cards" class="row flex-grow-1">
       </div>
 
       <div id="template-config-section">
@@ -642,11 +640,11 @@ class GUI {
         </ul>
         <!-- tabs -->
         <div id="resource_config_section" hidden="true">
-          <h2>Image</h2>
+          <h2>Image<span class="text-danger">*</span></h2>
           <div id="image-cards" class="row justify-content-start align-items-center">
           </div>
           <div class="form-group">
-            <h2>Hostname</h2>
+            <h2>Hostname<span class="text-danger">*</span></h2>
             <input type="text" class="form-control" id="hostname-input" placeholder="Enter Hostname">
             <h2>Cloud Init</h2>
             <div class="d-flex justify-content-center align-items-center">
@@ -695,11 +693,11 @@ class GUI {
       let color = available_count > 0 ? 'text-success' : 'text-danger';
       // let disabled = available_count == 0 ? 'disabled = "true"' : '';
         const col = document.createElement('div');
-        col.classList.add('col-12', 'col-md-6', 'col-xl-3', 'my-3');
+        col.classList.add('col-12', 'col-md-6', 'col-xl-3', 'my-3', 'd-flex', 'flex-grow-1');
         col.innerHTML=  `
-          <div class="card" id="card-" ` + templateBlob.id + `>
+          <div class="card flex-grow-1" id="card-" ` + templateBlob.id + `>
             <div class="card-header">
-                <p class="h5 font-weight-bold mt-2">` + templateBlob.pod_name + `</p>
+                <p class="h5 font-weight-bold">` + templateBlob.pod_name + `</p>
             </div>
             <div class="card-body">
                 <p class="grid-item-description">` + templateBlob.pod_desc +`</p>
@@ -999,7 +997,7 @@ class GUI {
           outer_block.appendChild(inner_block)
           for (const c of bg.connections) {
             const connection_li = document.createElement('li');
-            connection_li.innerText = c.connects_to + `: ` + c.tagged;
+            connection_li.innerText = c.connects_to + `: ` + (c.tagged == true ? "tagged" : "untagged");
             inner_block.appendChild(connection_li);
           }
           bondgroup_list.appendChild(outer_block)

@@ -10,7 +10,7 @@
 <body>
 <div class="workflow-container">
     <div id="prev" class="row w-100 m-0">
-        <button class="btn btn-workflow-nav stretched-link m-0 p-0 mt-3" onclick="workflow.goPrev()" id="workflow-prev">
+        <button class="btn btn-workflow-nav stretched-link m-0 p-0 mt-3" hidden="true" onclick="workflow.goPrev()" id="workflow-prev">
           <div class="arrow arrow-up"></div>
         </button>
       </div>
@@ -25,21 +25,14 @@
         <div class="scroll-area pt-5 mx-5" id="select_template">
             <h1 class="mt-4"><u>Book a Pod</u></h1>
             <h2 class="mt-4 mb-3">Select Host Or Template<span class="text-danger">*</span></h2>
-            <div class="card-deck align-items-center">
-      
-              <div class="col-12" id="template_list">
-      
-                <div class="my-5" id="select_template_tab_content">
-                    <ul id="default_templates_list" class="p-0 m-0 row">
-                    </ul>
-                </div>
-      
+            <p>Select the resource bundle that you would like to reserve. Then use the navigation arrows or scroll to advance the workflow. Configure your own resource <a href="{% url 'workflow:design_a_pod' %}">here</a>.</p> 
+              <div id="default_templates_list" class="row flex-grow-1">
               </div>
-            </div>
         </div>
 
         <div class="scroll-area pt-5 mx-5" id="cloud_init">
             <h2 class="mt-4 mb-3">Global Cloud Init Override</h2>
+            <p>Add a custom cloud init configuration to apply to all hosts in your booking (optional).</p>
             <div class="d-flex align-items-center">
               <textarea name="ci-textarea" id="ci-textarea" rows="15" class="w-50"></textarea>
             </div>
@@ -47,6 +40,7 @@
 
         <div class="scroll-area pt-5 mx-5" id="booking_details">
             <h2 class="mt-4 mb-3">Booking Details<span class="text-danger">*</span></h2>
+            <p>Enter the project and purpose for your booking, as well as the duration (up to 21 days).</p>
             <div class="form-group mb-0">
               <div class="row align-items-center my-4">
                 <div class="col-xl-6 col-md-8 col-11">
@@ -67,6 +61,7 @@
               </div>
             </div>
             <h2 class="mt-4 mb-3">Add Collaborators:</h2>
+            <p>Give SSH and booking overview access to other users. Collaborators must mark their profiles as public and have a linked IPA account.</p>
             <div class="row">
               <div class="col-xl-6 col-md-8 col-11 p-0 border border-dark">
                 {% bootstrap_field form.users label="Collaborators" %}
@@ -76,6 +71,7 @@
 
         <div class="scroll-area pt-5 mx-5" id="booking_summary">
             <h2 class="mt-4 mb-3">Booking Summary</h2>
+            <p>Review your booking information and click 'Book' to reserve your resources.</p>
             <div class="row align-items-center">
               <div class="card col-xl-6 col-md-8 col-11 border-0">
                 <ul class="list-group">

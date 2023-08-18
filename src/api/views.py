@@ -575,7 +575,7 @@ def get_booking_status(bookingObject):
         return json.loads(response.content)
     except:
         print("failed to get status")
-        return []
+        return {}
     
 def liblaas_end_booking(aggregateId):
     liblaas_url = liblaas_base_url + "booking/" + str(aggregateId) + "/end"

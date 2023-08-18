@@ -196,45 +196,28 @@ class Workflow {
      * Enables the next button if the step is less than sections.length after executing
     */
     goPrev() {
-
-        if (workflow.step <= 0) {
-            return;
-        }
-
-        this.step--;
-
-        document.getElementById(this.sections[this.step]).scrollIntoView({behavior: 'smooth'});
-
-        if (this.step == 0) {
-            document.getElementById('prev').setAttribute('disabled', '');
-        } else if (this.step == this.sections.length - 2) {
-            document.getElementById('next').removeAttribute('disabled');
-        }
+        this.goTo(this.step -1);
     }
 
     goNext() {
-        if (this.step >= this.sections.length - 1 ) {
-            return;
-        }
-
-        this.step++;
-        document.getElementById(this.sections[this.step]).scrollIntoView({behavior: 'smooth'});
-
-        if (this.step == this.sections.length - 1) {
-            document.getElementById('next').setAttribute('disabled', '');
-        } else if (this.step == 1) {
-            document.getElementById('prev').removeAttribute('disabled');
-        }
+        this.goTo(this.step + 1);
     }
 
     goTo(step_number) {
         if (step_number < 0) return;
         this.step = step_number
+        document.getElementById('workflow-next').removeAttribute('hidden');
+        document.getElementById('workflow-prev').removeAttribute('hidden');
+
         document.getElementById(this.sections[this.step]).scrollIntoView({behavior: 'smooth'});
+
+        if (this.step == 0) {
+            document.getElementById('workflow-prev').setAttribute('hidden', '');
+
+        }
+
         if (this.step == this.sections.length - 1) {
-            document.getElementById('next').setAttribute('disabled', '');
-        } else if (this.step == 1) {
-            document.getElementById('prev').removeAttribute('disabled');
+            document.getElementById('workflow-next').setAttribute('hidden', '');
         }
     }
 

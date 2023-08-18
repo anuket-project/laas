@@ -53,6 +53,14 @@ code {
                         <td>Lab Deployed At</td>
                         <td>{{ booking.lab }}</td>
                     </tr>
+                    <tr>
+                        <td>IPMI Username</td>
+                        <td><code id="ipmi-username">{{ status.config.ipmi_username }}</code></td>
+                    </tr>
+                    <tr>
+                        <td>IPMI Password</td>
+                        <td><code id="ipmi-password">{{ status.config.ipmi_password }}</code></td>
+                    </tr>
                 </table>
             </div>
         </div>
@@ -61,35 +69,80 @@ code {
         <div class="card mb-3">
             <div class="card-header d-flex">
                 <h4 class="d-inline">Deployment Progress</h4>
-                <p class="mx-3">Your resources are being prepared. If this is taking a really long time, please contact us <a href="mailto:{{contact_email}}">here!</a></p>
-                <!-- <button data-toggle="collapse" data-target="#panel_tasks" class="btn btn-outline-secondary ml-auto">Expand</button> -->
+                <p class="mx-3">Your resources are being prepared. If this is taking a really long time, please contact
+                    us <a href="mailto:{{contact_email}}">here!</a></p>
             </div>
             <div class="collapse show" id="panel_tasks">
                 <table class="table m-0">
                     <tr>
                         <th></th>
-                        <th>Resource</th>
+                        <th>Name</th>
+
+                        <th>Assigned Host</th>
                         <th>Status</th>
                     </tr>
-                    {% for host in statuses %}
+                    {% with status.instances as instances %}
+
+                    {% for id, inst in instances.items %}
                     <tr>
                         <td>
-                            {% if 'Success' in host.status  %}
-                            <div class="rounded-circle bg-success square-20"></div>
-                            {% elif 'Fail' in host.status %}
-                            <div class="rounded-circle bg-danger square-20"></div>
+                            <!-- icon -->
+                            {% if inst.logs|length > 0 %}
+                            {% with inst.logs|last as lastelem %}
+                            {% if 'Success' in lastelem.status  %}
+                            <div id="icon-{{id}}" class="rounded-circle bg-success square-20"></div>
+                            {% elif 'Fail' in lastelem.status %}
+                            <div id="icon-{{id}}" class="rounded-circle bg-danger square-20"></div>
                             {% else %}
-                            <div class="spinner-border text-primary square-20"></div>
+                            <div id="icon-{{id}}" class="spinner-border text-primary square-20"></div>
+                            {% endif %}
+                            {% endwith %}
                             {% endif %}
                         </td>
-                        <td>
-                            {{ host.hostname }}
+                        <td id="alias-{{id}}">
+                            <!-- Hostname -->
+                            {{inst.host_alias}}
                         </td>
-                        <td id="{{host.instance_id}}">
-                            {{ host.status }}
+                        <td id="host-{{id}}">
+                            <!-- Actual Host -->
+                            {{inst.assigned_host}}
+                        </td>
+                        <td>
+                            <!-- Logs -->
+                            {% if inst.logs|length > 0 %}
+                            {% with inst.logs|last as lastelem %}
+                            <span id="status-{{id}}">
+                            {{lastelem.status}}
+                            </span>
+                                <button class="btn-secondary btn float-right" data-target="#collapse-{{id}}"
+                                    data-toggle="collapse">Show Additional Logs</button>
+                            {% endwith %}
+
+                            {% endif %}
+                            <p>
+                            <div class="card collapse mt-3" id="collapse-{{id}}">
+                                <div class="card-header">Additional Logs</div>
+                                <div class="card-body">
+                                    <table id="logs-{{id}}">
+                                        {% for log in inst.logs %}
+                                        <tr>
+                                            <td>
+                                                {{log.status}}
+                                            </td>
+
+                                            <td>
+                                                {{log.time}}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                            </p>
                         </td>
                     </tr>
                     {% endfor %}
+                    {% endwith %}
                 </table>
             </div>
         </div>
@@ -116,30 +169,67 @@ code {
 </div>
 
 <script>
-setInterval(function(){
-   fetchBookingStatus();
-}, 5000);
+    setInterval(function () {
+        fetchBookingStatus();
+    }, 5000);
 
 
-async function fetchBookingStatus() {
+    async function fetchBookingStatus() {
         req = new XMLHttpRequest();
         var url = "status";
         req.open("GET", url, true);
-        req.onerror = function() { alert("oops"); }
-        req.onreadystatechange = function() {
-            if(req.readyState === 4) {
-            statuses = JSON.parse(req.responseText)
-            updateStatuses(statuses)
+        req.onerror = function () { console.log("failed to get status") }
+        req.onreadystatechange = function () {
+            if (req.readyState === 4) {
+                let status = JSON.parse(req.responseText)
+                updateStatuses(status)
             }
         }
         req.send();
-}
-
-async function updateStatuses(statuses) {
-    for (const s of statuses) {
-        document.getElementById(s.instance_id).innerText = s.status
     }
-}
+
+    async function updateStatuses(status) {
+
+        const instances = status.instances;
+        
+        Object.keys(instances).forEach((aggId) => {
+            const instance = instances[aggId]
+            const status = instance.logs.pop()
+
+            let icon_class = "spinner-border text-primary square-20"
+            if (status.status.includes('Success')) {
+                icon_class = "rounded-circle bg-success square-20"
+            } else if (status.status.includes('Fail')) {
+                icon_class = "rounded-circle bg-danger square-20"
+            }
+
+            // icon
+            document.getElementById("icon-" + aggId).className = icon_class;
+            // host alias
+            document.getElementById("alias-" + aggId).innerText = instance.host_alias;
+            // assigned host
+            document.getElementById("host-" + aggId).innerText = instance.assigned_host;
+            // status
+            document.getElementById("status-" + aggId).innerText = status.status;
+            // logs
+            const log_table = document.getElementById("logs-" + aggId);
+            log_table.innerHTML = "";
+            for (const log of instance.logs) {
+                const tr = document.createElement('tr');
+                const td_status = document.createElement('td')
+                td_status.innerText = log.status;
+                const td_time = document.createElement('td')
+                td_time.innerText = log.time;
+                tr.appendChild(td_status)
+                tr.appendChild(td_time)
+                log_table.appendChild(tr)
+            }
+        })
+
+        // IPMI
+        document.getElementById("ipmi-username").innerText = status.config.ipmi_username;
+        document.getElementById("ipmi-password").innerText = status.config.ipmi_password;
+    }
 </script>
 
 {% endblock content %}

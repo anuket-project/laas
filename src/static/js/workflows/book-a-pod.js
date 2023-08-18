@@ -64,7 +64,7 @@ const steps = {
     }
 
     onclickSelectTemplate(templateCard, templateId) {
-        this.step = steps.SELECT_TEMPLATE
+        this.goTo(steps.SELECT_TEMPLATE)
         const oldHighlight = document.querySelector("#default_templates_list .selected_node")
         if (oldHighlight) {
             GUI.unhighlightCard(oldHighlight)
@@ -90,12 +90,6 @@ const steps = {
             return[passed, message]
         }
 
-        if (!(project.match(/^[a-z0-9~@#$^*()_+=[\]{}|,.?': -]+$/i))) {
-            passed = false;
-            message = "Project field contains invalid characters"
-            return[passed, message]
-        }
-
         return [passed, message]
     }
 
@@ -106,12 +100,6 @@ const steps = {
         if (purpose == "") {
             passed = false;
             message = "Purpose field cannot be empty."
-            return[passed, message]
-        }
-
-        if (!(purpose.match(/^[a-z0-9~@#$^*()_+=[\]{}|,.?': -]+$/i))) {
-            passed = false;
-            message = "Purpose field contains invalid characters"
             return[passed, message]
         }
 
@@ -129,7 +117,7 @@ const steps = {
     }
 
     onFocusInCIFile() {
-        this.step = steps.CLOUD_INIT
+        workflow.goTo(steps.CLOUD_INIT)
         const ci_textarea = document.getElementById('ci-textarea')
         GUI.unhighlightError(ci_textarea)
     }
@@ -148,7 +136,7 @@ const steps = {
     }
 
     onFocusInPurpose() {
-        this.step = steps.BOOKING_DETAILS
+        workflow.goTo(steps.BOOKING_DETAILS)
         const input = document.getElementById('input_purpose');
         GUI.hideDetailsError()
         GUI.unhighlightError(input)
@@ -168,14 +156,14 @@ const steps = {
     }
 
     onFocusInProject() {
-        this.step = steps.BOOKING_DETAILS
+        workflow.goTo(steps.BOOKING_DETAILS)
         const input = document.getElementById('input_project');
         GUI.hideDetailsError()
         GUI.unhighlightError(input)
     }
 
     onchangeDays() {
-        this.step = steps.BOOKING_DETAILS
+        workflow.goTo(steps.BOOKING_DETAILS)
         const counter = document.getElementById("booking_details_day_counter")
         const input = document.getElementById('input_length')
         workflow.bookingBlob.metadata.length = input.value
@@ -184,8 +172,7 @@ const steps = {
     }
 
     add_collaborator(username) {
-        this.step = steps.ADD_COLLABS;
-
+        workflow.goTo(steps.ADD_COLLABS)
         for (const c of this.bookingBlob.allowed_users) {
             if (c == username) {
                 return;
@@ -198,8 +185,7 @@ const steps = {
 
     remove_collaborator(username) {
         // Removes collab from collaborators list and updates summary
-        this.step = steps.ADD_COLLABS
-
+        this.goTo(steps.ADD_COLLABS)
         const temp = [];
 
         for (const c of this.bookingBlob.allowed_users) {
@@ -340,9 +326,9 @@ class GUI {
         let disabled = !isAvailable ? 'disabled = "true"' : '';
 
         const col = document.createElement('div');
-        col.classList.add('col-3', 'my-1');
+        col.classList.add('col-12', 'col-md-6', 'col-xl-3', 'my-3', 'd-flex', 'flex-grow-1');
         col.innerHTML=  `
-          <div class="card">
+          <div class="card flex-grow-1">
             <div class="card-header">
                 <p class="h5 font-weight-bold mt-2">` + templateBlob.pod_name + `</p>
             </div>

@@ -87,7 +87,7 @@ def booking_detail_view(request, booking_id):
     context = {
         'title': 'Booking Details',
         'booking': booking,
-        'statuses': statuses,
+        'status': statuses,
         'collab_string': ', '.join(map(str, booking.collaborators.all()))
     }
 

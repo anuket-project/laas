@@ -14,7 +14,7 @@
 
   <div class="workflow-container">
     <div id="prev" class="row w-100 m-0">
-      <button class="btn btn-workflow-nav stretched-link m-0 p-0 mt-3" onclick="workflow.goPrev()" id="workflow-prev">
+      <button class="btn btn-workflow-nav stretched-link m-0 p-0 mt-3" hidden="true" onclick="workflow.goPrev()" id="workflow-prev">
         <div class="arrow arrow-up"></div>
       </button>
     </div>
@@ -30,7 +30,8 @@
       <!-- Select Lab -->
       <div class="scroll-area pt-5 mx-5" id="select_lab">
         <!-- Ideally the 'Design a Pod' header would be anchored to the top of the page below the arrow -->
-        <h1 class="mt-4"><u>Design a Pod</u></h1> 
+        <h1 class="mt-4"><u>Design a Pod</u></h1>
+        <p>To get started, select a lab. Then use the navigation arrows or scroll to advance through the workflow.</p>
         <h2 class="mt-4 mb-3">Select a Lab<span class="text-danger">*</span></h2>
         <div class="row card-deck" id="lab_cards">
         </div>
@@ -39,6 +40,7 @@
       <!-- Add Resources -->
       <div class="scroll-area pt-5 mx-5" id="add_resources">
         <h2 class="mt-4 mb-3">Add Resources<span class="text-danger">*</span></h2>
+        <p>Add up to 8 configurable resources to your pod, then use the navigation arrows to proceed to the next step.</p>
         <div class="row card-deck align-items-center" id="host_cards">
           <div class="col-xl-3 col-md-6 col-12" id="add_resource_plus_card">
             <div class="card align-items-center border-0">
@@ -52,6 +54,7 @@
       <!-- Add Networks --> 
     <div class="scroll-area pt-5 mx-5" id="add_networks">
       <h2 class="mt-4 mb-3">Add Networks<span class="text-danger">*</span></h2>
+      <p>Define networks to use in your pod. A network may be set as public or private.</p>
         <div class="row card-deck align-items-center" id="network_card_deck">
           <div class="col-xl-3 col-md-6 col-12" id="add_network_plus_card">
             <div class="card align-items-center border-0">
@@ -65,6 +68,7 @@
    <!-- Configure Connections-->
    <div class="scroll-area pt-5 mx-5" id="configure_connections">
       <h2 class="mt-4 mb-3">Configure Connections<span class="text-danger">*</span></h2>
+      <p>Configure the connections for each host in your pod to your defined networks.</p>
       <div class="row card-deck align-items-center" id="connection_cards">
       </div>
   </div>
@@ -72,6 +76,7 @@
   <!-- Pod Details-->
   <div class="scroll-area pt-5 mx-5" id="pod_details">
     <h2 class="mt-4 mb-3">Pod Details<span class="text-danger">*</span></h2>
+    <p>Add a pod name and description to refer to later.</p>
     <div class="form-group">
       <div class="row align-items-center my-4">
         <div class="col-xl-6 col-md-8 col-11">
@@ -102,7 +107,8 @@
 
   <!-- Pod Summary-->
   <div class="scroll-area pt-5 mx-5" id="pod_summary">
-    <h2 class="mt-4 mb-3">Pod Summary:</h2>
+    <h2 class="mt-4 mb-3">Pod Summary</h2>
+    <p>Confirm the specifications below, and select 'create' to save this pod. Otherwise, navigate upwards and modify it as needed.</p>
     <div class="row align-items-center">
       <div class="col-xl-6 col-md-8 col-11">
         <div class="card border-0">
@@ -143,8 +149,10 @@
           <button class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
         </div>
         <div class="modal-body" id="add_resource_modal_body">
-          <h2>Resource</h2>
-          <div id="template-cards" class="row align-items-center justify-content-start">
+          <p>Select a resource, then configure the image, hostname and cloud-init (optional).</p>
+          <p>For multi-node resources, select a tab to modify each individual node.</p>
+          <h2>Resource<span class="text-danger">*</span></h2>
+          <div id="template-cards" class="row flex-grow-1">
           </div>
 
           <div id="template-config-section">
@@ -153,11 +161,11 @@
             </ul>
             <!-- tabs -->
             <div id="resource_config_section">
-              <h2>Image</h2>
+              <h2>Image<span class="text-danger">*</span></h2>
               <div id="image-cards" class="row justify-content-start align-items-center">
               </div>
               <div class="form-group">
-                <h2>Hostname</h2>
+                <h2>Hostname<span class="text-danger">*</span></h2>
                 <input type="text" class="form-control" id="hostname-input" placeholder="Enter Hostname">
                 <h2>Cloud Init</h2>
                 <div class="d-flex justify-content-center align-items-center">
@@ -184,6 +192,12 @@
         <h5 class="modal-title">Configure Connections</h5>
         <button class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
       </div>
+      <ul>
+        <li>Select an interface and a frame type to add a connection to a network.</li>
+        <li>An interface may send tagged or untagged frames on a single network, but not both.</li>
+        <li>Each interface may only be untagged on one network.</li>
+        <li>Reselect a connection to remove it.</li>
+      </ul>
       <div class="modal-body text-center">
         <ul class="nav nav-tabs" role="tablist" id="configure-connections-tablist">
         </ul>

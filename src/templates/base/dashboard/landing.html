@@ -49,13 +49,15 @@
         {% endif %}
         {% else %}
         {% block btnGrp %}
-        <p>To get started, book a server below:</p>
-        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border p-4 btnAnuket" href="{% url 'workflow:book_a_pod' %}" >
-            Book a Pod
-        </a>
+        <p>Select 'Design a Pod' to create a custom resource group.</p>
+        <p>Select 'Book a Pod' to reserve a custom pod or a single resource.</p>
         <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border p-4 btnAnuket" href="{% url 'workflow:design_a_pod' %}" >
             Design a Pod
         </a>
+        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border p-4 btnAnuket" href="{% url 'workflow:book_a_pod' %}" >
+            Book a Pod
+        </a>
+
         {% endblock btnGrp %}
         {% endif %}
     </div>
