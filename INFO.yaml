@@ -74,6 +74,14 @@ committers:
       company: 'gmail'
       id: 'latha2019'
       timezone: 'Unknown/Unknown'
+    - name: 'Justin Choquette'
+      email: 'jchoquette@iol.unh.edu'
+      company: 'UNH'
+      id: 'jchoquetteiol'
+    - name: 'Raven Hodgdon'
+      email: 'jhodgdon@iol.unh.edu'
+      company: 'UNH'
+      id: 'jhodgdon'
 tsc:
     # yamllint disable rule:line-length
     approval: 'http://meetbot.opnfv.org/meetings/opnfv-meeting/2019/opnfv-meeting.2019-06-25-12.59.txt'
