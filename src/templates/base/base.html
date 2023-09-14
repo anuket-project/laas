@@ -5,7 +5,7 @@
 
 
 <!-- Custom CSS -->
-<link href="{% static "css/base.css" %}" rel="stylesheet">
+<link href="{% static " css/base.css" %}" rel="stylesheet">
 
 {% endblock %}
 {% block basecontent %}
@@ -13,12 +13,12 @@
     <!-- Navigation -->
     {% block bgColor %}
     <nav class="navbar navbar-light bg-light navbar-fixed-top border-bottom py-0 mb-0" role="navigation">
-    {% endblock bgColor %}
+        {% endblock bgColor %}
         <div class="container-fluid pb-2 pb-sm-0">
             <!-- Logo -->
             {% block logo %}
             <div class="col-12 col-sm order-1 order-sm-2 text-center text-lg-left">
-            <h2>Logo Here</h2>
+                <h2>Logo Here</h2>
                 <a class="navbar-brand d-none d-lg-inline Anuket-Text" href={% url 'dashboard:index' %}>
                     Laas Dashboard
                 </a>
@@ -35,60 +35,43 @@
             <div class="col-6 col-sm-2 order-3 d-flex">
                 <ul class="nav mx-auto mr-sm-0">
                     <li class="dropdown ml-auto">
-			{% block userDropDownText %}
+                        {% block userDropDownText %}
                         <a class="nav-link p-0 p-2 Anuket-Text" data-toggle="dropdown" href="#">
                             {% if request.user.username %}
-                                {{request.user.username}}
+                            {{request.user.username}}
                             {% else %}
-                                <i class="fas fa-user"></i>
+                            <i class="fas fa-user"></i>
                             {% endif %}
                             <i class="fas fa-caret-down rotate"></i>
                         </a>
-			{% endblock userDropDownText %}
+                        {% endblock userDropDownText %}
                         <div class="dropdown-menu dropdown-menu-right">
-                            {% if LFID %}
-                                {% if user.is_authenticated %}
-                                <a href="{% url 'account:settings' %}" class="dropdown-item Anuket-Text">
-                                    <i class="fas fa-cog"></i>
-                                        Settings
-                                </a>
-                                <a id="logout_btn" href="#" method="post" class="dropdown-item Anuket-Text">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                        Logout
-                                </a>
-                                <form id="logout_form" action="{% url 'oidc_logout' %}" method="post" style="visibility: hidden;">
-                                    {% csrf_token %}
-                                    <input type="submit" value="logout">
-                                </form>
-                                <script>
-                                    const logout_btn = document.getElementById("logout_btn");
+                            {% if user.is_authenticated %}
+                            <a href="{% url 'account:settings' %}" class="dropdown-item Anuket-Text">
+                                <i class="fas fa-cog"></i>
+                                Settings
+                            </a>
+                            <a id="logout_btn" href="#" method="post" class="dropdown-item Anuket-Text">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Logout
+                            </a>
+                            <form id="logout_form" action="{% url 'oidc_logout' %}" method="post"
+                                style="visibility: hidden;" hidden="true">
+                                {% csrf_token %}
+                                <input type="submit" value="logout">
+                            </form>
+                            <script>
+                                const logout_btn = document.getElementById("logout_btn");
 
-                                    const logout_form = document.getElementById("logout_form");
+                                const logout_form = document.getElementById("logout_form");
 
-                                    logout_btn.onclick = function() { logout_form.submit(); };
-                                </script>
-                                {% else %}
-                                <a href="{% url 'oidc_authentication_init' %}" class="dropdown-item Anuket-Text">
-                                    <i class="fas fa-sign-in-alt"></i>
-                                        Login with LFID
-                                </a>
-                                {% endif %}
+                                logout_btn.onclick = function () { logout_form.submit(); };
+                            </script>
                             {% else %}
-                                {% if user.is_authenticated %}
-                                    <a href="{% url 'account:settings' %}" class="dropdown-item Anuket-Text">
-                                        <i class="fas fa-cog"></i>
-                                        Settings
-                                    </a>
-                                    <a href="{% url 'account:logout' %}?next={{ request.path }}" class="dropdown-item Anuket-Text">
-                                        <i class="fas fa-sign-out-alt"></i>
-                                        Logout
-                                    </a>
-                                {% else %}
-                                    <a href="{% url 'account:login' %}" class="dropdown-item Anuket-Text">
-                                        <i class="fas fa-sign-in-alt"></i>
-                                        Login
-                                    </a>
-                                {% endif %}
+                            <a href="{% url 'oidc_authentication_init' %}" class="dropdown-item Anuket-Text">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Login with LFID
+                            </a>
                             {% endif %}
                         </div>
                     </li>
@@ -113,42 +96,49 @@
                                 Create <i class="fas fa-angle-down rotate"></i>
                             </a>
                             <div class="collapse" id="createList">
-                                <a href="{% url 'workflow:book_a_pod' %}" onclick="" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                <a href="{% url 'workflow:book_a_pod' %}" onclick=""
+                                    class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
                                     Book a Pod
                                 </a>
-                                <a href="{% url 'workflow:design_a_pod' %}" onclick="" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                <a href="{% url 'workflow:design_a_pod' %}" onclick=""
+                                    class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
                                     Design a Pod
                                 </a>
                             </div>
                             {% endblock dropDown %}
                             <a class="list-group-item list-group-item-action nav-bg" data-toggle="collapse"
-                            href="#accountList" role="button">
-                            Account <i class="fas fa-angle-down rotate"></i>
+                                href="#accountList" role="button">
+                                Account <i class="fas fa-angle-down rotate"></i>
                             </a>
-                        <div class="collapse" id="accountList">
-                            <a href="{% url 'account:my-resources' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                My Resources
+                            <div class="collapse" id="accountList">
+                                <a href="{% url 'account:my-resources' %}"
+                                    class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                    My Resources
+                                </a>
+                                <a href="{% url 'account:my-bookings' %}"
+                                    class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                    My Bookings
+                                </a>
+                            </div>
+                            <a class="list-group-item list-group-item-action nav-bg" data-toggle="collapse"
+                                href="#labInfo" role="button">
+                                Lab Info <i class="fas fa-angle-down rotate"></i>
                             </a>
-                            <a href="{% url 'account:my-bookings' %}" class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                My Bookings
+                            <div class="collapse" id="labInfo">
+                                <a href="{% url 'resource:host-list' %}"
+                                    class="list-group-item list-group-item-action nav-bg">
+                                    Hosts
+                                </a>
+                                <a href="{% url 'booking:list' %}"
+                                    class="list-group-item list-group-item-action nav-bg">
+                                    Booking List
+                                </a>
+                            </div>
+                            <a href="{% url 'dashboard:all_labs' %}"
+                                class="list-group-item list-group-item-action nav-bg">
+                                About Us
                             </a>
                         </div>
-                        <a class="list-group-item list-group-item-action nav-bg" data-toggle="collapse"
-                        href="#labInfo" role="button">
-                        Lab Info <i class="fas fa-angle-down rotate"></i>
-                        </a>
-                        <div class="collapse" id="labInfo">
-                            <a href="{% url 'resource:host-list' %}" class="list-group-item list-group-item-action nav-bg">
-                                Hosts
-                            </a>
-                            <a href="{% url 'booking:list' %}" class="list-group-item list-group-item-action nav-bg">
-                                Booking List
-                            </a>
-                        </div>
-                        <a href="{% url 'dashboard:all_labs' %}" class="list-group-item list-group-item-action nav-bg">
-                            About Us
-                        </a>
-                    </div>
                 </nav>
             </div>
             <div class="col flex-grow-1 d-flex flex-column h-100 overflow-control">
@@ -160,7 +150,7 @@
                 </div>
                 {% endif %}
                 {% if messages %}
-                    <div id="bsm" class="mt-4">{% bootstrap_messages %}</div>
+                <div id="bsm" class="mt-4">{% bootstrap_messages %}</div>
                 {% endif %}
                 <!-- Content block placed here -->
                 {% block content %}
