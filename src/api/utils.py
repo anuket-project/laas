@@ -64,11 +64,17 @@ def get_ipa_migration_form(user, profile):
             "button": "Submit"
         }
 
+# Removes leading and trailing white space from a list of ssh keys and returns the cleaned list
+def clean_ssh_keys(ssh_key_list):
+    cleaned = []
+    for key in ssh_key_list:
+        cleaned.append(key.strip())
+    return cleaned
+
 # Take a list of strings, sends it to liblaas, replacing the IPA keys with the new keys
 def ipa_set_ssh(user_profile, ssh_key_list):
     url = liblaas_base_url + "user/" + user_profile.ipa_username + "/ssh"
-    print(ssh_key_list)
-    print("Setting SSH keys with URL", url)
+    ssh_key_list = clean_ssh_keys(ssh_key_list)
     try:
         requests.post(url, data=json.dumps(ssh_key_list), headers={'Content-Type': 'application/json'})
         return HttpResponse(status=200)
