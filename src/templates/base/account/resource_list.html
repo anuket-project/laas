@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block extrahead %}
-<script src="/static/js/workflows/workflow.js"></script>
 {% endblock %}
 {% block content %}
 <div class="row">
@@ -42,12 +41,25 @@
     }
 
     async function submit_delete_form() {
-        if(LibLaaSAPI.deleteTemplate(current_resource_id)) {
-            location.reload();
-        } else {
-            alert('Unable to delete template.');
-        }
+        let data = {"template_id": current_resource_id}
+        $.ajax({
+            url: '',
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+        })
+        .done(function() {
+            location.reload()
+        })
+        .fail(function() {
+            alert("Unable to delete resource.")
+        })
     }
+
 </script>
 <div class="modal fade" id="resModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">

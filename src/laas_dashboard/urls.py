@@ -42,6 +42,7 @@ urlpatterns = [
     url(r'^api/', include('api.urls')),
     url(r'^oidc/', include('mozilla_django_oidc.urls')),
     url(r'^resource/', include('resource_inventory.urls', namespace='resource')),
+    url(r'^liblaas/', include('liblaas.urls', namespace='liblaas'))
 ]
 
 if settings.DEBUG is True:

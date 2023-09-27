@@ -169,28 +169,32 @@ code {
 </div>
 
 <script>
+    const agg_id = "{{booking.aggregateId}}"
     setInterval(function () {
         fetchBookingStatus();
     }, 5000);
 
 
     async function fetchBookingStatus() {
-        req = new XMLHttpRequest();
-        var url = "status";
-        req.open("GET", url, true);
-        req.onerror = function () { console.log("failed to get status") }
-        req.onreadystatechange = function () {
-            if (req.readyState === 4) {
-                let status = JSON.parse(req.responseText)
-                updateStatuses(status)
-            }
-        }
-        req.send();
+        data = {"agg_id": agg_id}
+        $.ajax({
+            url: '',
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+        })
+        .done(function(response) {
+            updateStatuses(response)
+        })
     }
 
     async function updateStatuses(status) {
-
         const instances = status.instances;
+        if (!instances) return;
         
         Object.keys(instances).forEach((aggId) => {
             const instance = instances[aggId]

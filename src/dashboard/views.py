@@ -8,22 +8,21 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-import json
+import os
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django.shortcuts import render
 from django.db.models import Q
 from datetime import datetime
 import pytz
+from django.http import HttpResponse
 
 from account.models import Lab, UserProfile
-from api.utils import get_ipa_migration_form, ipa_query_user
-from api.views import ipa_conflict_account
 from booking.models import Booking
-from dashboard.forms import *
-from api.views import list_flavors, list_hosts
-
 from laas_dashboard import settings
+from liblaas.utils import get_ipa_status
+
+from liblaas.views import flavor_list_flavors, flavor_list_hosts
 
 
 def lab_list_view(request):
@@ -34,14 +33,16 @@ def lab_list_view(request):
 
 
 def lab_detail_view(request, lab_name):
-    # todo - LL Integration
     user = None
     if request.user.is_authenticated:
         user = request.user
 
     lab = get_object_or_404(Lab, name=lab_name)
-    flavors_list = json.loads(list_flavors(request).content)
-    host_list = json.loads(list_hosts(request).content)
+    origin = "anuket" if os.environ.get("TEMPLATE_OVERRIDE_DIR") == 'laas' else "lfedge"
+
+    flavors_list = flavor_list_flavors(origin)
+    host_list = flavor_list_hosts(origin)
+
     flavor_map = {}
     for flavor in flavors_list:
         flavor_map[flavor['flavor_id']] = flavor['name']
@@ -79,55 +80,42 @@ def host_profile_detail_view(request):
 
 def landing_view(request):
     user = request.user
-    ipa_migrator = {
-        "exists": "false" # Jinja moment
-    }
+    ipa_status = "n/a"
+    profile = {}
+
     if not user.is_anonymous:
         bookings = Booking.objects.filter(
             Q(owner=user) | Q(collaborators=user),
             end__gte=datetime.now(pytz.utc)
         )
-        profile = UserProfile.objects.get(user=user)
-        if (not profile.ipa_username):
-             ipa_migrator = get_ipa_migration_form(user, profile)
-             ipa_migrator["exists"] = "true"
+        # new, link, conflict, n/a
+        ipa_status = get_ipa_status(user)
+        up = UserProfile.objects.get(user=user)
+        profile["email"] = up.email_addr
 
+        # Link by default, no need for modal
+        if ipa_status == "link":
+            up.ipa_username = str(user)
+            up.save()
     else:
         bookings = None
 
-    print("IPA migrator is", ipa_migrator)
     LFID = True if settings.AUTH_SETTING == 'LFID' else False
 
-    if request.method == "GET":
-        return render(
-            request,
-            'dashboard/landing.html',
-            {
-                'title': "Welcome to the Lab as a Service Dashboard",
-                'bookings': bookings,
-                'LFID': LFID,
-                'ipa_migrator': ipa_migrator,
-            }
-        )
-    
-    # Using this for the special case in the ipa_migrator
-    if request.method == 'POST':
-        existing_profile = ipa_query_user(request.POST['ipa_username'])
-        print("exists already?", existing_profile != None)
-        if (existing_profile != None):
-            return render(
-                request,
-                'dashboard/landing.html',
-                {
-                    'title': "Welcome to the Lab as a Service Dashboard",
-                    'bookings': bookings,
-                    'LFID': LFID,
-                    'ipa_migrator': ipa_migrator,
-                    'error': "Username is already taken"
-                }
-            )
-        else:
-            return ipa_conflict_account(request)
+    if request.method != "GET":
+        return HttpResponse(status_code=405)
+
+    return render(
+        request,
+        'dashboard/landing.html',
+        {
+            'title': "Welcome to the Lab as a Service Dashboard",
+            'bookings': bookings,
+            'LFID': LFID,
+            'ipa_status': ipa_status,
+            'profile': profile
+        }
+    )
 
 class LandingView(TemplateView):
     template_name = "dashboard/landing.html"

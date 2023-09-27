@@ -34,8 +34,6 @@ from account.views import (
     account_resource_view,
     account_booking_view,
     account_detail_view,
-    template_delete_view,
-    booking_cancel_view,
     account_settings_view
 )
 
@@ -46,8 +44,6 @@ urlpatterns = [
     url(r'^login/$', OIDCLoginView.as_view(), name='login'),
     url(r'^logout/$', LogoutView.as_view(), name='logout'),
     url(r'^my/resources/$', account_resource_view, name='my-resources'),
-    path('my/resources/delete/<int:resource_id>', template_delete_view),
     url(r'^my/bookings/$', account_booking_view, name='my-bookings'),
-    path('my/bookings/cancel/<int:booking_id>', booking_cancel_view),
     url(r'^my/$', account_detail_view, name='my-account'),
 ]

@@ -114,14 +114,21 @@
       </div>
       <div class="modal-body" id="add_resource_modal_body">
           <p>Please update your information before creating a booking.</p>
-          <form action="{{prereq_validator.action}}" method="post">
-              {% csrf_token %}
-              {{ prereq_validator.form }}
-              <div class="form-group">
-                  <input class="btn btn-success" name="submitButton" type="submit" value="Save">
-              </div>
+          <p id="error-msg" class="text-danger"></p>
+          <form>
+            {% csrf_token %}
+            <div class="form-group">
+              {% if prereqs.company == "false" %}
+              <label for="prereq_form">Company:</label>
+              <input type="text" class="form-control" style="width: 300px;" placeholder="Company" id="prereq_form" name="company">
+              {% elif prereqs.keys == "false" %}
+              <label for="prereq_form">SSH Public Key:</label>
+              <textarea id="prereq_form" placeholder="SSH Public Key" class="form-control" style="width: 500px;" id="prereq_form" name="ssh"></textarea>
+              {% endif %}
+            </div>
           </form>
-      </div>
+          <button class="btn btn-success" onclick="submit_form({% if prereqs.company == 'false' %} 'ipa/company/'{% elif prereqs.keys == 'false' %} 'ipa/ssh/'  {% endif %})">Save</button>
+        </div>
     </div>
   </div>
 </div>
@@ -145,10 +152,52 @@
 </body>
 
 <script>
+    function collect_form_data() {
+
+      const form = document.getElementById("prereq_form");
+
+      const data = {};
+      if (form.name == "company") {
+        data["data"] = form.value;
+      } else if (form.name == "ssh") {
+        data["data"] = [];
+        data["data"].push(form.value)
+      }
+
+      return data;
+
+    }
+
+    function submit_form(endpoint) {
+        const data = collect_form_data();
+
+        $.ajax({
+            url: '../../liblaas/' + endpoint,
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+            success: (response) => {
+                location.reload();
+            },
+              error: (response) => {
+                const r = JSON.parse(response.responseText)
+                document.getElementById("error-msg").innerText = r.message;
+            }
+        })
+    }
+
+
+
+
   let user;
   let workflow;
   $(window).on('load', function() {
-    if ({{prereq_validator.exists}}) {
+
+    if (!{{prereqs.company}} || !{{prereqs.keys}}) {
         $('#ipa-modal').modal({backdrop: 'static', keyboard: false});
         $('#ipa-modal').modal('show');
     } else {
@@ -157,7 +206,5 @@
       workflow.startWorkflow();
     }
     });
-
-
   </script>
 {% endblock %}

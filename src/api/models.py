@@ -10,23 +10,12 @@
 
 from django.contrib.auth.models import User
 from django.db import models
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.contrib.postgres.fields import JSONField
-from django.http import HttpResponseNotFound
-from django.urls import reverse
 from django.utils import timezone
-
 import json
-import uuid
-import yaml
-import re
-
-from booking.models import Booking
 from account.models import Downtime, UserProfile
-from dashboard.utils import AbstractModelQuery
-
-
 
 class LabManagerTracker:
 

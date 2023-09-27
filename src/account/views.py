@@ -9,67 +9,72 @@
 ##############################################################################
 
 
-import json
 import os
-
+import pytz
+import json
 from django.utils import timezone
-from django.contrib import messages
 from django.contrib.auth import logout
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.decorators import method_decorator
-from django.views.generic import RedirectView, TemplateView, UpdateView
+from django.views.generic import RedirectView
 from django.shortcuts import render
-from api.utils import ipa_set_ssh, ipa_query_user, ipa_set_company
-from dashboard.forms import SetCompanyForm, SetSSHForm
-from rest_framework.authtoken.models import Token
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
-
-from account.forms import AccountPreferencesForm
 from account.models import UserProfile
 from booking.models import Booking
-from api.views import delete_template, liblaas_templates
 from workflow.views import login
+
+from liblaas.views import user_get_user,user_set_company, user_set_ssh, \
+template_list_templates, template_delete_template, booking_end_booking
 
 def account_settings_view(request):
     if request.method == "GET":
         if not request.user.is_authenticated:
             return login(request)
+
         profile = UserProfile.objects.get(user=request.user)
-        if (not profile or profile.ipa_username == "" or profile.ipa_username == None):
-            return redirect("dashboard:index")
-        ipa_user = ipa_query_user(profile.ipa_username)
+
+        ipa_user = user_get_user(profile.ipa_username)
         template = "account/settings.html"
+
         context = {
-            "preference_form": AccountPreferencesForm(instance=profile),
-            "company_form": SetCompanyForm(initial={'company': ipa_user['ou']}),
+            "timezone": profile.timezone,
+            "timezones": [(x) for x in pytz.common_timezones],
+            "public": profile.public_user,
+            "company": ipa_user["ou"] if 'ou' in ipa_user else "",
             "existing_keys": ipa_user['ipasshpubkey'] if 'ipasshpubkey' in ipa_user else [],
             "ipa_username": profile.ipa_username
         }
-        return render(request, template, context)       
 
-    if request.method == 'POST':
-        data = request.POST
+        return render(request, template, context)
 
-        print("data is", data)
-        # User profile
-        profile = UserProfile.objects.get(user=request.user)
-        profile.public_user = "public_user" in data
-        profile.timezone = data["timezone"]
-        profile.save()
-
-        # IPA
-        ipa_set_company(profile, data['company'])
-        ipa_set_ssh(profile, data['ssh_key_list'].split(","))
-
-        return redirect("account:settings")
-
+    if request.method == "POST":
+        return account_update_settings(request)
+    
     return HttpResponse(status=405)
+
+def account_update_settings(request):
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    data = json.loads(request.body.decode('utf-8'))
+    profile = UserProfile.objects.get(user=request.user)
+    profile.public_user = data["public_user"]
+
+    if data["timezone"] in pytz.common_timezones:
+        profile.timezone = data["timezone"]
+    r1 = user_set_company(profile.ipa_username, data["company"])
+    r2 = user_set_ssh(profile, data["keys"])
+
+    if (r1 and r2):
+        profile.save()
+        return HttpResponse(status=200)
+
+
+    return HttpResponse(status=500)
 
 class MyOIDCAB(OIDCAuthenticationBackend):
     def filter_users_by_claims(self, claims):
@@ -132,20 +137,19 @@ def account_detail_view(request):
 def account_resource_view(request):
     """
     Display a user's resources.
-
-    gathers a users genericResoureBundles and
-    turns them into displayable objects
     """
-    if not request.user.is_authenticated:
-        return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
-    template = "account/resource_list.html"
 
     if request.method == "GET":
+
+        if not request.user.is_authenticated:
+            return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
+        template = "account/resource_list.html"
+
         profile = UserProfile.objects.get(user=request.user)
-        if (not profile or profile.ipa_username == "" or profile.ipa_username == None):
+        if (not profile or profile.ipa_username == None):
             return redirect("dashboard:index")
-        r = liblaas_templates(request)
-        usable_templates = r.json()
+
+        usable_templates = template_list_templates(profile.ipa_username)
         user_templates = [ t for t in usable_templates if t["owner"] == profile.ipa_username]
         context = {
             "templates": user_templates,
@@ -154,59 +158,84 @@ def account_resource_view(request):
         return render(request, template, context=context)
     
     if request.method == "POST":
-        return delete_template(request)
+        return account_delete_resource(request)
     
     return HttpResponse(status_code=405)
+    
 
+def account_delete_resource(request):
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    data = json.loads(request.body.decode('utf-8'))
+    template_id = data["template_id"]
+
+    if not canDeleteTemplate(template_id, UserProfile.objects.get(user=request.user).ipa_username):
+        return HttpResponse(status=401)    
+
+    response = template_delete_template(template_id)
+    if (response.status_code == 200):
+        return HttpResponse(status=200)
+
+
+    return HttpResponse(status=500)
+
+def canDeleteTemplate(template_id, ipa_username):
+    usable_templates = template_list_templates(ipa_username)
+    for t in usable_templates:
+        if (t['id'] == template_id and t['owner'] == ipa_username):
+            return True
+
+    return False
 
 def account_booking_view(request):
-    if not request.user.is_authenticated:
-        return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
-    profile = UserProfile.objects.get(user=request.user)
-    if (not profile or profile.ipa_username == "" or profile.ipa_username == None):
-        return redirect("dashboard:index")
-    template = "account/booking_list.html"
-    bookings = list(Booking.objects.filter(owner=request.user, end__gt=timezone.now()).order_by("-start"))
-    my_old_bookings = Booking.objects.filter(owner=request.user, end__lt=timezone.now()).order_by("-start")
-    collab_old_bookings = request.user.collaborators.filter(end__lt=timezone.now()).order_by("-start")
-    expired_bookings = list(my_old_bookings.union(collab_old_bookings))
-    collab_bookings = list(request.user.collaborators.filter(end__gt=timezone.now()).order_by("-start"))
-    context = {
-        "title": "My Bookings",
-        "bookings": bookings,
-        "collab_bookings": collab_bookings,
-        "expired_bookings": expired_bookings
-    }
-    return render(request, template, context=context)
+    if request.method == 'GET':
+        if not request.user.is_authenticated:
+            return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
 
+        profile = UserProfile.objects.get(user=request.user)
+        if (not profile or profile.ipa_username == None):
+            return redirect("dashboard:index")
 
+        template = "account/booking_list.html"
+        bookings = list(Booking.objects.filter(owner=request.user, end__gt=timezone.now()).order_by("-start"))
+        my_old_bookings = Booking.objects.filter(owner=request.user, end__lt=timezone.now()).order_by("-start")
+        collab_old_bookings = request.user.collaborators.filter(end__lt=timezone.now()).order_by("-start")
+        expired_bookings = list(my_old_bookings.union(collab_old_bookings))
+        collab_bookings = list(request.user.collaborators.filter(end__gt=timezone.now()).order_by("-start"))
+        context = {
+            "title": "My Bookings",
+            "bookings": bookings,
+            "collab_bookings": collab_bookings,
+            "expired_bookings": expired_bookings
+        }
+        return render(request, template, context=context)
+    
+    if request.method == 'POST':
+        return account_cancel_booking(request)
 
-def template_delete_view(request, resource_id=None):
-    # if not request.user.is_authenticated:
-    #     return HttpResponse(status=403)
-    # template = get_object_or_404(ResourceTemplate, pk=resource_id)
-    # if not request.user.id == template.owner.id:
-    #     return HttpResponse(status=403)
-    # if Booking.objects.filter(resource__template=template, end__gt=timezone.now()).exists():
-    #     return HttpResponse(status=403)
-    # template.public = False
-    # template.temporary = True
-    # template.save()
-    # return HttpResponse(status=200)
-    return HttpResponse(status=404) # todo - LL Integration
+    return HttpResponse(status=405)
 
+def account_cancel_booking(request):
+    if request.method != "POST":
+        return HttpResponse(status=405)
 
-def booking_cancel_view(request, booking_id=None):
-    if not request.user.is_authenticated:
-        return HttpResponse('no')  # 403?
-    booking = get_object_or_404(Booking, pk=booking_id)
-    if not request.user.id == booking.owner.id:
-        return HttpResponse('no')  # 403?
+    data = json.loads(request.body.decode('utf-8'))
+    booking_id = data["booking_id"]
+    booking = Booking.objects.get(id=booking_id)
+    if not (booking.owner == request.user):
+        return HttpResponse(401)
 
-    if booking.end < timezone.now():  # booking already over
-        return HttpResponse('')
+    # LibLaaS
+    response = booking_end_booking(booking.aggregateId)
 
+    # Dashboard
     booking.end = timezone.now()
     booking.save()
-    return HttpResponse('')
+
+    if (response.status_code == 200):
+        return HttpResponse(status=200)
+
+    return HttpResponse(status=500)
+
 

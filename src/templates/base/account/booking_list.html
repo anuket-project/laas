@@ -97,16 +97,23 @@
     }
 
     async function submit_cancel_form() {
-        var ajaxForm = $("#booking_cancel_form");
-        var formData = ajaxForm.serialize();
-        req = new XMLHttpRequest();
-        var url = "cancel/" + current_booking_id;
-        req.open("POST", url, true);
-        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        req.onerror = function() { alert("problem submitting form"); }
-        req.send(formData);
-        await new Promise(r => setTimeout(r, 500)); // Quickest solution I could come up with to give liblaas time to mark it as deleted until we do an api rework
-        location.reload();
+        let data = {"booking_id": current_booking_id}
+        $.ajax({
+            url: '',
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+        })
+        .done(function() {
+            location.reload()
+        })
+        .fail(function() {
+            alert("Unable to cancel booking.")
+        })
     }
 </script>
 

@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'workflow',
     'api',
     'analytics',
+    'liblaas',
     'django.contrib.admin',
     'django.contrib.auth',
     'mozilla_django_oidc',  # needs to be defined after auth

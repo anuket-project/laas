@@ -9,18 +9,17 @@
 ##############################################################################
 
 from django.contrib import messages, admin
+import json
+from django.contrib import messages
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
-from django.views import View
 from django.views.generic import TemplateView
 from django.shortcuts import redirect, render
-from django.db.models import Q
-from django.urls import reverse
 
 from account.models import Downtime, Lab
-from api.views import get_booking_status
 from booking.models import Booking
+from liblaas.views import booking_booking_status
+from django.http import HttpResponse, JsonResponse
 
 class BookingView(TemplateView):
     template_name = "booking/booking_detail.html"
@@ -71,30 +70,53 @@ class BookingListView(TemplateView):
 
 
 def booking_detail_view(request, booking_id):
-    user = None
-    if request.user.is_authenticated:
-        user = request.user
-    else:
-        return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
+    if request.method == 'GET':
+        user = None
+        if request.user.is_authenticated:
+            user = request.user
+        else:
+            return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
 
-    booking = get_object_or_404(Booking, id=booking_id)
-    statuses = get_booking_status(booking)
-    allowed_users = set(list(booking.collaborators.all()))
-    if (request.user.is_superuser):
-        allowed_users.add(request.user)
-    allowed_users.add(booking.owner)
-    if user not in allowed_users:
-        return render(request, "dashboard/login.html", {'title': 'This page is private'})
-    context = {
-        'title': 'Booking Details',
-        'booking': booking,
-        'status': statuses,
-        'collab_string': ', '.join(map(str, booking.collaborators.all())),
-        'contact_email': booking.lab.contact_email
-    }
+        booking = get_object_or_404(Booking, id=booking_id)
+        statuses = []
+        if booking.aggregateId:
+            statuses = booking_booking_status(booking.aggregateId)
+        allowed_users = set(list(booking.collaborators.all()))
+        if (request.user.is_superuser):
+            allowed_users.add(request.user)
+        allowed_users.add(booking.owner)
+        if user not in allowed_users:
+            return render(request, "dashboard/login.html", {'title': 'This page is private'})
+        
+        context = {
+            'title': 'Booking Details',
+            'booking': booking,
+            'status': statuses,
+            'collab_string': ', '.join(map(str, booking.collaborators.all()))
+        }
 
-    return render(
-        request,
-        "booking/booking_detail.html",
-        context
-    )
+        return render(
+            request,
+            "booking/booking_detail.html",
+            context
+        )
+    
+    if request.method == 'POST':
+        return update_booking_status(request)
+    
+    return HttpResponse(status=405)
+
+def update_booking_status(request):
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    data = json.loads(request.body.decode('utf-8'))
+    agg_id = data["agg_id"]
+
+    response = booking_booking_status(agg_id)
+
+    if (response.status_code == 200):
+        return JsonResponse(status=200, data=response)
+
+    return HttpResponse(status=500)
+

@@ -63,37 +63,98 @@
     </div>
 </div>
 
-<!-- IPA Modal -->
+  <!-- Link Modal -->
 <div class="modal fade" id="ipa-modal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-      <div class="modal-content">
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Welcome to LaaS 3.0</h5>
+            <h5 class="modal-title">Welcome to LaaS 3.0</h5>
         </div>
-        <div class="modal-body" id="add_resource_modal_body">
+        <div class="modal-body">
             <p>We have made large scale improvements to the dashboard and our host provisioning service to improve your user experience.</p>
-            <p>{{ ipa_migrator.message }}</p>
-            <form action="{{ipa_migrator.action}}" method="post">
+            <p id="form-message">
+                {% if ipa_status == "new" %}
+                Our records indicate that you do not currently have an account in our IPA system, or your usernames do not match. Please enter the following details to enroll your account.
+                {% elif ipa_status == "conflict" %}
+                Our records indicate that you do not currently have an account in our IPA system, or your emails do not match. Please enter the following details to enroll your account.
+                {% endif %}
+            </p>
+            <form>
                 {% csrf_token %}
-                <p class="text-danger">{{error}}</p>
-                {{ ipa_migrator.form }}
+
+                <p class="text-danger" id="error-msg"></p>
                 <div class="form-group">
-                    <input class="btn btn-success" name="submitButton" type="submit" value="{{ipa_migrator.button}}">
+
+                    <label for="firstname">First Name:</label>
+                    <input type="text" class="form-control" name="firstname" id="firstname"style="width: 300px;" placeholder="First Name">
+
+                    <label for="lastname">Last Name:</label>
+                    <input type="text" class="form-control" name="lastname" id="lastname" style="width: 300px;" placeholder="Last Name">
+
+                    <label for="company">Company:</label>
+                    <input type="text" class="form-control" name="company" id="company" style="width: 300px;" placeholder="Company">
+
+                    
+                    <label for="username" {% if ipa_status != "conflict" %} hidden {% endif %}>New VPN Username:</label>
+                    <input type="text" class="form-control" name="username" id="username" style="width: 300px;" placeholder="New VPN Username" {% if ipa_status != "conflict" %} hidden {% endif %}>
+
+                    <label for="email">Email:</label>
+                    <input type="text" class="form-control" name="email" id="email" style="width: 300px;"  value="{{profile.email}}" disabled>
+
                 </div>
             </form>
+
+            <button class="btn btn-success" onclick="submit_form()">Submit</button>
         </div>
-      </div>
     </div>
-  </div>
+</div>
+</div>
 
 <script>
 
+    function collect_form_data() {
+        data = {
+            "firstname": document.getElementById("firstname").value,
+            "lastname": document.getElementById("lastname").value,
+            "company": document.getElementById("company").value,
+            "username": document.getElementById("username").value // Only present in conflict form
+            // Do not collect email, grab this from the UserProfile in django. Prevents hijacking of accounts.
+        };
+
+        return data;
+
+    }
+
+    function submit_form() {
+        const data = collect_form_data();
+
+        $.ajax({
+            url: '/liblaas/migrate/{{ipa_status}}/',
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+            success: (response) => {
+                console.log("successful response is")
+                location.reload();
+            },
+              error: (response) => {
+                const r = JSON.parse(response.responseText)
+                document.getElementById("error-msg").innerText = r.message;
+            }
+        })
+    }
+
 $(window).on('load', function() {
-    if ({{ipa_migrator.exists}}) {
+
+    if ("{{ipa_status}}" == "new" || "{{ipa_status}}" == "conflict") {
         $('#ipa-modal').modal({backdrop: 'static', keyboard: false});
         $('#ipa-modal').modal('show');
     }
-    });
+});
 </script>
 
 {% endblock content %}

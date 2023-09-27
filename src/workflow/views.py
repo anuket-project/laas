@@ -11,60 +11,59 @@ import json
 from django.shortcuts import render, redirect
 from laas_dashboard.settings import TEMPLATE_OVERRIDE
 from django.http import HttpResponse
-from django.http.response import JsonResponse
+from liblaas.views import user_get_user
 from workflow.forms import BookingMetaForm
-from api.views import liblaas_request, make_booking
-from api.utils import  get_booking_prereqs_validator
 from account.models import UserProfile
-
-
-def no_workflow(request):
-    return render(request, 'workflow/no_workflow.html', {'title': "Not Found"}, status=404)
 
 
 def login(request):
     return render(request, "dashboard/login.html", {'title': 'Authentication Required'})
 
 def design_a_pod_view(request):
-    if request.method == "GET":
-        if not request.user.is_authenticated:
-            return login(request)
-        prereq_validator = get_booking_prereqs_validator(UserProfile.objects.get(user=request.user))
-        if (prereq_validator["action"] == "no user"):
-            return redirect("dashboard:index")
-        template = "workflow/design_a_pod.html"
-        context = {
-            "dashboard": str(TEMPLATE_OVERRIDE)
-        }
-        return render(request, template, context)
-    
-    if request.method == "POST":
-        print("forwarding request to liblaas...")
-        return liblaas_request(request)
+    if request.method != "GET":
+        return HttpResponse(status=405)
 
-    return HttpResponse(status=405)
+    if not request.user.is_authenticated:
+        return login(request)
+
+    profile = UserProfile.objects.get(user=request.user)
+
+    if (not profile or profile.ipa_username == None):
+        return redirect("dashboard:index")
+
+    template = "workflow/design_a_pod.html"
+    context = {
+        "dashboard": str(TEMPLATE_OVERRIDE)
+    }
+    return render(request, template, context)
+
 
 def book_a_pod_view(request):
-    if request.method == "GET":
-        if not request.user.is_authenticated:
-            return login(request)
-        prereq_validator = get_booking_prereqs_validator(UserProfile.objects.get(user=request.user))
-        if (prereq_validator["action"] == "no user"):
-            return redirect("dashboard:index")
-        template = "workflow/book_a_pod.html"
-        context = {
-            "dashboard": str(TEMPLATE_OVERRIDE),
-            "form": BookingMetaForm(initial={}, user_initial=[], owner=request.user),
-            "prereq_validator": prereq_validator
-        }
-        return render(request, template, context)
+    if request.method != "GET":
+        return HttpResponse(status=405)
+
+    if not request.user.is_authenticated:
+        return login(request)
+
+    profile = UserProfile.objects.get(user=request.user)
+
+    if (not profile or profile.ipa_username == None):
+        return redirect("dashboard:index")
+
+    vpn_user = user_get_user(profile.ipa_username)
     
-    if request.method == "POST":
-        print("forwarding request to liblaas...")
-        return liblaas_request(request)
+    # These booleans need to be represented as strings, due to the way jinja interprets them
+    prereqs = {
+        "company": "true" if ("ou" in vpn_user and vpn_user["ou"] != "") else "false",
+        "keys": "true" if ("ipasshpubkey" in vpn_user) and (len(vpn_user["ipasshpubkey"]) > 0) else "false"
+    }
 
-    # Using PUT to signal that we do not want to talk to liblaas
-    if request.method == "PUT":
-        return make_booking(request)
+    template = "workflow/book_a_pod.html"
+    context = {
+        "dashboard": str(TEMPLATE_OVERRIDE),
+        "form": BookingMetaForm(initial={}, user_initial=[], owner=request.user),
+        "prereqs": prereqs
+    }
+    return render(request, template, context)
 
-    return HttpResponse(status=405)
+

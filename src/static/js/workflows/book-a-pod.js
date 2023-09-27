@@ -247,13 +247,14 @@ const steps = {
         if (!response) {
             showError("The selected resources for this booking are unavailable at this time. Please select a different resource or try again later.", -1)
         }
-        if (response.bookingId) {
+        const r = JSON.parse(response)
+        if (r.bookingId) {
             showError("The booking has been successfully created.", -1)
-            window.location.href = "../../booking/detail/" + response.bookingId + "/"; // todo
+            window.location.href = "../../booking/detail/" + r.bookingId + "/";
             return;
         } else {
-            if (response.error == true) {
-                showError(response.message, -1)
+            if (r.error == true) {
+                showError(r.message, -1)
             } else {
                 showError("The booking could not be created at this time.", -1)
             }
