@@ -82,6 +82,10 @@ committers:
       email: 'jhodgdon@iol.unh.edu'
       company: 'UNH'
       id: 'jhodgdon'
+    - name: 'Nicholas Schoenfeld'
+      email: 'nschoenfeld@iol.unh.edu'
+      company: 'UNH'
+      id: 'nschoenfeld'
 tsc:
     # yamllint disable rule:line-length
     approval: 'http://meetbot.opnfv.org/meetings/opnfv-meeting/2019/opnfv-meeting.2019-06-25-12.59.txt'
