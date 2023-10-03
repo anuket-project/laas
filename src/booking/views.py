@@ -8,7 +8,7 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-from django.contrib import messages
+from django.contrib import messages, admin
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
@@ -80,10 +80,11 @@ def booking_detail_view(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     statuses = get_booking_status(booking)
     allowed_users = set(list(booking.collaborators.all()))
+    if (request.user.is_superuser):
+        allowed_users.add(request.user)
     allowed_users.add(booking.owner)
     if user not in allowed_users:
         return render(request, "dashboard/login.html", {'title': 'This page is private'})
-    
     context = {
         'title': 'Booking Details',
         'booking': booking,
