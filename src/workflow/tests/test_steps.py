@@ -17,8 +17,8 @@ import json
 from unittest import SkipTest, mock
 
 from django.test import TestCase, RequestFactory
-from dashboard.testing_utils import make_lab, make_user, make_os,\
-    make_complete_host_profile, make_opnfv_role, make_image, make_grb,\
+from dashboard.testing_utils import make_lab, make_user, make_os, \
+    make_complete_host_profile, make_opnfv_role, make_image, make_grb, \
     make_config_bundle, make_host, make_user_profile, make_generic_host
 from workflow import resource_bundle_workflow
 from workflow import booking_workflow
