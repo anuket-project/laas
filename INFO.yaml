@@ -5,10 +5,10 @@ project_category: ''
 lifecycle_state: 'Incubation'
 project_lead: &opnfv_laas_ptl
     name: 'Sawyer Bergeron'
-    email: 'sbergeron@iol.unh.edu'
+    email: 'sawyerbergeron@gmail.com'
     id: 'sbergeron'
-    company: 'UNH'
-    timezone: 'EST'
+    company: 'None'
+    timezone: 'Unknown/Unknown'
 primary_contact: *opnfv_laas_ptl
 issue_tracking:
     type: 'jira'
