@@ -89,7 +89,8 @@ def booking_detail_view(request, booking_id):
         'title': 'Booking Details',
         'booking': booking,
         'status': statuses,
-        'collab_string': ', '.join(map(str, booking.collaborators.all()))
+        'collab_string': ', '.join(map(str, booking.collaborators.all())),
+        'contact_email': booking.lab.contact_email
     }
 
     return render(
