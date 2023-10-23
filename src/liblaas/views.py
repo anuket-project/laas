@@ -75,19 +75,8 @@ def flavor_list_flavors(project: str) -> requests.Response:
         return None
 
 # GET
-def flavor_get_flavor_by_id(flavor_id: str) -> requests.Response:
-    endpoint = f'flavor/name/{flavor_id}/'
-    url = f'{base}{endpoint}'
-    try:
-        response = requests.get(url)
-        return response.json()
-    except:
-        print(f"Error at {url}")
-        return None
-
-# GET
 def flavor_list_hosts(project: str) -> requests.Response:
-    endpoint = f'flavor/hosts/{project}'
+    endpoint = f'flavor/hosts/{project}' #todo - support project in liblaas
     url = f'{base}{endpoint}'
     try:
         response = requests.get(url)
@@ -100,7 +89,7 @@ def flavor_list_hosts(project: str) -> requests.Response:
 
 # GET
 def template_list_templates(uid: str) -> requests.Response:
-    endpoint = f'template/list/{uid}'
+    endpoint = f'template/list/{uid}' # todo - templates need to be restricted by project
     url = f'{base}{endpoint}'
     try:
         response = requests.get(url)
@@ -122,7 +111,7 @@ def template_delete_template(template_id: str) -> requests.Response:
 
 #POST
 def template_make_template(template_blob: dict) -> requests.Response:
-    endpoint = f'template/create'
+    endpoint = f'template/create' # todo - needs to be restricted by project
     url = f'{base}{endpoint}'
     try:
         response = requests.post(url, data=json.dumps(template_blob), headers=post_headers)

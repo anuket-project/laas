@@ -18,6 +18,7 @@ from booking.models import Booking
 from account.models import Lab
 from django.utils import timezone
 from datetime import timedelta
+from laas_dashboard.settings import PROJECT
 
 def request_list_flavors(request) -> HttpResponse:
     data = json.loads(request.body.decode('utf-8'))
@@ -90,7 +91,7 @@ def request_create_booking(request) -> HttpResponse:
         "project": data["metadata"]["project"],
         "length": int(data["metadata"]["length"])
     },
-    "origin": "anuket" if os.environ.get("TEMPLATE_OVERRIDE_DIR") == 'laas' else "lfedge" # todo - refactor
+    "origin": PROJECT
     }
 
     # Create booking in dashboard

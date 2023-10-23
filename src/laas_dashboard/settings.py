@@ -87,15 +87,15 @@ if os.environ.get('EXPECT_HOST_FORWARDING') == 'True':
 
 ROOT_URLCONF = 'laas_dashboard.urls'
 
-TEMPLATE_OVERRIDE = os.environ.get("TEMPLATE_OVERRIDE_DIR", "")  # the user's custom template dir
+PROJECT = os.environ.get("PROJECT", "")  # the project for the current deployment (i.e. anuket or lfedge)
 TEMPLATE_DIRS = ["base"]  # where all the base templates are
 
 # If the user has a custom template directory,
 # We should search that first. Then we search the
 # root template directory so that we can extend the base
 # templates within the custom template dir.
-if TEMPLATE_OVERRIDE:
-    TEMPLATE_DIRS = [TEMPLATE_OVERRIDE, ""] + TEMPLATE_DIRS
+if PROJECT:
+    TEMPLATE_DIRS = [PROJECT, ""] + TEMPLATE_DIRS
 
 # all template dirs are relative to /project_root/templates/
 dirs = [os.path.join(BASE_DIR, "templates", d) for d in TEMPLATE_DIRS]

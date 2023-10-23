@@ -7,9 +7,8 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-import json
 from django.shortcuts import render, redirect
-from laas_dashboard.settings import TEMPLATE_OVERRIDE
+from laas_dashboard.settings import PROJECT
 from django.http import HttpResponse
 from liblaas.views import user_get_user
 from workflow.forms import BookingMetaForm
@@ -31,9 +30,10 @@ def design_a_pod_view(request):
     if (not profile or profile.ipa_username == None):
         return redirect("dashboard:index")
 
+    constraints = get_workflow_contraints(PROJECT)
     template = "workflow/design_a_pod.html"
     context = {
-        "dashboard": str(TEMPLATE_OVERRIDE)
+        "constraints": constraints,
     }
     return render(request, template, context)
 
@@ -51,7 +51,7 @@ def book_a_pod_view(request):
         return redirect("dashboard:index")
 
     vpn_user = user_get_user(profile.ipa_username)
-    
+
     # These booleans need to be represented as strings, due to the way jinja interprets them
     prereqs = {
         "company": "true" if ("ou" in vpn_user and vpn_user["ou"] != "") else "false",
@@ -60,10 +60,23 @@ def book_a_pod_view(request):
 
     template = "workflow/book_a_pod.html"
     context = {
-        "dashboard": str(TEMPLATE_OVERRIDE),
         "form": BookingMetaForm(initial={}, user_initial=[], owner=request.user),
         "prereqs": prereqs
     }
     return render(request, template, context)
+
+def get_workflow_contraints(project: str) -> dict:
+
+    if project == 'anuket':
+        return {
+            "max_hosts": 8,
+        }
+
+    if project == 'lfedge':
+        return {
+            "max_hosts": "null",
+        }
+
+    return {}
 
 

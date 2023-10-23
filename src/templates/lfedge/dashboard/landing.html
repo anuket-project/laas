@@ -1,23 +1,6 @@
 {% extends "base/dashboard/landing.html" %}
+
 {% block about_us %}
     <p>The Shared Community Lab at the IOL aims to help development and testing of LF Edge projects by hosting hardware and providing access to the community.</p>
     <p>To get started, you can request access to a pod at the right.</p>
 {% endblock about_us %}
-
-{% block btnGrp %}
-<style>
-.btnLFEdge {
-    color: #fff;
-    background-color: #0049b0;
-}
-.btnLFEdge:hover{
-    color: #fff;
-    background-color: #001776;
-}
-</style>
-<p>To get started, book a pod below:</p>
-<a class="btn btnLFEdge btn-lg d-flex flex-column justify-content-center align-content-center border text-white p-4" href="/booking/quick/">Book a Pod</a>
-{% endblock btnGrp %}
-
-{% block returningUsers %}
-{% endblock returningUsers %}

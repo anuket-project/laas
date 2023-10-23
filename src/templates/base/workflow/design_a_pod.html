@@ -7,8 +7,6 @@
 <script src="/static/js/workflows/design-a-pod.js"></script>
 {% endblock %}
 {% block content %}
-{% if dashboard == 'laas' %}
-
 <!-- Main Content -->
 <body>
 
@@ -18,13 +16,13 @@
         <div class="arrow arrow-up"></div>
       </button>
     </div>
-  
+
     <div id="next" class="row w-100 m-0">
       <button class="btn btn-workflow-nav stretched-link m-0 p-0 mb-3" onclick="workflow.goNext()" id="workflow-next">
         <div class="arrow arrow-down"></div>
       </button>
     </div>
-  
+
     <div class="scroll-container w-100 h-100 p-0">
 
       <!-- Select Lab -->
@@ -40,18 +38,24 @@
       <!-- Add Resources -->
       <div class="scroll-area pt-5 mx-5" id="add_resources">
         <h2 class="mt-4 mb-3">Add Resources<span class="text-danger">*</span></h2>
-        <p>Add up to 8 configurable resources to your pod, then use the navigation arrows to proceed to the next step.</p>
+        {% if constraints.max_hosts != "null" %}
+        <p>Add up to {{constraints.max_hosts}} configurable resources to your pod, then use the navigation arrows to proceed to the next step.</p>
+        {% else %}
+        <p>Select a resource bundle that you would like to configure. To change the selected resource bundle, remove all added resources.</p>
+        {% endif %}
         <div class="row card-deck align-items-center" id="host_cards">
           <div class="col-xl-3 col-md-6 col-12" id="add_resource_plus_card">
             <div class="card align-items-center border-0">
-              <span class="" id="resource-count">0 / 8</span>
+              {% if constraints.max_hosts != "null" %}
+              <span class="" id="resource-count">0 / {{constraints.max_hosts}}</span>
+              {% endif %}
               <button class="btn btn-success add-button p-0" onclick="workflow.onclickAddResource()">+</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Add Networks --> 
+      <!-- Add Networks -->
     <div class="scroll-area pt-5 mx-5" id="add_networks">
       <h2 class="mt-4 mb-3">Add Networks<span class="text-danger">*</span></h2>
       <p>Define networks to use in your pod. A network may be set as public or private.</p>
@@ -238,8 +242,8 @@
 
 <script>
   const user = "{{user}}"
+  const max_hosts = {{constraints.max_hosts}}
   const workflow = new DesignWorkflow();
   workflow.startWorkflow();
 </script>
-{% endif %}
 {% endblock %}

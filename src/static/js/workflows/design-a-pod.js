@@ -113,8 +113,8 @@ class DesignWorkflow extends Workflow {
           return;
       }
 
-      if (this.templateBlob.host_list.length >= 8) {
-        showError("You may not add more than 8 hosts to a single pod.", -1)
+      if (max_hosts && this.templateBlob.host_list.length >= max_hosts) {
+        showError(`You may not add more than ${max_hosts} hosts to a single pod.`, -1)
         return;
       }
 
@@ -246,7 +246,7 @@ class DesignWorkflow extends Workflow {
       for (const [index, host] of this.resourceBuilder.user_configs.entries()) {
         const new_host = new HostConfigBlob(host);
         this.templateBlob.host_list.push(new_host);
-        this.labFlavors.get(host.flavor).available_count--      
+        this.labFlavors.get(host.flavor).available_count--
       }
 
       // Add networks
@@ -256,17 +256,17 @@ class DesignWorkflow extends Workflow {
         }
       }
 
-        // We are done
-        GUI.refreshHostStep(this.templateBlob.host_list, this.labFlavors, this.labImages);
-        GUI.refreshNetworkStep(this.templateBlob.networks);
-        GUI.refreshConnectionStep(this.templateBlob.host_list);
-        GUI.refreshPodSummaryHosts(this.templateBlob.host_list, this.labFlavors, this.labImages)
-        $('#resource_modal').modal('hide')
+      // We are done
+      GUI.refreshHostStep(this.templateBlob.host_list, this.labFlavors, this.labImages);
+      GUI.refreshNetworkStep(this.templateBlob.networks);
+      GUI.refreshConnectionStep(this.templateBlob.host_list);
+      GUI.refreshPodSummaryHosts(this.templateBlob.host_list, this.labFlavors, this.labImages)
+      $('#resource_modal').modal('hide')
     }
 
     /**
      * Takes a hostname, looks for the matching HostConfigBlob in the TemplateBlob, removes it from the list, and refreshes the appropriate views
-     * @param {String} hostname 
+     * @param {String} hostname
      */
     onclickDeleteHost(hostname) {
       this.goTo(steps.ADD_RESOURCES);
@@ -536,9 +536,9 @@ class DesignWorkflow extends Workflow {
         passed = false;
         message = "Please select a lab";
         step = steps.SELECT_LAB;
-      } else if (this.templateBlob.host_list.length < 1 || this.templateBlob.host_list.length > 8) {
+      } else if (this.templateBlob.host_list.length < 1 || (max_hosts && this.templateBlob.host_list.length > max_hosts)) {
         passed = false;
-        message = "Pods must contain 1 to 8 hosts";
+        message = "Pod contains invalid number of resources.";
         step = steps.ADD_RESOURCES;
       } else if (this.templateBlob.networks.length < 1) {
         passed = false;
@@ -817,7 +817,7 @@ class GUI {
 
     /**
      * Refreshes the step and creates a card for each host in the hostlist
-     * @param {List<HostConfigBlob>} hostlist 
+     * @param {List<HostConfigBlob>} hostlist
      */
     static refreshHostStep(hostlist, flavors, images) {
       const host_cards = document.getElementById('host_cards');
@@ -827,27 +827,41 @@ class GUI {
       }
 
       let span_class = ''
-      if (hostlist.length == 8) {
-        span_class = 'text-primary'
-      } else if (hostlist.length > 8) {
-        span_class = 'text-danger'
+      if (max_hosts) {
+        if (hostlist.length == max_hosts) {
+          span_class = 'text-primary'
+        } else if (hostlist.length > max_hosts) {
+          span_class = 'text-danger'
+        }
       }
+
       const plus_card = document.createElement("div");
       plus_card.classList.add("col-xl-3", "col-md-6", "col-12");
       plus_card.id = "add_resource_plus_card";
-      plus_card.innerHTML = `
-      <div class="card align-items-center border-0">
-      <span class="` + span_class + `" id="resource-count">` + hostlist.length + `/ 8</span>
-      <button class="btn btn-success add-button p-0" onclick="workflow.onclickAddResource()">+</button>
-      </div>
-      `
 
-      host_cards.appendChild(plus_card);
+      if (max_hosts) {
+        plus_card.innerHTML = `
+        <div class="card align-items-center border-0">
+        <span class="${span_class}" id="resource-count">${hostlist.length} / ${max_hosts}</span>
+        <button class="btn btn-success add-button p-0" onclick="workflow.onclickAddResource()">+</button>
+        </div>
+        `
+      } else {
+        plus_card.innerHTML = `
+        <div class="card align-items-center border-0">
+        <button class="btn btn-success add-button p-0" onclick="workflow.onclickAddResource()">+</button>
+        </div>
+        `
+      }
+
+      if (max_hosts || hostlist.length == 0) {
+        host_cards.appendChild(plus_card);
+      }
     }
 
     /**
      * Makes a host card element for a given host and returns a reference to the card
-     * @param {HostConfigBlob} host 
+     * @param {HostConfigBlob} host
      */
     static makeHostCard(host, flavors, images) {
       const new_card = document.createElement("div");

@@ -20,6 +20,7 @@ from django.http import HttpResponse
 from account.models import Lab, UserProfile
 from booking.models import Booking
 from laas_dashboard import settings
+from laas_dashboard.settings import PROJECT
 from liblaas.utils import get_ipa_status
 
 from liblaas.views import flavor_list_flavors, flavor_list_hosts
@@ -38,15 +39,13 @@ def lab_detail_view(request, lab_name):
         user = request.user
 
     lab = get_object_or_404(Lab, name=lab_name)
-    origin = "anuket" if os.environ.get("TEMPLATE_OVERRIDE_DIR") == 'laas' else "lfedge"
-
-    flavors_list = flavor_list_flavors(origin)
-    host_list = flavor_list_hosts(origin)
+    flavors_list = flavor_list_flavors(PROJECT)
+    host_list = flavor_list_hosts(PROJECT)
 
     flavor_map = {}
     for flavor in flavors_list:
         flavor_map[flavor['flavor_id']] = flavor['name']
-        
+
 
     # Apparently Django Templating lacks many features that regular Jinja offers, so I need to get creative
     for host in host_list:

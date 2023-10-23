@@ -11,17 +11,16 @@ import json
 import os
 from django.shortcuts import render
 from django.http import HttpResponse
+from laas_dashboard.settings import PROJECT
 
 from liblaas.views import flavor_list_hosts, flavor_list_flavors
-
-origin = "anuket" if os.environ.get("TEMPLATE_OVERRIDE_DIR") == 'laas' else "lfedge"
 
 def host_list_view(request):
     if request.method != "GET":
         return HttpResponse(status=405)
 
-    host_list = flavor_list_hosts(origin)
-    flavor_list = flavor_list_flavors(origin)
+    host_list = flavor_list_hosts(PROJECT)
+    flavor_list = flavor_list_flavors(PROJECT)
 
     flavor_map = {}
     for flavor in flavor_list:
@@ -46,7 +45,7 @@ def profile_view(request, resource_id):
     if request.method != "GET":
         return HttpResponse(status=405)
 
-    flavor_list = flavor_list_flavors(origin)
+    flavor_list = flavor_list_flavors(PROJECT)
     selected_flavor = {}
     for flavor in flavor_list:
         if flavor["flavor_id"] == resource_id:
