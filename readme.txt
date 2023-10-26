@@ -47,3 +47,8 @@ Development:
 - run 'make dev-up'
 
     NOTE: DEBUG must be set to True in config.env when running development builds
+
+History: 
+- Development history of the project before 2023.10.26
+  - Code: https://gerrit.opnfv.org/gerrit/gitweb?p=laas.git;a=summary
+  - Reviews: https://gerrit.opnfv.org/gerrit/q/project:laas
