@@ -106,11 +106,11 @@ def request_create_booking(request) -> HttpResponse:
 
     for c in list(data["allowed_users"]):
         booking.collaborators.add(User.objects.get(username=c))
-    
+
     # Create booking in liblaas
     bookingBlob["metadata"]["booking_id"] = str(booking.id)
     liblaas_response = booking_create_booking(bookingBlob)
-    if liblaas_response.status_code != 200:
+    if not liblaas_response:
         print("received non success from liblaas, deleting booking from dashboard")
         booking.delete()
         return JsonResponse(
@@ -118,7 +118,7 @@ def request_create_booking(request) -> HttpResponse:
             status=500,
             safe=False
         )
-    
+
     aggregateId = liblaas_response
     booking.aggregateId = aggregateId
     booking.save()
@@ -155,10 +155,10 @@ def request_migrate_new(request) -> HttpResponse:
         'random': True
     }
     
-    vpn_username = user_create_user(user_blob)
+    success = user_create_user(user_blob)
 
-    if (vpn_username):
-        profile.ipa_username = vpn_username
+    if (success):
+        profile.ipa_username = str(user)
         profile.save()
         return HttpResponse(status=200)
 
@@ -203,10 +203,10 @@ def request_migrate_conflict(request) -> HttpResponse:
         'random': True
     }
     
-    vpn_username = user_create_user(user_blob)
+    success = user_create_user(user_blob)
 
-    if (vpn_username):
-        profile.ipa_username = vpn_username
+    if (success):
+        profile.ipa_username = str(username)
         profile.save()
         return HttpResponse(status=200)
 

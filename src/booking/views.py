@@ -115,7 +115,7 @@ def update_booking_status(request):
 
     response = booking_booking_status(agg_id)
 
-    if (response.status_code == 200):
+    if (response):
         return JsonResponse(status=200, data=response)
 
     return HttpResponse(status=500)
