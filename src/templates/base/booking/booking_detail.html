@@ -188,14 +188,14 @@ code {
             dataType: 'text',
         })
         .done(function(response) {
-            updateStatuses(response)
+            updateStatuses(JSON.parse(response))
         })
     }
 
     async function updateStatuses(status) {
         const instances = status.instances;
         if (!instances) return;
-        
+
         Object.keys(instances).forEach((aggId) => {
             const instance = instances[aggId]
             const status = instance.logs.pop()

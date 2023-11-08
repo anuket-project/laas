@@ -18,7 +18,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.views.generic import RedirectView
 from django.shortcuts import render
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
@@ -156,12 +156,12 @@ def account_resource_view(request):
             "title": "My Resources"
         }
         return render(request, template, context=context)
-    
+
     if request.method == "POST":
         return account_delete_resource(request)
-    
+
     return HttpResponse(status_code=405)
-    
+
 
 def account_delete_resource(request):
     if request.method != "POST":
@@ -171,10 +171,10 @@ def account_delete_resource(request):
     template_id = data["template_id"]
 
     if not canDeleteTemplate(template_id, UserProfile.objects.get(user=request.user).ipa_username):
-        return HttpResponse(status=401)    
+        return HttpResponse(status=401)
 
     response = template_delete_template(template_id)
-    if (response.status_code == 200):
+    if (response):
         return HttpResponse(status=200)
 
 
@@ -210,7 +210,7 @@ def account_booking_view(request):
             "expired_bookings": expired_bookings
         }
         return render(request, template, context=context)
-    
+
     if request.method == 'POST':
         return account_cancel_booking(request)
 
@@ -233,7 +233,7 @@ def account_cancel_booking(request):
     booking.end = timezone.now()
     booking.save()
 
-    if (response.status_code == 200):
+    if (response):
         return HttpResponse(status=200)
 
     return HttpResponse(status=500)
