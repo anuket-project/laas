@@ -45,5 +45,7 @@ urlpatterns = [
     url(r'^liblaas/', include('liblaas.urls', namespace='liblaas'))
 ]
 
-if settings.DEBUG is True:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+handler404 = 'dashboard.views.handler404'
+handler500 = 'dashboard.views.handler500'
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
