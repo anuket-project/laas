@@ -73,7 +73,7 @@ class DesignWorkflow extends Workflow {
         if (this.templateBlob.lab_name == null) { // Lab has not been selected yet
             // lab name is using project name instead
             // this.templateBlob.lab_name = lab_card.id;
-            this.templateBlob.lab_name = "{{project}}";
+            this.templateBlob.lab_name = dashboard_project; // defined in design_a_pod.html
 
             lab_card.classList.add("selected_node");
             await this.setLabDetails(this.templateBlob.lab_name);
