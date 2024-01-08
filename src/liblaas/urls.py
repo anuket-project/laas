@@ -13,8 +13,8 @@ from liblaas.endpoints import *
 
 app_name = 'liblaas'
 urlpatterns = [
-    url(r'^flavor/$', request_list_flavors, name='flavor'),
-    url(r'^template/$', request_list_template, name='template'),
+    url(r'^flavor/(<str:lab_name>)$', request_list_flavors, name='flavor'),
+    url(r'^template/<str:lab_name>$', request_list_template, name='template'),
     url(r'^template/create/$', request_create_template, name='template_create'),
     url(r'^booking/create/$', request_create_booking, name='booking_create'),
     url(r'^migrate/new/$', request_migrate_new, name='migrate_new'),

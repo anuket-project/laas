@@ -98,7 +98,7 @@ class DesignWorkflow extends Workflow {
           this.labFlavors.set(fblob.flavor_id, fblob);
         }
 
-        this.userTemplates = await LibLaaSAPI.getTemplatesForUser();
+        this.userTemplates = await LibLaaSAPI.getTemplatesForUser(lab_name);
     }
 
     /** Prepopulates fields and launches the modal */

@@ -20,31 +20,24 @@ from django.utils import timezone
 from datetime import timedelta
 from laas_dashboard.settings import PROJECT
 
-def request_list_flavors(request) -> HttpResponse:
+def request_list_flavors(request, lab_name) -> HttpResponse:
     data = json.loads(request.body.decode('utf-8'))
-    if not "project" in data:
-        return HttpResponse(status=422)
 
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
 
-    response = flavor_list_flavors(data["project"])
+    response = flavor_list_flavors(lab_name)
     return JsonResponse(status=200, data={"flavors_list": response})
 
 
-def request_list_template(request) -> HttpResponse:
+def request_list_template(request, lab_name) -> HttpResponse:
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
-    
-    data = json.loads(request.body.decode('utf-8'))
-    if not "project" in data:
-        return HttpResponse(status=422)
-    
+
     uid = UserProfile.objects.get(user=request.user)
     uid = uid.ipa_username
 
-    
-    response = template_list_templates(uid, data["project"])
+    response = template_list_templates(uid, lab_name)
     return JsonResponse(status=200, data={"templates_list": response})
 
 def request_create_template(request) -> HttpResponse:

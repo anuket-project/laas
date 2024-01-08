@@ -49,7 +49,7 @@ class LibLaaSAPI {
     }
 
     static async getLabFlavors(project) { // -> List<FlavorBlob>
-        const response = await this.handleResponse(this.makeRequest(endpoint.FLAVORS, {"project": project}));
+        const response = await this.handleResponse(this.makeRequest(endpoint.FLAVORS + "/" + project, {}));
         let flavors = [];
         let data = JSON.parse(response)
         if (data) {
@@ -62,8 +62,8 @@ class LibLaaSAPI {
         return flavors;
     }
 
-    static async getTemplatesForUser() { // -> List<TemplateBlob>
-        const response = await this.handleResponse(this.makeRequest(endpoint.TEMPLATES, {}))
+    static async getTemplatesForUser(project) { // -> List<TemplateBlob>
+        const response = await this.handleResponse(this.makeRequest(endpoint.TEMPLATES + "/" + project, {}))
         let templates = []
         let data = JSON.parse(response)
         if (data)
