@@ -36,10 +36,15 @@ def request_list_template(request) -> HttpResponse:
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
     
+    data = json.loads(request.body.decode('utf-8'))
+    if not "project" in data:
+        return HttpResponse(status=422)
+    
     uid = UserProfile.objects.get(user=request.user)
     uid = uid.ipa_username
 
-    response = template_list_templates(uid)
+    
+    response = template_list_templates(uid, data["project"])
     return JsonResponse(status=200, data={"templates_list": response})
 
 def request_create_template(request) -> HttpResponse:

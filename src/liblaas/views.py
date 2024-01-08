@@ -70,7 +70,7 @@ def booking_create_booking(booking_blob: dict) -> str:
 
 # GET
 def flavor_list_flavors(project: str) -> list[dict]:
-    endpoint = f'flavor' #todo - add project to url once liblaas supports it
+    endpoint = f'flavor/{project}'
     url = f'{base}{endpoint}'
     try:
         response = requests.get(url)
@@ -82,7 +82,7 @@ def flavor_list_flavors(project: str) -> list[dict]:
 
 # GET
 def flavor_list_hosts(project: str) -> list[dict]:
-    endpoint = f'flavor/hosts/{project}' #todo - support project in liblaas
+    endpoint = f'flavor/hosts/{project}'
     url = f'{base}{endpoint}'
     try:
         response = requests.get(url)
@@ -95,8 +95,8 @@ def flavor_list_hosts(project: str) -> list[dict]:
 ### TEMPLATE
 
 # GET
-def template_list_templates(uid: str) -> list[dict]:
-    endpoint = f'template/list/{uid}' # todo - templates need to be restricted by project
+def template_list_templates(uid: str, project: str) -> list[dict]:
+    endpoint = f'template/{project}/list/{uid}' # todo - templates need to be restricted by project
     url = f'{base}{endpoint}'
     try:
         response = requests.get(url)
