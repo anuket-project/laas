@@ -71,7 +71,10 @@ class DesignWorkflow extends Workflow {
         this.goTo(steps.SELECT_LAB)
 
         if (this.templateBlob.lab_name == null) { // Lab has not been selected yet
-            this.templateBlob.lab_name = lab_card.id;
+            // lab name is using project name instead
+            // this.templateBlob.lab_name = lab_card.id;
+            this.templateBlob.lab_name = "{{project}}";
+
             lab_card.classList.add("selected_node");
             await this.setLabDetails(this.templateBlob.lab_name);
             this.addDefaultNetwork();

@@ -34,6 +34,7 @@ def design_a_pod_view(request):
     template = "workflow/design_a_pod.html"
     context = {
         "constraints": constraints,
+        "project": PROJECT
     }
     return render(request, template, context)
 
