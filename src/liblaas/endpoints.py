@@ -82,7 +82,7 @@ def request_create_booking(request) -> HttpResponse:
     "metadata": {
         "booking_id": None, # fill in after creating django object
         "owner": UserProfile.objects.get(user=request.user).ipa_username,
-        "lab": "UNH_IOL",
+        "lab": PROJECT,
         "purpose": data["metadata"]["purpose"],
         "project": data["metadata"]["project"],
         "length": int(data["metadata"]["length"])
