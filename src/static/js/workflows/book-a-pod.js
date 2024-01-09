@@ -23,7 +23,7 @@ const steps = {
     }
 
     async startWorkflow() {
-        this.userTemplates = await LibLaaSAPI.getTemplatesForUser() // List<TemplateBlob>
+        this.userTemplates = await LibLaaSAPI.getTemplatesForUser(dashboard_project)
         const flavorsList = await LibLaaSAPI.getLabFlavors(dashboard_project)
         this.labFlavors = new Map(); // Map<UUID, FlavorBlob>
         for (const fblob of flavorsList) {
