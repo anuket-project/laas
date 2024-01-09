@@ -662,7 +662,12 @@ class GUI {
       const template_cards = document.getElementById('template-cards');
 
       for (let template of template_list) {
-        template_cards.appendChild(this.makeTemplateCard(template, this.calculateAvailability(template, flavor_map)));
+        try {
+          template_cards.appendChild(this.makeTemplateCard(template, this.calculateAvailability(template, flavor_map)));
+        } catch (e) {
+          console.log(e)
+          console.log("Unable to render template", template);
+        }
       }
     }
 
