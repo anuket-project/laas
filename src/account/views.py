@@ -22,6 +22,7 @@ from django.shortcuts import redirect, render
 from django.views.generic import RedirectView
 from django.shortcuts import render
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
+from laas_dashboard.settings import PROJECT
 
 from account.models import UserProfile
 from booking.models import Booking
@@ -149,7 +150,7 @@ def account_resource_view(request):
         if (not profile or profile.ipa_username == None):
             return redirect("dashboard:index")
 
-        usable_templates = template_list_templates(profile.ipa_username)
+        usable_templates = template_list_templates(profile.ipa_username, PROJECT)
         user_templates = [ t for t in usable_templates if t["owner"] == profile.ipa_username]
         context = {
             "templates": user_templates,
@@ -181,7 +182,7 @@ def account_delete_resource(request):
     return HttpResponse(status=500)
 
 def canDeleteTemplate(template_id, ipa_username):
-    usable_templates = template_list_templates(ipa_username)
+    usable_templates = template_list_templates(ipa_username, PROJECT)
     for t in usable_templates:
         if (t['id'] == template_id and t['owner'] == ipa_username):
             return True
