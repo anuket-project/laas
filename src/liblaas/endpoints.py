@@ -21,8 +21,6 @@ from datetime import timedelta
 from laas_dashboard.settings import PROJECT
 
 def request_list_flavors(request, lab_name) -> HttpResponse:
-    data = json.loads(request.body.decode('utf-8'))
-
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
 
