@@ -96,7 +96,7 @@ def flavor_list_hosts(project: str) -> list[dict]:
 
 # GET
 def template_list_templates(uid: str, project: str) -> list[dict]:
-    endpoint = f'template/{project}/list/{uid}' # todo - templates need to be restricted by project
+    endpoint = f'template/list/{project}/{uid}'
     url = f'{base}{endpoint}'
     try:
         response = requests.get(url)
@@ -121,7 +121,10 @@ def template_delete_template(template_id: str) -> bool:
 
 #POST
 def template_make_template(template_blob: dict) -> str:
-    endpoint = f'template/create' # todo - needs to be restricted by project
+
+    project = template_blob["lab_name"]
+
+    endpoint = f'template/{project}/create'
     url = f'{base}{endpoint}'
     try:
         response = requests.post(url, data=json.dumps(template_blob), headers=post_headers)
