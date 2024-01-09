@@ -62,7 +62,8 @@ def book_a_pod_view(request):
     template = "workflow/book_a_pod.html"
     context = {
         "form": BookingMetaForm(initial={}, user_initial=[], owner=request.user),
-        "prereqs": prereqs
+        "prereqs": prereqs,
+        "project": PROJECT
     }
     return render(request, template, context)
 
