@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load bootstrap4 %}
+{% block extrahead %}
+<script src="{% static "/js/workflows/common-models.js" %}"></script>
+<script src="{% static "/js/workflows/workflow.js" %}"></script>
+<script src="{% static "/js/workflows/book-a-pod.js" %}"></script>
+{% endblock %}
+{% block content %}
+<body>
+<div class="workflow-container">
+    <div id="prev" class="row w-100 m-0">
+        <button class="btn btn-workflow-nav stretched-link m-0 p-0 mt-3" hidden="true" onclick="workflow.goPrev()" id="workflow-prev">
+          <div class="arrow arrow-up"></div>
+        </button>
+      </div>
+    
+      <div id="next" class="row w-100 m-0">
+        <button class="btn btn-workflow-nav stretched-link m-0 p-0 mb-3" onclick="workflow.goNext()" id="workflow-next">
+          <div class="arrow arrow-down"></div>
+        </button>
+      </div>
+
+    <div class="scroll-container w-100 h-100 p-0">
+        <div class="scroll-area pt-5 mx-5" id="select_template">
+            <h1 class="mt-4"><u>Book a Pod</u></h1>
+            <h2 class="mt-4 mb-3">Select Host Or Template<span class="text-danger">*</span></h2>
+            <p>Select the resource bundle that you would like to reserve. Then use the navigation arrows or scroll to advance the workflow. Configure your own resource <a href="{% url 'workflow:design_a_pod' %}">here</a>.</p> 
+              <div id="default_templates_list" class="row flex-grow-1">
+              </div>
+        </div>
+
+        <div class="scroll-area pt-5 mx-5" id="cloud_init">
+            <h2 class="mt-4 mb-3">Global Cloud Init Override</h2>
+            <p>Add a custom cloud init configuration to apply to all hosts in your booking (optional).</p>
+            <div class="d-flex align-items-center">
+              <textarea name="ci-textarea" id="ci-textarea" rows="15" class="w-50"></textarea>
+            </div>
+        </div>
+
+        <div class="scroll-area pt-5 mx-5" id="booking_details">
+            <h2 class="mt-4 mb-3">Booking Details<span class="text-danger">*</span></h2>
+            <p>Enter the project and purpose for your booking, as well as the duration (up to 21 days).</p>
+            <div class="form-group mb-0">
+              <div class="row align-items-center my-4">
+                <div class="col-xl-6 col-md-8 col-11">
+                  <input id="input_project" class="form-control form-control-lg border border-dark p-5" type="text" placeholder="Project">
+                </div>
+              </div>
+              <div class="row align-items-center my-4">
+                <div class="col-xl-6 col-md-8 col-11">
+                  <input id="input_purpose" class="form-control form-control-lg border border-dark p-5" type="text" placeholder = "Purpose">
+                </div>
+              </div>
+              <div class="row align-items-center my-4">
+                <span id="booking_details_error" class="text-danger col-xl-6 col-md-8 col-11"></span>
+              </div>
+              <div class="row align-items-center my-4">
+                <span id="booking_details_day_counter" class="col-md-1 col-2 p-0">Days: 1</span>
+                <input id="input_length" type="range" min="1" max="21" value="1" class="form-control form-control-lg col-xl-5 col-9 p-0" placeholder="Length" oninput="workflow.onchangeDays()">
+              </div>
+            </div>
+            <h2 class="mt-4 mb-3">Add Collaborators:</h2>
+            <p>Give SSH and booking overview access to other users. Collaborators must mark their profiles as public and have a linked IPA account.</p>
+            <div class="row">
+              <div class="col-xl-6 col-md-8 col-11 p-0 border border-dark">
+                {% bootstrap_field form.users label="Collaborators" %}
+              </div>
+            </div>
+        </div>
+
+        <div class="scroll-area pt-5 mx-5" id="booking_summary">
+            <h2 class="mt-4 mb-3">Booking Summary</h2>
+            <p>Review your booking information and click 'Book' to reserve your resources.</p>
+            <div class="row align-items-center">
+              <div class="card col-xl-6 col-md-8 col-11 border-0">
+                <ul class="list-group">
+                  <li class="list-group-item">Booking Details
+                    <ul id="booking_summary_booking_details">
+                    </ul>
+                  </li>
+                  <li class="list-group-item">Collaborators
+                    <ul id="booking_summary_collaborators">
+                    </ul>
+                  </li>
+                  <li class="list-group-item">Hosts
+                    <ul id="booking_summary_hosts">
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="row align-items-center mt-5">
+              <!-- <button class="btn btn-danger cancel-book-button p-0 mr-2 col-xl-2 col-md-3 col-5" onclick="workflow.onclickCancel()">Cancel</button> -->
+              <button id="booking-confirm-button"  class="btn btn-success cancel-book-button p-0 ml-2 col-xl-2 col-md-3 col-5" onclick="workflow.onclickConfirm()">Book</button>
+            </div>
+          </div>
+        
+    </div>
+</div> 
+
+<div class="hidden_form d-none">
+  <form id="token">
+      {% csrf_token %}
+  </form>
+</div>
+
+<div class="modal fade" id="ipa-modal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Welcome to LaaS 3.0</h5>
+        <button class="close" onclick="window.location.href = '../../'"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body" id="add_resource_modal_body">
+          <p>Please update your information before creating a booking.</p>
+          <p id="error-msg" class="text-danger"></p>
+          <form>
+            {% csrf_token %}
+            <div class="form-group">
+              {% if prereqs.company == "false" %}
+              <label for="prereq_form">Company:</label>
+              <input type="text" class="form-control" style="width: 300px;" placeholder="Company" id="prereq_form" name="company">
+              {% elif prereqs.keys == "false" %}
+              <label for="prereq_form">SSH Public Key:</label>
+              <textarea id="prereq_form" placeholder="SSH Public Key" class="form-control" style="width: 500px;" id="prereq_form" name="ssh"></textarea>
+              {% endif %}
+            </div>
+          </form>
+          <button class="btn btn-success" onclick="submit_form({% if prereqs.company == 'false' %} 'ipa/company/'{% elif prereqs.keys == 'false' %} 'ipa/ssh/'  {% endif %})">Save</button>
+        </div>
+    </div>
+  </div>
+</div>
+
+<!-- Alert Modal -->
+<div class="modal fade" id="alert_modal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body text-center">
+        <h5 id="alert_modal_message"></h5>
+      </div>
+      <div class="modal-footer d-flex justify-content-center">
+        <button class="btn btn-success" data-dismiss="modal" id="alert-modal-submit" onclick="workflow.goTo(alert_destination)">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+
+<script>
+    function collect_form_data() {
+
+      const form = document.getElementById("prereq_form");
+
+      const data = {};
+      if (form.name == "company") {
+        data["data"] = form.value;
+      } else if (form.name == "ssh") {
+        data["data"] = [];
+        data["data"].push(form.value)
+      }
+
+      return data;
+
+    }
+
+    function submit_form(endpoint) {
+        const data = collect_form_data();
+
+        $.ajax({
+            url: '../../liblaas/' + endpoint,
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+            success: (response) => {
+                location.reload();
+            },
+              error: (response) => {
+                const r = JSON.parse(response.responseText)
+                document.getElementById("error-msg").innerText = r.message;
+            }
+        })
+    }
+
+
+
+
+  let user;
+  let workflow;
+  const dashboard_project = "{{project}}"
+
+  $(window).on('load', function() {
+
+    if (!{{prereqs.company}} || !{{prereqs.keys}}) {
+        $('#ipa-modal').modal({backdrop: 'static', keyboard: false});
+        $('#ipa-modal').modal('show');
+    } else {
+      user = "{{user}}"
+      workflow = new BookingWorkflow();
+      workflow.startWorkflow();
+    }
+    });
+  </script>
+{% endblock %}

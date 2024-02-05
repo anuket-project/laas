@@ -29,12 +29,14 @@ INSTALLED_APPS = [
     'workflow',
     'api',
     'analytics',
+    'liblaas',
     'django.contrib.admin',
     'django.contrib.auth',
     'mozilla_django_oidc',  # needs to be defined after auth
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    "whitenoise.runserver_nostatic",
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'bootstrap4',
@@ -44,6 +46,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -53,6 +56,7 @@ MIDDLEWARE = [
     'account.middleware.TimezoneMiddleware',
 ]
 
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 # AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend', 'account.views.MyOIDCAB']
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
@@ -86,15 +90,15 @@ if os.environ.get('EXPECT_HOST_FORWARDING') == 'True':
 
 ROOT_URLCONF = 'laas_dashboard.urls'
 
-TEMPLATE_OVERRIDE = os.environ.get("TEMPLATE_OVERRIDE_DIR", "")  # the user's custom template dir
+PROJECT = os.environ.get("PROJECT", "")  # the project for the current deployment (i.e. anuket or lfedge)
 TEMPLATE_DIRS = ["base"]  # where all the base templates are
 
 # If the user has a custom template directory,
 # We should search that first. Then we search the
 # root template directory so that we can extend the base
 # templates within the custom template dir.
-if TEMPLATE_OVERRIDE:
-    TEMPLATE_DIRS = [TEMPLATE_OVERRIDE, ""] + TEMPLATE_DIRS
+if PROJECT:
+    TEMPLATE_DIRS = [PROJECT, ""] + TEMPLATE_DIRS
 
 # all template dirs are relative to /project_root/templates/
 dirs = [os.path.join(BASE_DIR, "templates", d) for d in TEMPLATE_DIRS]
@@ -153,10 +157,15 @@ USE_L10N = True
 
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.10/howto/static-files/
-MEDIA_URL = '/media/'
-STATIC_URL = '/static/'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = "/media"
+
+STATIC_HOST = os.environ.get("DJANGO_STATIC_HOST", "")
+
+STATIC_URL = STATIC_HOST + "/collected_static/"
+
+STATIC_ROOT = os.environ.get("STATIC_ROOT", os.path.join(BASE_DIR, "collected_static"))
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
@@ -200,8 +209,6 @@ REST_FRAMEWORK = {
     )
 }
 
-MEDIA_ROOT = '/media'
-STATIC_ROOT = '/static'
 
 OAUTH_CONSUMER_KEY = os.environ.get('OAUTH_CONSUMER_KEY')
 OAUTH_CONSUMER_SECRET = os.environ.get('OAUTH_CONSUMER_SECRET')
@@ -220,35 +227,13 @@ RABBITMQ_DEFAULT_PASS = os.environ['RABBITMQ_DEFAULT_PASS']
 CELERY_BROKER_URL = 'amqp://' + RABBITMQ_DEFAULT_USER + ':' + RABBITMQ_DEFAULT_PASS + '@rabbitmq:5672//'
 
 CELERY_BEAT_SCHEDULE = {
+    # Keeping commented as an example for the future
     'booking_poll': {
-        'task': 'dashboard.tasks.booking_poll',
+        'task': 'dashboard.tasks.end_expired_bookings',
         'schedule': timedelta(minutes=1)
-    },
-    'free_hosts': {
-        'task': 'dashboard.tasks.free_hosts',
-        'schedule': timedelta(minutes=1)
-    },
-    'notify_expiring': {
-        'task': 'notifier.tasks.notify_expiring',
-        'schedule': timedelta(hours=1)
-    },
-    'query_vpn_users': {
-        'task': 'dashboard.tasks.query_vpn_users',
-        'schedule': timedelta(hours=1)
-    },
-    'dispatch_emails': {
-        'task': 'notifier.tasks.dispatch_emails',
-        'schedule': timedelta(minutes=10)
     }
 }
 
 # Notifier Settings
-EMAIL_HOST = os.environ.get('EMAIL_HOST')
-EMAIL_PORT = os.environ.get('EMAIL_PORT')
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS = True
-DEFAULT_EMAIL_FROM = os.environ.get('DEFAULT_EMAIL_FROM', 'webmaster@localhost')
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 EXPIRE_LIFETIME = 12  # Minimum lifetime of booking to send notification
 EXPIRE_HOURS = 48  # Notify when booking is expiring within this many hours

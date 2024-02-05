@@ -37,13 +37,15 @@ urlpatterns = [
     url(r'^', include('dashboard.urls', namespace='dashboard')),
     url(r'^booking/', include('booking.urls', namespace='booking')),
     url(r'^accounts/', include('account.urls', namespace='account')),
-    url(r'^resource/', include('resource_inventory.urls', namespace='resource')),
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api/', include('api.urls')),
-    url(r'^messages/', include('notifier.urls', namespace='notifier')),
     url(r'^oidc/', include('mozilla_django_oidc.urls')),
+    url(r'^resource/', include('resource_inventory.urls', namespace='resource')),
+    url(r'^liblaas/', include('liblaas.urls', namespace='liblaas'))
 ]
 
-if settings.DEBUG is True:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+handler404 = 'dashboard.views.handler404'
+handler500 = 'dashboard.views.handler500'
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

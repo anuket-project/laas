@@ -20,12 +20,7 @@ import urllib
 
 from account.models import Lab
 from account.models import UserProfile
-from resource_inventory.models import (
-    OPNFVRole,
-    Installer,
-    Scenario
-)
-from resource_inventory.resource_manager import ResourceManager
+
 from booking.lib import get_user_items, get_user_field_opts
 
 
@@ -206,50 +201,6 @@ class OPNFVSelectForm(SearchableSelectAbstractForm):
         return items
 
 
-class ResourceSelectorForm(SearchableSelectAbstractForm):
-    def generate_items(self, queryset):
-        items = {}
-
-        for bundle in queryset:
-            items[bundle.id] = {
-                'expanded_name': bundle.name,
-                'small_name': bundle.owner.username,
-                'string': bundle.description,
-                'id': bundle.id
-            }
-
-        return items
-
-
-class BookingMetaForm(forms.Form):
-    # Django Form class for Book a Pod
-    length = forms.IntegerField(
-        widget=NumberInput(
-            attrs={
-                "type": "range",
-                'min': "1",
-                "max": "21",
-                "value": "1"
-            }
-        )
-    )
-    purpose = forms.CharField(max_length=1000)
-    project = forms.CharField(max_length=400)
-    info_file = forms.CharField(max_length=1000, required=False)
-    deploy_opnfv = forms.BooleanField(required=False)
-
-    def __init__(self, *args, user_initial=[], owner=None, **kwargs):
-        super(BookingMetaForm, self).__init__(**kwargs)
-
-        self.fields['users'] = SearchableSelectMultipleField(
-            queryset=UserProfile.objects.select_related('user').exclude(user=owner),
-            initial=user_initial,
-            items=get_user_items(exclude=owner),
-            required=False,
-            **get_user_field_opts()
-        )
-
-
 class MultipleSelectFilterWidget(forms.Widget):
     def __init__(self, *args, display_objects=None, filter_items=None, neighbors=None, **kwargs):
         super(MultipleSelectFilterWidget, self).__init__(*args, **kwargs)
@@ -284,206 +235,16 @@ class MultipleSelectFilterField(forms.Field):
         except json.decoder.JSONDecodeError:
             pass
         raise ValidationError("content is not valid JSON")
+    
+class BookingMetaForm(forms.Form):
 
+    def __init__(self, *args, user_initial=[], owner=None, **kwargs):
+        super(BookingMetaForm, self).__init__(**kwargs)
 
-class FormUtils:
-    @staticmethod
-    def getLabData(multiple_hosts=False, user=None):
-        """
-        Get all labs and thier host profiles, returns a serialized version the form can understand.
-
-        Could be rewritten with a related query to make it faster
-        """
-        # javascript truthy variables
-        true = 1
-        false = 0
-        if multiple_hosts:
-            multiple_hosts = true
-        else:
-            multiple_hosts = false
-        labs = {}
-        resources = {}
-        items = {}
-        neighbors = {}
-        for lab in Lab.objects.all():
-            lab_node = {
-                'id': "lab_" + str(lab.lab_user.id),
-                'model_id': lab.lab_user.id,
-                'name': lab.name,
-                'description': lab.description,
-                'selected': false,
-                'selectable': true,
-                'follow': multiple_hosts,
-                'multiple': false,
-                'class': 'lab',
-                'available_resources': json.dumps(lab.get_available_resources())
-            }
-
-            items[lab_node['id']] = lab_node
-            neighbors[lab_node['id']] = []
-            labs[lab_node['id']] = lab_node
-
-            for template in ResourceManager.getInstance().getAvailableResourceTemplates(lab, user):
-                resource_node = {
-                    'form': {"name": "host_name", "type": "text", "placeholder": "hostname"},
-                    'id': "resource_" + str(template.id),
-                    'model_id': template.id,
-                    'name': template.name,
-                    'description': template.description,
-                    'selected': false,
-                    'selectable': true,
-                    'follow': false,
-                    'multiple': multiple_hosts,
-                    'class': 'resource',
-                    'required_resources': json.dumps(template.get_required_resources())
-                }
-
-                if multiple_hosts:
-                    resource_node['values'] = []  # place to store multiple values
-
-                items[resource_node['id']] = resource_node
-                neighbors[lab_node['id']].append(resource_node['id'])
-
-                if resource_node['id'] not in neighbors:
-                    neighbors[resource_node['id']] = []
-
-                neighbors[resource_node['id']].append(lab_node['id'])
-                resources[resource_node['id']] = resource_node
-
-        display_objects = [("lab", labs.values()), ("resource", resources.values())]
-
-        context = {
-            'display_objects': display_objects,
-            'neighbors': neighbors,
-            'filter_items': items
-        }
-
-        return context
-
-
-class HardwareDefinitionForm(forms.Form):
-
-    def __init__(self, user, *args, **kwargs):
-        super(HardwareDefinitionForm, self).__init__(*args, **kwargs)
-        attrs = FormUtils.getLabData(multiple_hosts=True, user=user)
-        self.fields['filter_field'] = MultipleSelectFilterField(
-            widget=MultipleSelectFilterWidget(**attrs)
+        self.fields['users'] = SearchableSelectMultipleField(
+            queryset=UserProfile.objects.select_related('user').exclude(user=owner),
+            initial=user_initial,
+            items=get_user_items(exclude=owner),
+            required=False,
+            **get_user_field_opts()
         )
-
-
-class PodDefinitionForm(forms.Form):
-
-    fields = ["xml"]
-    xml = forms.CharField()
-
-
-class ResourceMetaForm(forms.Form):
-
-    bundle_name = forms.CharField(label="POD Name")
-    bundle_description = forms.CharField(label="POD Description", widget=forms.Textarea, max_length=1000)
-
-
-class GenericHostMetaForm(forms.Form):
-
-    host_profile = forms.CharField(label="Host Type", disabled=True, required=False)
-    host_name = forms.CharField(label="Host Name")
-
-
-class NetworkDefinitionForm(forms.Form):
-    def __init__(self, *args, **kwargs):
-        super(NetworkDefinitionForm, self).__init__(**kwargs)
-
-
-class NetworkConfigurationForm(forms.Form):
-    def __init__(self, *args, **kwargs):
-        super(NetworkConfigurationForm).__init__(**kwargs)
-
-
-class HostSoftwareDefinitionForm(forms.Form):
-    # Django Form class for Design a Pod
-    host_name = forms.CharField(
-        max_length=200,
-        disabled=False,
-        required=True
-    )
-    headnode = forms.BooleanField(required=False, widget=forms.HiddenInput)
-
-    def __init__(self, *args, **kwargs):
-        imageQS = kwargs.pop("imageQS")
-        super(HostSoftwareDefinitionForm, self).__init__(*args, **kwargs)
-        self.fields['image'] = forms.ModelChoiceField(queryset=imageQS)
-
-
-class WorkflowSelectionForm(forms.Form):
-    fields = ['workflow']
-
-    empty_permitted = False
-
-    workflow = forms.ChoiceField(
-        choices=(
-            (0, 'Booking'),
-            (1, 'Resource Bundle'),
-            (2, 'Software Configuration')
-        ),
-        label="Choose Workflow",
-        initial='booking',
-        required=True
-    )
-
-
-class SnapshotHostSelectForm(forms.Form):
-    host = forms.CharField()
-
-
-class BasicMetaForm(forms.Form):
-    name = forms.CharField()
-    description = forms.CharField(widget=forms.Textarea)
-
-
-class ConfirmationForm(forms.Form):
-    fields = ['confirm']
-
-    confirm = forms.ChoiceField(
-        choices=(
-            (False, "Cancel"),
-            (True, "Confirm")
-        )
-    )
-
-
-def validate_step(value):
-    if value not in ["prev", "next", "current"]:
-        raise ValidationError(str(value) + " is not allowed")
-
-
-def validate_step_form(value):
-    try:
-        urllib.parse.unquote_plus(value)
-    except Exception:
-        raise ValidationError("Value is not url encoded data")
-
-
-class ManagerForm(forms.Form):
-    step = forms.CharField(widget=forms.widgets.HiddenInput, validators=[validate_step])
-    step_form = forms.CharField(widget=forms.widgets.HiddenInput, validators=[validate_step_form])
-    # other fields?
-
-
-class OPNFVSelectionForm(forms.Form):
-    installer = forms.ModelChoiceField(queryset=Installer.objects.all(), required=True)
-    scenario = forms.ModelChoiceField(queryset=Scenario.objects.all(), required=True)
-
-
-class OPNFVNetworkRoleForm(forms.Form):
-    role = forms.CharField(max_length=200, disabled=True, required=False)
-
-    def __init__(self, *args, config_bundle, **kwargs):
-        super(OPNFVNetworkRoleForm, self).__init__(*args, **kwargs)
-        self.fields['network'] = forms.ModelChoiceField(
-            queryset=config_bundle.bundle.networks.all()
-        )
-
-
-class OPNFVHostRoleForm(forms.Form):
-    host_name = forms.CharField(max_length=200, disabled=True, required=False)
-    role = forms.ModelChoiceField(queryset=OPNFVRole.objects.all().order_by("name").distinct("name"))
