@@ -7,27 +7,27 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-version: '3'
+version: "3"
 services:
-    nginx:
-        command: echo "Nginx is disabled in dev mode."
-        restart: "no"
+  nginx:
+    command: echo "Nginx is disabled in dev mode."
+    restart: "no"
 
-    web:
-        image: opnfv/laas-dashboard:dev
-        build:
-            context: .
-            dockerfile: web/Dockerfile
-        command: >
-            sh -c "cd static && npm install && cd .. &&
-                   ./manage.py runserver 0:8000"
-        volumes:
-            - ./src:/laas_dashboard
-        ports:
-            - "8000:8000"
+  web:
+    image: opnfv/laas-dashboard:dev
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    command: >
+      sh -c "cd static && npm install && cd .. && ./manage.py collectstatic --no-input &&
+             ./manage.py runserver --insecure 0:8000"
+    volumes:
+      - ./src:/laas_dashboard
+    ports:
+      - "8000:8000"
 
-    worker:
-        image: opnfv/laas-celery:dev
-        build:
-            context: .
-            dockerfile: worker/Dockerfile
+  worker:
+    image: opnfv/laas-celery:dev
+    build:
+      context: .
+      dockerfile: worker/Dockerfile

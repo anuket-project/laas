@@ -7,32 +7,53 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-
-from django.views.generic import TemplateView
-from django.shortcuts import get_object_or_404
+import json
+import os
 from django.shortcuts import render
+from django.http import HttpResponse
+from laas_dashboard.settings import PROJECT
 
-from resource_inventory.models import ResourceProfile, ResourceQuery
+from liblaas.views import flavor_list_hosts, flavor_list_flavors
+
+def host_list_view(request):
+    if request.method != "GET":
+        return HttpResponse(status=405)
+
+    host_list = flavor_list_hosts(PROJECT)
+    flavor_list = flavor_list_flavors(PROJECT)
+
+    flavor_map = {}
+    for flavor in flavor_list:
+        flavor_map[flavor['flavor_id']] = flavor['name']
+
+    # Apparently Django Templating lacks many features that regular Jinja offers, so I need to get creative
+    for host in host_list:
+        id = host["flavor"]
+        name = flavor_map[id]
+        host["flavor"] = {"id": id, "name": name}
+
+    template = "resource/hosts.html"
+    context = {
+        "hosts": host_list,
+        "flavor_map": flavor_map
+    }
+    return render(request, template, context)
 
 
-class HostView(TemplateView):
-    template_name = "resource/hosts.html"
 
-    def get_context_data(self, **kwargs):
-        context = super(HostView, self).get_context_data(**kwargs)
-        hosts = ResourceQuery.filter(working=True)
-        context.update({'hosts': hosts, 'title': "Hardware Resources"})
-        return context
+def profile_view(request, resource_id):
+    if request.method != "GET":
+        return HttpResponse(status=405)
 
+    flavor_list = flavor_list_flavors(PROJECT)
+    selected_flavor = {}
+    for flavor in flavor_list:
+        if flavor["flavor_id"] == resource_id:
+            selected_flavor = flavor
+            break
 
-def hostprofile_detail_view(request, hostprofile_id):
-    hostprofile = get_object_or_404(ResourceProfile, id=hostprofile_id)
-
-    return render(
-        request,
-        "resource/hostprofile_detail.html",
-        {
-            'title': "Host Type: " + str(hostprofile.name),
-            'hostprofile': hostprofile
-        }
-    )
+    template = "resource/hostprofile_detail.html"
+    context = {
+        "flavor": selected_flavor
+    }
+    return render(request, template, context)

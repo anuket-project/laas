@@ -8,7 +8,6 @@
     <th>Project</th>
     <th>Start</th>
     <th>End</th>
-    <th>Operating System</th>
 </tr>
 </thead>
 <tbody>
@@ -28,9 +27,6 @@
         </td>
         <td>
             {{ booking.end }}
-        </td>
-        <td>
-            {{ booking.resource.get_head_node.config.image.os.name }}
         </td>
     </tr>
 {% endfor %}

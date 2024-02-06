@@ -5,25 +5,37 @@
     <thead>
     <tr>
         <th>Name</th>
+        <th>Architecture</th>
         <th>Profile</th>
         <th>Booked</th>
         <th>Working</th>
     </tr>
     </thead>
     <tbody>
-    {% for host in hosts %}
+        {% for host in hosts %}
         <tr>
             <td>
                 {{ host.name }}
             </td>
             <td>
-                <a href="profiles/{{ host.profile.id }}">{{ host.profile }}</a>
+                {{ host.arch }}
             </td>
             <td>
-                {{ host.booked|yesno:"Yes,No" }}
+                <a href="../profile/{{ host.flavor.id }}">{{ host.flavor.name }}</a>
             </td>
             <td>
-                {{ host.working|yesno:"Yes,No" }}
+            {% if host.allocation != null %}
+            Yes
+            {% else %}
+            No
+            {% endif %}
+            </td>
+            <td>
+            {% if host.allocation.reason == "maintenance" %}
+            No
+            {% else %}
+            Yes
+            {% endif %}
             </td>
         </tr>
     {% endfor %}

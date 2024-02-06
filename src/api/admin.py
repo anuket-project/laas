@@ -12,16 +12,6 @@ from django.apps import AppConfig
 from django.contrib import admin
 
 from api.models import (
-    Job,
-    OpnfvApiConfig,
-    HardwareConfig,
-    NetworkConfig,
-    SoftwareConfig,
-    AccessConfig,
-    AccessRelation,
-    SoftwareRelation,
-    HostHardwareRelation,
-    HostNetworkRelation,
     APILog
 )
 
@@ -29,15 +19,4 @@ from api.models import (
 class ApiConfig(AppConfig):
     name = 'apiJobs'
 
-
-admin.site.register(Job)
-admin.site.register(OpnfvApiConfig)
-admin.site.register(HardwareConfig)
-admin.site.register(NetworkConfig)
-admin.site.register(SoftwareConfig)
-admin.site.register(AccessConfig)
-admin.site.register(AccessRelation)
-admin.site.register(SoftwareRelation)
-admin.site.register(HostHardwareRelation)
-admin.site.register(HostNetworkRelation)
 admin.site.register(APILog)

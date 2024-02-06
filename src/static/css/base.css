@@ -69,7 +69,14 @@ a[aria-expanded="true"] > i.rotate {
 /* Booking Node Styles */
 .selected_node {
     border-color: #40c640;
+    border-width: 2px;
     box-shadow: 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(109, 243, 76, 0.6);
+    transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
+}
+
+.invalid_field {
+    border-color: #c65040;
+    box-shadow: 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(243, 76, 76, 0.6);
     transition: border-color ease-in-out .1s,box-shadow ease-in-out .1s;
 }
 
@@ -78,8 +85,23 @@ a[aria-expanded="true"] > i.rotate {
     cursor: not-allowed;
 }
 
+.z-n1 {
+    z-index: -1 !important;
+}
+
+.z-0 {
+    z-index: 0 !important;
+}
+
+.z-1 {
+z-index: 1 !important;
+}
+
 .z-2 {
-    z-index: 2;
+    z-index: 2 !important;
+}
+.z-3 {
+    z-index: 3 !important;
 }
 
 .mh-30vh {
@@ -90,4 +112,104 @@ a[aria-expanded="true"] > i.rotate {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+}
+
+/* Design a pod Styles */
+.scroll-container {
+    position: absolute !important; /* Needed for proper functionality*/
+    overflow: auto;
+    scroll-snap-type: y proximity;
+}
+
+.scroll-area {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    min-height: 100vh;
+}
+
+.add-button {
+    font-size: 3em;
+    font-weight: bolder;
+    text-align: center;
+    height: 2em;
+    width: 2em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cancel-book-button {
+    font-size: 1em;
+    font-weight: bolder;
+    text-align: center;
+    height: 2em;
+    width: 10em;
+}
+
+.input-search:focus {
+    border-color: none !important;
+    box-shadow: none !important;
+}
+
+.arrow {
+    box-sizing: border-box;
+    height: 2vw;
+    width: 2vw;
+    border-style: solid;
+    border-color: black;
+    border-width: 0px 3px 3px 0px;
+    transition: border-width 150ms ease-in-out;
+    box-shadow: 0, 0, 100px, 100px, black;
+}
+
+.arrow-down {
+    transform: rotate(45deg);
+}
+
+.arrow-up {
+    transform: rotate(225deg);
+}
+
+#next {
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    background-color: white;
+    align-items: center;
+    justify-content: center;
+    z-index: 2 !important;
+}
+
+#prev {
+    position: fixed !important;
+    left: 0;
+    background-color: white;
+    align-items: center;
+    justify-content: center;
+    z-index: 2 !important;
+}
+
+#next:hover,#next:active {
+    background-color: #d4d4d4;
+}
+
+#prev:hover,#prev:active {
+    background-color: #d4d4d4;
+}
+
+.btn-workflow-nav {
+    box-shadow: none !important;
+}
+
+.interface-btn {
+    color: inherit;
+}
+
+.card-body-scroll {
+    height: 25vh;
+    overflow-y: auto;
+}
+
+.overflow-control {
+    overflow-y: auto;
+    overflow-x: hidden;
 }

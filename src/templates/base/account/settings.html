@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load bootstrap4 %}
+{% block content %}
+<h1>Settings</h1>
+<form>
+    <div class="form-group">
+        {% csrf_token %}
+        <input id="hidden_key_list" type="hidden" name="ssh_key_list" value="">
+        <label for="form_username">VPN Username</label>
+        <input value="{{ipa_username}}" type="text" class="form-control col-lg-1" id="form_username" disabled="">
+        <p>To change your password and access advanced account management, please go <a href="http://os-passwd.iol.unh.edu">here</a></p>
+
+        <label for="form_company">Company</label>
+        <input value="{{company}}" type="text" class="form-control col-lg-1" id="form_company">
+
+        <label for="form_timezone">Timezone</label>
+        <select class="form-control col-lg-1" id="form_timezone">
+            {% for tz in timezones %}
+            <option {% if tz == timezone %} selected {% endif %}>{{tz}}</option>
+            {% endfor %}
+        </select>
+
+        <label for="Nothing" class="m-0">Public User</label>
+        <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="form_public" {% if public %} checked="" {% endif %}>
+            <label class="custom-control-label" for="form_public"></label>
+          </div>
+    </div>
+</form>
+
+<div class="form-group">
+    <h2>SSH Keys</h2>
+    <ul class="list-group" id="key_ul">
+        {% for key in existing_keys %}
+        <li class="card w-25 mb-1">
+            <div class="card-body" style="height: 150px; overflow-y: auto;">
+                {{key}}
+            </div>
+            <div class="card-footer d-flex flex-row-reverse">
+                <div class="btn btn-danger" onclick="remove_key('{{key}}', this.parentNode.parentNode)">Delete</div>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <ul class="list-group">
+        <li class="card w-25 text-truncate mb-1">
+            <div class="card-body">
+                <textarea id="new_key_area" placeholder="New SSH Public Key" class="form-control"
+                    id="new_key_input"></textarea>
+            </div>
+            <div class="card-footer d-flex flex-row-reverse">
+                <div class="btn btn-success"
+                    onclick="add_key(this.parentNode.parentNode.childNodes[1].childNodes[1].value)">Add</div>
+            </div>
+        </li>
+    </ul>
+
+    <button class="btn btn-success" onclick=submit_changes()>Save</button>
+</div>
+
+<script>
+    let key_list = []
+    $(window).on('load', function () {
+        document.getElementById('new_key_area').value = "";
+        {% for key in existing_keys %}
+        key_list.push('{{key}}')
+        {% endfor %}
+        update_json_list()
+    });
+
+
+    function remove_key(target_key, node) {
+        key_list = key_list.filter(key => key != target_key);
+        node.setAttribute("hidden", "true");
+        update_json_list()
+    }
+
+    function add_key(key_string) {
+        console.log(key_string)
+        if (key_list.indexOf(key_string) != -1) {
+            alert('This key has already been added');
+            return;
+        }
+        key_list.push(key_string)
+        create_key_card(key_string)
+        update_json_list()
+    }
+
+    function create_key_card(key_string) {
+        const elem = document.createElement('li');
+        elem.classList.add('card', 'w-25', 'mb-1');
+        elem.innerHTML = `
+    <div class="card-body" style="height: 150px; overflow-y: auto;">
+        ` + key_string + `
+    </div>
+    <div class="card-footer d-flex flex-row-reverse">
+        <div class="btn btn-danger" onclick="remove_key('` + key_string + `', this.parentNode.parentNode)">Delete</div>
+    </div>
+    `
+
+        document.getElementById('key_ul').appendChild(elem);
+        document.getElementById('new_key_area').value = "";
+
+    }
+
+    function update_json_list() {
+        document.getElementById("hidden_key_list").value = key_list.toString()
+    }
+
+    function collect_form_data() {
+        data = {
+            "public_user": document.getElementById("form_public").checked,
+            "timezone": document.getElementById("form_timezone").value,
+            "company": document.getElementById("form_company").value,
+            "keys": key_list
+        }
+        console.log(data)
+        return data
+    }
+
+    async function submit_changes() {
+
+        let data = collect_form_data();
+        $.ajax({
+            url: '',
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+        })
+        .done(function() {
+            location.reload()
+        })
+        .fail(function() {
+            alert("There was an issue saving your changes.")
+        })
+    }
+
+</script>
+{% endblock content %}

@@ -1,16 +1,10 @@
 {% extends "base.html" %}
 {% load staticfiles %}
-
+{% load bootstrap4 %}
 {% block content %}
 
 <div class="text-center">
     {% if not request.user.is_anonymous %}
-    {% if not request.user.userprofile.ssh_public_key %}
-    <div class="alert alert-danger alertAnuket" role="alert">
-        <b>Warning: you need to upload an ssh key under <a href="/accounts/settings" class="inTextLink" >account settings</a> if you wish to
-        log into the servers you book</b>
-    </div>
-    {% endif %}
     {% else %}
     {% endif %}
 </div>
@@ -55,47 +49,112 @@
         {% endif %}
         {% else %}
         {% block btnGrp %}
-        <p>To get started, book a server below:</p>
-        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border p-4 btnAnuket" href="/booking/quick/" >
-            Book a Resource
+        <p>Select 'Design a Pod' to create a custom resource group.</p>
+        <p>Select 'Book a Pod' to reserve a custom pod or a single resource.</p>
+        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border p-4 btnAnuket" href="{% url 'workflow:design_a_pod' %}" >
+            Design a Pod
         </a>
-        <p class="mt-4">PTLs can use our advanced options to book multi-node pods. If you are a PTL, you may use the options
-            below:
-        </p>
-        <div class="btn-group-vertical w-100">
-            <button class="btn btn-primary btnAnuket" onclick="create_workflow(0)">Book a Pod</button>
-            <button class="btn btn-primary btnAnuket" onclick="create_workflow(1)">Design a Pod</button>
-        </div>
+        <a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border p-4 btnAnuket" href="{% url 'workflow:book_a_pod' %}" >
+            Book a Pod
+        </a>
+
         {% endblock btnGrp %}
         {% endif %}
     </div>
+</div>
 
-    <!-- Returning users -->
-    {% if not request.user.is_anonymous %}
-    {% block returningUsers %}
-    <div class="col-12 col-lg-6 offset-lg-6 mb-4 mt-lg-4">
-        <h2 class="ht-4 border-bottom">Returning Users</h2>
-        <p>If you're a returning user, some of the following options may be of interest:</p>
-        <div class="btn-group-vertical w-100">
-            <button class="btn btn-primary btnAnuket" onclick="create_workflow(3)">Snapshot a Host</button>
-            <a class="btn btn-primary btnAnuket" href="{% url 'account:my-bookings' %}">
-                My Bookings
-            </a>
-            {% if manager == True %}
-            <button class="btn btn-primary" onclick="continue_workflow()">
-                Resume Workflow
-            </button>
-            {% endif %}
+  <!-- Link Modal -->
+<div class="modal fade" id="ipa-modal" tabindex="-1">
+<div class="modal-dialog modal-xl">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Welcome to LaaS 3.0</h5>
+        </div>
+        <div class="modal-body">
+            <p>We have made large scale improvements to the dashboard and our host provisioning service to improve your user experience.</p>
+            <p id="form-message">
+                {% if ipa_status == "new" %}
+                Our records indicate that you do not currently have an account in our IPA system, or your usernames do not match. Please enter the following details to enroll your account.
+                {% elif ipa_status == "conflict" %}
+                Our records indicate that you do not currently have an account in our IPA system, or your emails do not match. Please enter the following details to enroll your account.
+                {% endif %}
+            </p>
+            <form>
+                {% csrf_token %}
+
+                <p class="text-danger" id="error-msg"></p>
+                <div class="form-group">
+
+                    <label for="firstname">First Name:</label>
+                    <input type="text" class="form-control" name="firstname" id="firstname"style="width: 300px;" placeholder="First Name">
+
+                    <label for="lastname">Last Name:</label>
+                    <input type="text" class="form-control" name="lastname" id="lastname" style="width: 300px;" placeholder="Last Name">
+
+                    <label for="company">Company:</label>
+                    <input type="text" class="form-control" name="company" id="company" style="width: 300px;" placeholder="Company">
+
+                    
+                    <label for="username" {% if ipa_status != "conflict" %} hidden {% endif %}>New VPN Username:</label>
+                    <input type="text" class="form-control" name="username" id="username" style="width: 300px;" placeholder="New VPN Username" {% if ipa_status != "conflict" %} hidden {% endif %}>
+
+                    <label for="email">Email:</label>
+                    <input type="text" class="form-control" name="email" id="email" style="width: 300px;"  value="{{profile.email}}" disabled>
+
+                </div>
+            </form>
+
+            <button class="btn btn-success" onclick="submit_form()">Submit</button>
         </div>
     </div>
-    {% endblock returningUsers %}
-    {% endif %}
+</div>
 </div>
 
-<div class="hidden_form d-none" id="form_div">
-    <form method="post" action="" class="form" id="wf_selection_form">
-        {% csrf_token %}
-    </form>
-</div>
+<script>
+
+    function collect_form_data() {
+        data = {
+            "firstname": document.getElementById("firstname").value,
+            "lastname": document.getElementById("lastname").value,
+            "company": document.getElementById("company").value,
+            "username": document.getElementById("username").value // Only present in conflict form
+            // Do not collect email, grab this from the UserProfile in django. Prevents hijacking of accounts.
+        };
+
+        return data;
+
+    }
+
+    function submit_form() {
+        const data = collect_form_data();
+
+        $.ajax({
+            url: '/liblaas/migrate/{{ipa_status}}/',
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+            success: (response) => {
+                console.log("successful response is")
+                location.reload();
+            },
+              error: (response) => {
+                const r = JSON.parse(response.responseText)
+                document.getElementById("error-msg").innerText = r.message;
+            }
+        })
+    }
+
+$(window).on('load', function() {
+
+    if ("{{ipa_status}}" == "new" || "{{ipa_status}}" == "conflict") {
+        $('#ipa-modal').modal({backdrop: 'static', keyboard: false});
+        $('#ipa-modal').modal('show');
+    }
+});
+</script>
 
 {% endblock content %}

@@ -19,21 +19,27 @@ code {
         <div class="card mb-3">
             <div class="card-header d-flex">
                 <h4 class="d-inline">Overview</h4>
-                <button data-toggle="collapse" data-target="#panel_overview" class="btn btn-outline-secondary ml-auto">Expand</button>
+                <!-- <button data-toggle="collapse" data-target="#panel_overview" class="btn btn-outline-secondary ml-auto">Expand</button> -->
             </div>
             <div class="collapse show" id="panel_overview">
                 <table class="table m-0">
                     <tr>
-                        <td>Username</td>
-                        <td>{{  posix_username  }}</td>
+                        <td>Owner</td>
+                        <td>{{ booking.owner }}</td>
                     </tr>
                     <tr>
-                        <td>Purpose</td>
-                        <td>{{ booking.purpose }}</td>
+                        <td>Collaborators</td>
+                        <td>
+                            {{ collab_string}}
+                        </td>
                     </tr>
                     <tr>
                         <td>Project</td>
                         <td>{{ booking.project }}</td>
+                    </tr>
+                    <tr>
+                        <td>Purpose</td>
+                        <td>{{ booking.purpose }}</td>
                     </tr>
                     <tr>
                         <td>Start Time</td>
@@ -44,183 +50,18 @@ code {
                         <td>{{ booking.end }}</td>
                     </tr>
                     <tr>
-                        <td>Pod Definition</td>
-                        <td>{{ booking.resource.template }}</td>
-                    </tr>
-                    <tr>
                         <td>Lab Deployed At</td>
                         <td>{{ booking.lab }}</td>
                     </tr>
+                    <tr>
+                        <td>IPMI Username</td>
+                        <td><code id="ipmi-username">{{ status.config.ipmi_username }}</code></td>
+                    </tr>
+                    <tr>
+                        <td>IPMI Password</td>
+                        <td><code id="ipmi-password">{{ status.config.ipmi_password }}</code></td>
+                    </tr>
                 </table>
-            </div>
-        </div>
-        <div class="card my-3">
-            <div class="card-header d-flex">
-                <h4 class="d-inline">Pod</h4>
-                <button data-toggle="collapse" data-target="#pod_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
-            </div>
-            <div class="collapse show" id="pod_panel">
-                <div class="card-body">
-                    <h4>{{host.bundle.template.copy_of.name}}</h4>
-                    {% for host in booking.resource.get_resources %}
-                        <h4>{{host.config.name}}</h4>
-                        <div class="overflow-auto">
-                            <table class="table m-0">
-                                <tr>
-                                    <td>Hostname:</td>
-                                    <td>{{host.config.name}}</td>
-                                </tr>
-                                <tr>
-                                    <td>Machine:</td>
-                                    <td>{{host.name}}</td>
-                                </tr>
-                                <tr>
-                                    <td>Role:</td>
-                                    <td>{{host.template.opnfvRole}}</td>
-                                </tr>
-                                <tr>
-                                    <td>Is Headnode:</td>
-                                    <td>{{host.config.is_head_node}}</td>
-                                <tr>
-                                    <td>Image:</td>
-                                    <td id="host_image_{{host.id}}">
-                                        {{host.config.image}}
-                                        <button
-                                            class="btn btn-primary ml-4"
-                                            data-toggle="modal"
-                                            data-target="#imageModal"
-                                            onclick="set_image_dropdown('{{host.profile.name}}', {{host.id}});"
-                                        >Change/Reset</button></td>
-                                </tr>
-                                <tr>
-                                    <td>RAM:</td>
-                                    <td>{{host.profile.ramprofile.first.amount}}G,
-                                        {{host.profile.ramprofile.first.channels}} channels</td>
-                                </tr>
-                                <tr>
-                                    <td>CPU:</td>
-                                    <td>
-                                        <table class="table m-0">
-                                            <tr>
-                                                <td>Arch:</td>
-                                                <td>{{host.profile.cpuprofile.first.architecture}}</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Cores:</td>
-                                                <td>{{host.profile.cpuprofile.first.cores}}</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Sockets:</td>
-                                                <td>{{host.profile.cpuprofile.first.cpus}}</td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>DISK:</td>
-                                    <td>
-                                        <table class="table m-0">
-                                            <tr>
-                                                <td>Size:</td>
-                                                <td>{{host.profile.storageprofile.first.size}} GiB</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Type:</td>
-                                                <td>{{host.profile.storageprofile.first.media_type}}</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Mount Point:</td>
-                                                <td>{{host.profile.storageprofile.first.name}}</td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Interfaces:</td>
-                                    <td>
-                                        <table class="table m-0">
-                                        {% for intprof in host.profile.interfaceprofile.all %}
-                                        <tr>
-                                            <td>
-                                            <table class="table table-sm table-borderless m-0">
-                                                <tr>
-                                                    <td>Name:</td>
-                                                    <td>{{intprof.name}}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Speed:</td>
-                                                    <td>{{intprof.speed}}</td>
-                                                </tr>
-                                            </table>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                        </table>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        <div class="card my-3">
-            <div class="card-header d-flex">
-                <h4 class="d-inline">Diagnostic Information</h4>
-                <button data-toggle="collapse" data-target="#diagnostics_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
-            </div>
-            <div class="collapse" id="diagnostics_panel">
-                <div class="card-body">
-                    <table class="table m-0">
-                        <tr>
-                            <th>Job ID: </th>
-                            <td>{{booking.job.id}}</td>
-                        </tr>
-                        <tr>
-                            <th>CI Files</th>
-                        </tr>
-                        {% for host in booking.resource.get_resources %}
-                        <tr>
-                            <td>
-                                <table class="table m-0">
-                                    <tr>
-                                        <th>Host:</th>
-                                        <td>{{host.name}}</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Configs:</th>
-                                    </tr>
-                                    {% for ci_file in host.config.cloud_init_files.all %}
-                                    <tr>
-                                        <td>{{ci_file.id}}</td>
-                                        <td>
-                                            <div class="modal fade" id="ci_file_modal_{{ci_file.id}}" tabindex="-1" role="dialog" aria-hidden="true">
-                                                <div class="modal-dialog modal-xl" role="document">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h4 class="modal-title d-inline float-left">Cloud Config Content</h4>
-                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span>
-                                                            </button>
-                                                        </div>
-                                                        <div class="card-body">
-                                                            <pre class="prettyprint lang-yaml m-0 border-0 text-break pre-wrap">
-{{ci_file.text}}
-                                                            </pre>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button class="btn btn-primary" data-toggle="modal" data-target="#ci_file_modal_{{ci_file.id}}">Show File Content</button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </table>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </table>
-                </div>
             </div>
         </div>
     </div>
@@ -228,146 +69,171 @@ code {
         <div class="card mb-3">
             <div class="card-header d-flex">
                 <h4 class="d-inline">Deployment Progress</h4>
-                <p>These are the different tasks that have to be completed before your deployment is ready.
-                If this is taking a really long time, let us know <a href="mailto:{{contact_email}}">here!</a></p>
-                <button data-toggle="collapse" data-target="#panel_tasks" class="btn btn-outline-secondary ml-auto">Expand</button>
+                <p class="mx-3">Your resources are being prepared. If this is taking a really long time, please contact
+                    us <a href="mailto:{{contact_email}}">here!</a></p>
             </div>
             <div class="collapse show" id="panel_tasks">
                 <table class="table m-0">
                     <tr>
                         <th></th>
+                        <th>Name</th>
+
+                        <th>Assigned Host</th>
                         <th>Status</th>
-                        <th>Lab Response</th>
-                        <th>Type</th>
                     </tr>
-                    {% for task in booking.job.get_tasklist %}
+                    {% with status.instances as instances %}
+
+                    {% for id, inst in instances.items %}
                     <tr>
                         <td>
-                            {% if task.status < 100 %}
-                                <div class="rounded-circle bg-secondary square-20"></div>
-                            {% elif task.status < 200 %}
-                                <div class="spinner-border text-primary square-20"></div>
+                            <!-- icon -->
+                            {% if inst.logs|length > 0 %}
+                            {% with inst.logs|last as lastelem %}
+                            {% if 'Success' in lastelem.status  %}
+                            <div id="icon-{{id}}" class="rounded-circle bg-success square-20"></div>
+                            {% elif 'Fail' in lastelem.status %}
+                            <div id="icon-{{id}}" class="rounded-circle bg-danger square-20"></div>
                             {% else %}
-                                <div class="rounded-circle bg-success square-20"></div>
+                            <div id="icon-{{id}}" class="spinner-border text-primary square-20"></div>
+                            {% endif %}
+                            {% endwith %}
                             {% endif %}
                         </td>
-                        <td>
-                            {% if task.status < 100 %}
-                                PENDING
-                            {% elif task.status < 200 %}
-                                IN PROGRESS
-                            {% else %}
-                                DONE
-                            {% endif %}
+                        <td id="alias-{{id}}">
+                            <!-- Hostname -->
+                            {{inst.host_alias}}
+                        </td>
+                        <td id="host-{{id}}">
+                            <!-- Actual Host -->
+                            {{inst.assigned_host}}
                         </td>
                         <td>
-                            {% if task.message %}
-                                {% if task.type_str == "Access Task" and user_id != task.config.user.id %}
-                                    Message from Lab: <pre>--secret--</pre>
-                                {% else %}
-                                    Message from Lab: <pre class="text-break pre-wrap">{{ task.message }}</pre>
-                                {% endif %}
-                            {% else %}
-                                No response provided (yet)
+                            <!-- Logs -->
+                            {% if inst.logs|length > 0 %}
+                            {% with inst.logs|last as lastelem %}
+                            <span id="status-{{id}}">
+                            {{lastelem.status}}
+                            </span>
+                                <button class="btn-secondary btn float-right" data-target="#collapse-{{id}}"
+                                    data-toggle="collapse">Show Additional Logs</button>
+                            {% endwith %}
+
                             {% endif %}
-                        </td>
-                        <td>
-                            {{ task.type_str }}
+                            <p>
+                            <div class="card collapse mt-3" id="collapse-{{id}}">
+                                <div class="card-header">Additional Logs</div>
+                                <div class="card-body">
+                                    <table id="logs-{{id}}">
+                                        {% for log in inst.logs %}
+                                        <tr>
+                                            <td>
+                                                {{log.status}}
+                                            </td>
+
+                                            <td>
+                                                {{log.time}}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                            </p>
                         </td>
                     </tr>
                     {% endfor %}
+                    {% endwith %}
                 </table>
-            </div>
-        </div>
-        <div class="card my-3">
-            <div class="card-header d-flex">
-                <h4 class="d-inline">PDF</h4>
-                <button data-toggle="collapse" data-target="#pdf_panel" class="btn btn-outline-secondary ml-auto">Expand</button>
-            </div>
-            <div class="collapse show" id="pdf_panel">
-                <div class="card-body">
-                    <pre class="prettyprint lang-yaml m-0 border-0 text-break pre-wrap">
-{{pdf}}
-                    </pre>
-                </div>
             </div>
         </div>
     </div>
 </div>
 
-
-<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title d-inline float-left" id="exampleModalLabel">Host Image</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+<div class="row">
+    <div class="col-5">
+        <div class="card mb-3">
+            <div class="card-header d-flex">
+                Diagnostic Information
             </div>
-            <div class="modal-body">
-                <form id="image_host_form">
-                    {% csrf_token %}
-                    <select class="form-control" id="image_select" name="image_id">
-                    </select>
-                    <input id="host_id_input" type="hidden" name="host_id">
-                </form>
-            </div>
-            <div class="modal-footer d-flex flex-column">
-                <div>
-                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-danger" data-toggle="collapse" data-target="#modal_warning" aria-expanded="false">Reset Host</button>
-                </div>
-                <div class="border-top collapse mt-3 py-2 text-center w-100" id="modal_warning">
-                    <h3>Are You Sure?</h3>
-                    <p>This will wipe the disk and reimage the host</p>
-                    <button class="btn btn-outline-secondary" data-dismiss="modal">Nevermind</button>
-                    <button class="btn btn-danger" data-dismiss="modal" onclick="submit_image_form();">I'm Sure</button>
-                </div>
+            <div>
+                <table class="table m-0">
+                    <tr>
+                        <th></th>
+                        <th>Aggregate ID</th>
+                        <td>{{booking.aggregateId}}</td>
+                    </tr>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    var image_mapping = {{image_mapping|safe}};
-    var current_host_id = 0;
-    function set_image_dropdown(profile_name, host_id) {
-        document.getElementById("host_id_input").value = host_id;
-        current_host_id = host_id;
-        var dropdown = document.getElementById("image_select");
-        var length = dropdown.length;
-        //clear dropdown
-        for(i=length-1; i>=0; i--){
-            dropdown.options.remove(i);
-        }
-        var images = image_mapping[profile_name];
-        var image_length = images.length;
-        for(i=0; i<image_length; i++){
-            var opt = document.createElement("OPTION");
-            opt.value = images[i].value;
-            opt.appendChild(document.createTextNode(images[i].name));
-            dropdown.options.add(opt);
-        }
+    const agg_id = "{{booking.aggregateId}}"
+    setInterval(function () {
+        fetchBookingStatus();
+    }, 5000);
 
-        document.getElementById("modal_warning").classList.add("collapse");
+
+    async function fetchBookingStatus() {
+        data = {"agg_id": agg_id}
+        $.ajax({
+            url: '',
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+        })
+        .done(function(response) {
+            updateStatuses(JSON.parse(response))
+        })
     }
 
-    function submit_image_form() {
-        var ajaxForm = $("#image_host_form");
-        var formData = ajaxForm.serialize();
-        req = new XMLHttpRequest();
-        req.open("POST", "/booking/modify/{{booking.id}}/image/", true);
-        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        req.onerror = function() { alert("problem submitting form"); }
-        req.onreadystatechange = function() {
-            if(req.readyState === 4) {
-                node = document.getElementById("host_image_" + current_host_id);
-                text = document.createTextNode(req.responseText);
-                node.replaceChild(text, node.firstChild);
+    async function updateStatuses(status) {
+        const instances = status.instances;
+        if (!instances) return;
+
+        Object.keys(instances).forEach((aggId) => {
+            const instance = instances[aggId]
+            const status = instance.logs.pop()
+
+            let icon_class = "spinner-border text-primary square-20"
+            if (status.status.includes('Success')) {
+                icon_class = "rounded-circle bg-success square-20"
+            } else if (status.status.includes('Fail')) {
+                icon_class = "rounded-circle bg-danger square-20"
             }
-        }
-        req.send(formData);
+
+            // icon
+            document.getElementById("icon-" + aggId).className = icon_class;
+            // host alias
+            document.getElementById("alias-" + aggId).innerText = instance.host_alias;
+            // assigned host
+            document.getElementById("host-" + aggId).innerText = instance.assigned_host;
+            // status
+            document.getElementById("status-" + aggId).innerText = status.status;
+            // logs
+            const log_table = document.getElementById("logs-" + aggId);
+            log_table.innerHTML = "";
+            for (const log of instance.logs) {
+                const tr = document.createElement('tr');
+                const td_status = document.createElement('td')
+                td_status.innerText = log.status;
+                const td_time = document.createElement('td')
+                td_time.innerText = log.time;
+                tr.appendChild(td_status)
+                tr.appendChild(td_time)
+                log_table.appendChild(tr)
+            }
+        })
+
+        // IPMI
+        document.getElementById("ipmi-username").innerText = status.config.ipmi_username;
+        document.getElementById("ipmi-password").innerText = status.config.ipmi_password;
     }
 </script>
+
 {% endblock content %}
