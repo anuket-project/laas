@@ -45,3 +45,6 @@ src/account/rsa.pub
 
 # javascript unit testing
 tests/node_modules
+
+# collected static files
+/src/collected_static/**

@@ -106,29 +106,42 @@
 </div>
 
 <div class="modal fade" id="ipa-modal" tabindex="-1">
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Welcome to LaaS 3.0</h5>
         <button class="close" onclick="window.location.href = '../../'"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body" id="add_resource_modal_body">
-          <p>Please update your information before creating a booking.</p>
-          <p id="error-msg" class="text-danger"></p>
-          <form>
-            {% csrf_token %}
-            <div class="form-group">
-              {% if prereqs.company == "false" %}
+        <p>Please update your information before creating a booking.</p>
+        <p id="error-msg" class="text-danger"></p>
+        <form >
+          {% csrf_token %}
+          <div class="form-group">
+            {% if prereqs.company == "false" %}
               <label for="prereq_form">Company:</label>
               <input type="text" class="form-control" style="width: 300px;" placeholder="Company" id="prereq_form" name="company">
-              {% elif prereqs.keys == "false" %}
-              <label for="prereq_form">SSH Public Key:</label>
-              <textarea id="prereq_form" placeholder="SSH Public Key" class="form-control" style="width: 500px;" id="prereq_form" name="ssh"></textarea>
-              {% endif %}
-            </div>
-          </form>
-          <button class="btn btn-success" onclick="submit_form({% if prereqs.company == 'false' %} 'ipa/company/'{% elif prereqs.keys == 'false' %} 'ipa/ssh/'  {% endif %})">Save</button>
+                {% elif prereqs.keys == "false" %}
+                  <div class="input-group input-group-md mb-3">
+                    <span class="input-group-text">SSH Public Key:</span>
+                    <textarea class="form-control" id="keyTextArea" aria-label="SSH Public Key" placeholder="Paste or Upload Your SSH Public Key" name="ssh"></textarea>
+                  </div>
+                <!-- invisible file input -->
+                  <input type="file" style="display: none;" class="form-control" id="sshKeyFile" accept=".pub" aria-label="Upload" onchange="updateFileName(this)">
+            {% endif %}
+          </div>
+        </form>
+        <div class="d-flex justify-content-end">
+          {% if prereqs.company == "true" and prereqs.keys == "false" %}
+            <button type="button" class="btn btn-secondary mr-2" id="uploadButton" onclick="document.getElementById('sshKeyFile').click();">
+              Upload
+            </button>            
+          {% endif %}
+          <button class="btn btn-success" onclick="submitForm({% if prereqs.company == 'false' %} 'ipa/company/'{% elif prereqs.keys == 'false' %} 'ipa/ssh/'  {% endif %})">
+            Save
+          </button>
         </div>
+      </div>
     </div>
   </div>
 </div>
@@ -209,4 +222,4 @@
     }
     });
   </script>
-{% endblock %}
+  {% endblock %}
