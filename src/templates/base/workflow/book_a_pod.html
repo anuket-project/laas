@@ -164,26 +164,47 @@
 </div>
 </body>
 
+
 <script>
-    function collect_form_data() {
+function updateFileName(input) {
+    if (input.files && input.files[0]) {
+        var fileName = input.files[0].name;
+        var textArea = document.getElementById('keyTextArea');
+        textArea.value = fileName;
+        textArea.readOnly = true;
+    }
+}
 
-      const form = document.getElementById("prereq_form");
+function readFileContent(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(event.target.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsText(file);
+    });
+}
 
-      const data = {};
-      if (form.name == "company") {
+async function collectFormData() {
+    const form = document.getElementById("prereq_form");
+    const fileInput = document.getElementById('sshKeyFile');
+    const textArea = document.getElementById('keyTextArea');
+    const data = {};
+
+    if (form && form.name === "company") {
         data["data"] = form.value;
-      } else if (form.name == "ssh") {
-        data["data"] = [];
-        data["data"].push(form.value)
-      }
-
-      return data;
-
+    } else if (fileInput && fileInput.files[0]) {
+        const fileContent = await readFileContent(fileInput.files[0]);
+        data["data"] = [fileContent];
+    } else if (textArea && !textArea.readOnly) {
+        data["data"] = [textArea.value];
     }
 
-    function submit_form(endpoint) {
-        const data = collect_form_data();
+    return data;
+}
 
+async function submitForm(endpoint) {
+    try {
+        const data = await collectFormData();
         $.ajax({
             url: '../../liblaas/' + endpoint,
             type: 'post',
@@ -192,19 +213,18 @@
                 'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
                 'Content-Type': 'application/json'
             },
-            dataType: 'text',
             success: (response) => {
                 location.reload();
             },
-              error: (response) => {
-                const r = JSON.parse(response.responseText)
+            error: (response) => {
+                const r = JSON.parse(response.responseText);
                 document.getElementById("error-msg").innerText = r.message;
             }
-        })
+        });
+    } catch (error) {
+        console.error("Error reading file:", error);
     }
-
-
-
+}
 
   let user;
   let workflow;
@@ -221,5 +241,5 @@
       workflow.startWorkflow();
     }
     });
-  </script>
-  {% endblock %}
+</script>
+{% endblock %}
