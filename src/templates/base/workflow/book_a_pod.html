@@ -106,29 +106,42 @@
 </div>
 
 <div class="modal fade" id="ipa-modal" tabindex="-1">
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Welcome to LaaS 3.0</h5>
         <button class="close" onclick="window.location.href = '../../'"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body" id="add_resource_modal_body">
-          <p>Please update your information before creating a booking.</p>
-          <p id="error-msg" class="text-danger"></p>
-          <form>
-            {% csrf_token %}
-            <div class="form-group">
-              {% if prereqs.company == "false" %}
+        <p>Please update your information before creating a booking.</p>
+        <p id="error-msg" class="text-danger"></p>
+        <form >
+          {% csrf_token %}
+          <div class="form-group">
+            {% if prereqs.company == "false" %}
               <label for="prereq_form">Company:</label>
               <input type="text" class="form-control" style="width: 300px;" placeholder="Company" id="prereq_form" name="company">
-              {% elif prereqs.keys == "false" %}
-              <label for="prereq_form">SSH Public Key:</label>
-              <textarea id="prereq_form" placeholder="SSH Public Key" class="form-control" style="width: 500px;" id="prereq_form" name="ssh"></textarea>
-              {% endif %}
-            </div>
-          </form>
-          <button class="btn btn-success" onclick="submit_form({% if prereqs.company == 'false' %} 'ipa/company/'{% elif prereqs.keys == 'false' %} 'ipa/ssh/'  {% endif %})">Save</button>
+                {% elif prereqs.keys == "false" %}
+                  <div class="input-group input-group-md mb-3">
+                    <span class="input-group-text">SSH Public Key:</span>
+                    <textarea class="form-control" id="keyTextArea" aria-label="SSH Public Key" placeholder="Paste or Upload Your SSH Public Key" name="ssh"></textarea>
+                  </div>
+                <!-- invisible file input -->
+                  <input type="file" style="display: none;" class="form-control" id="sshKeyFile" accept=".pub" aria-label="Upload" onchange="updateFileName(this)">
+            {% endif %}
+          </div>
+        </form>
+        <div class="d-flex justify-content-end">
+          {% if prereqs.company == "true" and prereqs.keys == "false" %}
+            <button type="button" class="btn btn-secondary mr-2" id="uploadButton" onclick="document.getElementById('sshKeyFile').click();">
+              Upload
+            </button>            
+          {% endif %}
+          <button class="btn btn-success" onclick="submitForm({% if prereqs.company == 'false' %} 'ipa/company/'{% elif prereqs.keys == 'false' %} 'ipa/ssh/'  {% endif %})">
+            Save
+          </button>
         </div>
+      </div>
     </div>
   </div>
 </div>
@@ -151,26 +164,47 @@
 </div>
 </body>
 
+
 <script>
-    function collect_form_data() {
+function updateFileName(input) {
+    if (input.files && input.files[0]) {
+        var fileName = input.files[0].name;
+        var textArea = document.getElementById('keyTextArea');
+        textArea.value = fileName;
+        textArea.readOnly = true;
+    }
+}
 
-      const form = document.getElementById("prereq_form");
+function readFileContent(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(event.target.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsText(file);
+    });
+}
 
-      const data = {};
-      if (form.name == "company") {
+async function collectFormData() {
+    const form = document.getElementById("prereq_form");
+    const fileInput = document.getElementById('sshKeyFile');
+    const textArea = document.getElementById('keyTextArea');
+    const data = {};
+
+    if (form && form.name === "company") {
         data["data"] = form.value;
-      } else if (form.name == "ssh") {
-        data["data"] = [];
-        data["data"].push(form.value)
-      }
-
-      return data;
-
+    } else if (fileInput && fileInput.files[0]) {
+        const fileContent = await readFileContent(fileInput.files[0]);
+        data["data"] = [fileContent];
+    } else if (textArea && !textArea.readOnly) {
+        data["data"] = [textArea.value];
     }
 
-    function submit_form(endpoint) {
-        const data = collect_form_data();
+    return data;
+}
 
+async function submitForm(endpoint) {
+    try {
+        const data = await collectFormData();
         $.ajax({
             url: '../../liblaas/' + endpoint,
             type: 'post',
@@ -179,19 +213,18 @@
                 'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
                 'Content-Type': 'application/json'
             },
-            dataType: 'text',
             success: (response) => {
                 location.reload();
             },
-              error: (response) => {
-                const r = JSON.parse(response.responseText)
+            error: (response) => {
+                const r = JSON.parse(response.responseText);
                 document.getElementById("error-msg").innerText = r.message;
             }
-        })
+        });
+    } catch (error) {
+        console.error("Error reading file:", error);
     }
-
-
-
+}
 
   let user;
   let workflow;
@@ -208,5 +241,5 @@
       workflow.startWorkflow();
     }
     });
-  </script>
+</script>
 {% endblock %}
