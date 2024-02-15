@@ -17,8 +17,8 @@ code {
 <div class="row">
     <div class="col-12 col-lg-5">
         <div class="card mb-3">
-            <div class="card-header d-flex">
-                <h4 class="d-inline">Overview</h4>
+            <div class="card-header d-flex align-items-center">
+                <h4>Overview</h4>
                 <!-- <button data-toggle="collapse" data-target="#panel_overview" class="btn btn-outline-secondary ml-auto">Expand</button> -->
             </div>
             <div class="collapse show" id="panel_overview">
@@ -61,24 +61,60 @@ code {
                         <td>IPMI Password</td>
                         <td><code id="ipmi-password">{{ status.config.ipmi_password }}</code></td>
                     </tr>
+                    <tr>
+                        <td>Aggregate ID</td>
+                        <td>{{booking.aggregateId}}</td>
+                    </tr>
                 </table>
             </div>
         </div>
     </div>
     <div class="col">
         <div class="card mb-3">
+          <div class="card-header d-flex align-items-center">
+            <h4>Connect to Your Hosts</h4>
+          </div>
+          <p class="m-3">
+            Check the <strong>Deployment Progress</strong> section below for the provisioning status of your hosts. If there are any problems with your booking, please
+          <a href="mailto:{{contact_email}}">contact us here</a>.
+          </p>
+          <div class="mx-3 mb-3 ssh-command" id="sshCommand">
+            <div class="d-flex justify-content-between align-items-center" style="background-color: #f3f6f4; padding: 10px; border-radius: 5px;">
+                {% for id, inst in status.instances.items %}
+                  {% if forloop.first %}
+                    <div>
+                    ~$ ssh <span id="sshUser">{{ ipa_username }}</span>@<span id="sshHost">{{ inst.assigned_host }}.opnfv.iol.unh.edu</span>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                <div class="btn-group">
+                  <button class="btn btn-md btn-outline-secondary" onclick="copySSHCommand()")>Copy</button>
+                  <button type="button" class="btn btn-md btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-expanded="false">
+                    <span>Select Host</span>
+                  </button>
+                  <div class="dropdown-menu">
+                    {% for id, inst in status.instances.items %}
+                      <a class="dropdown-item" onclick="updateSSHCommand(this.innerText)" href="#">{{ inst.assigned_host }}</a>
+                    {% endfor %}
+                  </div>
+                </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#instructionModal">
+            View Instructions
+          </button>
+        </div>
+        <div class="card mb-3">
             <div class="card-header d-flex">
-                <h4 class="d-inline">Deployment Progress</h4>
-                <p class="mx-3">Your resources are being prepared. If this is taking a really long time, please contact
-                    us <a href="mailto:{{contact_email}}">here!</a></p>
+                <h4>Deployment Progress</h4>
             </div>
             <div class="collapse show" id="panel_tasks">
                 <table class="table m-0">
                     <tr>
                         <th></th>
                         <th>Name</th>
-
-                        <th>Assigned Host</th>
+                        <th>Host</th>
                         <th>Status</th>
                     </tr>
                     {% with status.instances as instances %}
@@ -111,69 +147,137 @@ code {
                             <!-- Logs -->
                             {% if inst.logs|length > 0 %}
                             {% with inst.logs|last as lastelem %}
-                            <span id="status-{{id}}">
-                            {{lastelem.status}}
-                            </span>
-                                <button class="btn-secondary btn float-right" data-target="#collapse-{{id}}"
-                                    data-toggle="collapse">Show Additional Logs</button>
+                            <div class="d-flex justify-content-around align-items-start">
+
+                              <p id="status-{{id}}">
+                              {{lastelem.status}}
+                              </p>
+
+                              <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" data-target="#logsModal-{{ id }}">Show Logs</button>
+                            </div>
                             {% endwith %}
 
                             {% endif %}
-                            <p>
-                            <div class="card collapse mt-3" id="collapse-{{id}}">
-                                <div class="card-header">Additional Logs</div>
-                                <div class="card-body">
-                                    <table id="logs-{{id}}">
-                                        {% for log in inst.logs %}
-                                        <tr>
-                                            <td>
-                                                {{log.status}}
-                                            </td>
-
-                                            <td>
-                                                {{log.time}}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </table>
-                                </div>
-                            </div>
-                            </p>
-                        </td>
+                            </td>
                     </tr>
                     {% endfor %}
                     {% endwith %}
                 </table>
             </div>
         </div>
+        
     </div>
 </div>
 
-<div class="row">
-    <div class="col-5">
+<div class="modal fade" id="instructionModal" tabindex="-1" role="dialog" aria-labelledby="instructionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="instructionModalLabel">Connection Instructions</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info" role="alert">
+          <strong>Welcome to your resource dashboard!</strong> Please follow the steps below to connect to your allocated resources.
+        </div>
+        
         <div class="card mb-3">
-            <div class="card-header d-flex">
-                Diagnostic Information
+          <div class="card-body">
+            <h5 class="card-title">Step 1: Download the VPN Client</h5>
+            <p class="card-text">
+              Begin by downloading the <a href="https://openvpn.net/vpn-client/" target="_blank">OpenVPN Client</a>. This is required to connect to our VPN.
+            </p>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Step 2: Set Up Your VPN Connection</h5>
+            <p class="card-text">
+              Locate the <strong>os-vpn-client.ovpn</strong> file sent to your email upon account creation. Use this file and your account username and password to connect to our VPN.
+            </p>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Step 3: Connect to Your Hosts</h5>
+            <p class="card-text">
+              Once connected, you can access your provisioned hosts over SSH. Each host is accessible at <strong>&lt;host&gt;.opnfv.iol.unh.edu</strong>, where <strong>&lt;host&gt;</strong> is your assigned host name.
+            </p>
+            <div class="alert" style="background-color: #f3f6f4;" role="alert">
+              For example, for the host <strong>hpe0</strong>, you would run <strong>ssh &lt;your_username&gt;@hpe0.opnfv.iol.unh.edu</strong>.
             </div>
-            <div>
-                <table class="table m-0">
+            <p class="card-text">
+              Optionally, you can also use the <strong>Copy</strong> and <strong>Select Host</strong> buttons located on this page to copy the complete SSH command to your clipboard for your desired host.
+          </div>
+        </div>
+
+        <div class="alert alert-warning">
+          <strong>Need Help?</strong> If you encounter any issues or require assistance, please <a style="color: inherit; text-decoration: underline;" href="mailto:{{contact_email}}">contact us here</a>.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% for id, inst in status.instances.items %}
+<div class="modal fade" id="logsModal-{{ id }}" tabindex="-1" role="dialog" aria-labelledby="logsModalLabel-{{ id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logsModalLabel-{{ id }}">Logs for {{ inst.host_alias }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 0px;">
+                <table class="table table-striped">
+                    <th>Time</th>
+                    <th>Message</th>
+                    {% for log in inst.logs %}
                     <tr>
-                        <th></th>
-                        <th>Aggregate ID</th>
-                        <td>{{booking.aggregateId}}</td>
+                        <td>{{ log.time }}</td>
+                        <td>{{ log.status }}</td>
                     </tr>
+                    {% endfor %}
                 </table>
             </div>
         </div>
     </div>
 </div>
+{% endfor %}
+
 
 <script>
+    
+    function updateSSHCommand(selectedHost) {
+      const sshHost = selectedHost + '.opnfv.iol.unh.edu'; 
+
+      document.getElementById('sshHost').innerText = sshHost;
+    }
+
     const agg_id = "{{booking.aggregateId}}"
     setInterval(function () {
         fetchBookingStatus();
     }, 5000);
 
+    
+    function copySSHCommand() {
+    const sshUser = document.getElementById("sshUser").innerText;
+    const sshHost = document.getElementById("sshHost").innerText;
+    const sshCommand = `ssh ${sshUser}@${sshHost}`;
+    
+    navigator.clipboard.writeText(sshCommand).catch(err => {
+      console.error('Error: ', err);
+    });
+    }
 
     async function fetchBookingStatus() {
         data = {"agg_id": agg_id}
