@@ -51,6 +51,12 @@
                                 <i class="fas fa-cog"></i>
                                 Settings
                             </a>
+                            {% if user.is_staff %}
+                            <a href="/admin" class="dropdown-item Anuket-Text">
+                              <i class="fas fa-user-shield"></i>
+                                Admin
+                            </a>
+                            {% endif %}
                             <a id="logout_btn" href="#" method="post" class="dropdown-item Anuket-Text">
                                 <i class="fas fa-sign-out-alt"></i>
                                 Logout

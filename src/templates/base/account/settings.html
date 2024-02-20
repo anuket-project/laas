@@ -49,18 +49,49 @@
             <div class="card-body">
                 <textarea id="new_key_area" placeholder="New SSH Public Key" class="form-control"
                     id="new_key_input"></textarea>
+                <input type="file" style="display: none;" id="sshKeyFileUpload" accept=".pub" onchange="handleFileUpload(this)">
+                
             </div>
             <div class="card-footer d-flex flex-row-reverse">
-                <div class="btn btn-success"
-                    onclick="add_key(this.parentNode.parentNode.childNodes[1].childNodes[1].value)">Add</div>
+              <div class="btn btn-success"
+                 onclick="add_key(this.parentNode.parentNode.childNodes[1].childNodes[1].value)">Add</div>
+              <button type="button" class="btn btn-secondary mr-2" onclick="triggerFileUpload()">Upload File</button>
+              <input type="file" id="sshKeyFileInput" accept=".pub" style="display: none;" onchange="handleFileUpload()">
             </div>
         </li>
     </ul>
 
-    <button class="btn btn-success" onclick=submit_changes()>Save</button>
+    <button class="btn btn-success mt-2" onclick=submit_changes()>Save</button>
 </div>
 
 <script>
+
+    function triggerFileUpload() {
+        document.getElementById('sshKeyFileInput').click();
+    }
+
+    function handleFileUpload() {
+        const input = document.getElementById('sshKeyFileInput');
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('new_key_area').value = e.target.result;
+            };
+            reader.readAsText(input.files[0]);
+            input.value = ''; 
+        }
+    }
+
+    function add_key(key_string) {
+        if (!key_string || key_list.includes(key_string)) {
+            alert('Invalid or duplicate key. Please enter a valid SSH key.');
+            return;
+        }
+        key_list.push(key_string);
+        create_key_card(key_string);
+        update_json_list();
+    }
+
     let key_list = []
     $(window).on('load', function () {
         document.getElementById('new_key_area').value = "";
