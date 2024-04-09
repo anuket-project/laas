@@ -68,6 +68,46 @@ code {
                 </table>
             </div>
         </div>
+        <div class="card mb-3">
+          <div class="card-header d-flex">
+              <h4>Template Information</h4>
+          </div>
+          <div>
+              <table class="table m-0">
+                  {% with status.template as template %}
+                  <tr>
+                      <th>Name</th>
+                      <td>{{ template.name }}</td>
+                      <td></td>
+                  </tr>
+                  <tr>
+                      <th>Description</th>
+                      <td>{{template.description}}</td>
+                      <td></td>
+                  </tr>
+                  <tr>
+                      <th>Owner</th>
+                      <td>{{template.owner}}</td>
+                      <td></td>
+                  </tr>
+                  {% endwith %}
+                  <table class="table-borderless table-striped table">
+                    <tr>
+                      <th>Name</th>
+                      <th>Image</th>
+                      <th>Flavor</th>
+                    </tr>
+                  {% for host in templatehosts %}
+                  <tr>
+                      <td style="border:none;">{{host.name}}</th>
+                      <td style="border:none;">{{host.image}}</td>
+                      <td style="border:none;">{{host.flavor}}</td>
+                  </tr>
+                  {% endfor %}
+                  </table>
+              </table>
+          </div>
+      </div>
     </div>
     <div class="col">
         <div class="card mb-3">
@@ -253,7 +293,6 @@ code {
     </div>
 </div>
 {% endfor %}
-
 
 <script>
     

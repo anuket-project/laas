@@ -18,9 +18,10 @@ from django.shortcuts import redirect, render
 
 from account.models import Downtime, Lab, UserProfile
 from booking.models import Booking
-from liblaas.views import booking_booking_status, user_get_user
+from liblaas.views import booking_booking_status, user_get_user, flavor_list_flavors
 from django.http import HttpResponse, JsonResponse
 
+from laas_dashboard.settings import PROJECT
 
 class BookingView(TemplateView):
     template_name = "booking/booking_detail.html"
@@ -97,6 +98,18 @@ def booking_detail_view(request, booking_id):
             )
 
         profile = UserProfile.objects.get(user=request.user)
+        flavorlist = flavor_list_flavors(PROJECT)
+        hosts = []
+        for host in statuses.get("template").get("hosts"):
+            curr_host = {}
+            curr_host["name"] = host.get("hostname")
+            for flavor in flavorlist:
+                if host.get("flavor") == flavor.get("flavor_id"):
+                    curr_host["flavor"] = flavor.get("name")
+                    for image in flavor.get("images"):
+                        if host.get("image") == image.get("image_id"):
+                            curr_host["image"] = image.get("name")
+            hosts.append(curr_host)
 
         context = {
             "title": "Booking Details",
@@ -104,7 +117,8 @@ def booking_detail_view(request, booking_id):
             "status": statuses,
             "collab_string": ", ".join(map(str, booking.collaborators.all())),
             "ipa_username": profile.ipa_username,
-            "contact_email": Lab.objects.filter(name="UNH_IOL").first().contact_email
+            "contact_email": Lab.objects.filter(name="UNH_IOL").first().contact_email,
+            "templatehosts": hosts,
         }
 
         return render(request, "booking/booking_detail.html", context)
