@@ -45,7 +45,9 @@ def request_create_template(request) -> HttpResponse:
 
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
-
+    
+    data["template_blob"]["owner"] = UserProfile.objects.get(user=request.user).ipa_username
+    print("Sending request to make template:", data)
     response = template_make_template(data["template_blob"])
     return JsonResponse(status=200, data={"uuid": response})
 
