@@ -21,7 +21,8 @@ from booking.models import Booking
 from liblaas.views import booking_booking_status, user_get_user, flavor_list_flavors
 from django.http import HttpResponse, JsonResponse
 
-from laas_dashboard.settings import PROJECT
+from laas_dashboard.settings import HOST_DOMAIN, PROJECT
+from booking.lib import resolve_hostname
 
 class BookingView(TemplateView):
     template_name = "booking/booking_detail.html"
@@ -140,5 +141,19 @@ def update_booking_status(request):
 
     if response:
         return JsonResponse(status=200, data=response)
+
+    return HttpResponse(status=500)
+
+def get_host_ip(request):
+    if request.method != "POST":
+        return HttpResponse(status=405)
+
+    data = json.loads(request.body.decode("utf-8"))
+    server_name = data["server_name"]
+
+    response = resolve_hostname(f"{server_name}.{HOST_DOMAIN}")
+
+    if response:
+        return JsonResponse(status=200, data=response, safe=False)
 
     return HttpResponse(status=500)

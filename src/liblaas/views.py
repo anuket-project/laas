@@ -10,11 +10,11 @@
 # Unauthenticated requests to liblaas. If a call makes it to here, it is assumed to be authenticated
 # Responses that return json will return the unwrapped json data, otherwise it will return whether the request was successful or not
 
-import os
 import requests
 import json
+from laas_dashboard.settings import LIBLAAS_BASE_URL
 
-base = os.environ.get("LIBLAAS_BASE_URL")
+base = LIBLAAS_BASE_URL
 post_headers = {'Content-Type': 'application/json'}
 
 def liblaas_docs():

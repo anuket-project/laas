@@ -198,7 +198,10 @@ code {
                             {% endwith %}
 
                             {% endif %}
-                            </td>
+                          </td>
+                          <td>
+                            <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showIPModal('{{inst.assigned_host}}')">Show IP</button>
+                          </td>
                     </tr>
                     {% endfor %}
                     {% endwith %}
@@ -266,6 +269,22 @@ code {
   </div>
 </div>
 
+<div class="modal fade" id="resolveHostModal" tabindex="-1" role="dialog" aria-labelledby="resolveHostModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="instructionModalLabel">Resolve Hostname</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p id="p-hostname-output"></p>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% for id, inst in status.instances.items %}
 <div class="modal fade" id="logsModal-{{ id }}" tabindex="-1" role="dialog" aria-labelledby="logsModalLabel-{{ id }}" aria-hidden="true">
@@ -335,6 +354,22 @@ code {
         })
     }
 
+    async function fetchHostIP(server_name) {
+        data = {"server_name": server_name}
+        const response = await $.ajax({
+            url: '../../resolve/',
+            type: 'post',
+            data: JSON.stringify(data),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+        })
+
+        return JSON.parse(response);
+    }
+
     async function updateStatuses(status) {
         const instances = status.instances;
         if (!instances) return;
@@ -376,6 +411,12 @@ code {
         // IPMI
         document.getElementById("ipmi-username").innerText = status.config.ipmi_username;
         document.getElementById("ipmi-password").innerText = status.config.ipmi_password;
+    }
+
+    async function showIPModal(assigned_host) {
+      const ip_address = await fetchHostIP(assigned_host);
+      document.getElementById("p-hostname-output").innerText = ip_address;
+      $("#resolveHostModal").modal('show');
     }
 </script>
 

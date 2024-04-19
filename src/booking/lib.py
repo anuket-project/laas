@@ -8,7 +8,7 @@
 ##############################################################################
 
 from account.models import UserProfile
-
+import os
 
 def get_user_field_opts():
     return {
@@ -34,3 +34,18 @@ def get_user_items(exclude=None):
         }
         items[up.id] = item
     return items
+
+def resolve_hostname(server_address) -> str:
+    '''
+    Resolves the given host ip from address using the host command.
+    Returns string output of "host -st A <server_address>".
+    '''
+    print(f"trying to resolve {server_address}")
+    process = os.popen(f"host -st A {server_address}")
+    data = process.read()
+    result = process.close()
+
+    if (result is None):
+        return data.strip()
+    
+    return f"Unable to resolve IP for {server_address}"

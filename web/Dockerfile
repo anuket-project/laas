@@ -9,7 +9,7 @@
 FROM python:3.9
 ENV PYTHONUNBUFFERED 1
 
-RUN apt-get update && apt-get install -y npm
+RUN apt-get update && apt-get install -y npm host
 
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
