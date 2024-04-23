@@ -108,6 +108,46 @@ code {
               </table>
           </div>
       </div>
+        <div class="card mb-3">
+          <div class="card-header d-flex">
+              <h4>Template Information</h4>
+          </div>
+          <div>
+              <table class="table m-0">
+                  {% with status.template as template %}
+                  <tr>
+                      <th>Name</th>
+                      <td>{{ template.name }}</td>
+                      <td></td>
+                  </tr>
+                  <tr>
+                      <th>Description</th>
+                      <td>{{template.description}}</td>
+                      <td></td>
+                  </tr>
+                  <tr>
+                      <th>Owner</th>
+                      <td>{{template.owner}}</td>
+                      <td></td>
+                  </tr>
+                  {% endwith %}
+                  <table class="table-borderless table-striped table">
+                    <tr>
+                      <th>Name</th>
+                      <th>Image</th>
+                      <th>Flavor</th>
+                    </tr>
+                  {% for host in templatehosts %}
+                  <tr>
+                      <td style="border:none;">{{host.name}}</th>
+                      <td style="border:none;">{{host.image}}</td>
+                      <td style="border:none;">{{host.flavor}}</td>
+                  </tr>
+                  {% endfor %}
+                  </table>
+              </table>
+          </div>
+      </div>
     </div>
     <div class="col">
         <div class="card mb-3">
@@ -202,6 +242,103 @@ code {
                           <td>
                             <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showIPModal('{{inst.assigned_host}}')">Show IP</button>
                           </td>
+                          <td>
+                            <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showIPModal('{{inst.assigned_host}}')">Show IP</button>
+                          </td>
+                    </tr>
+                    {% endfor %}
+                    {% endwith %}
+                </table>
+            </div>
+        </div>
+        <div class="card mb-3">
+            <div class="card-header d-flex">
+                <h4 class="d-inline">IPMI Tools</h4>
+            </div>
+            <div class="collapse show" id="panel_ipmi">
+                <table class="table m-0">
+                    <tr>
+                        <th>Host Power Status</th>
+                        <th>Assigned Host</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    {% with status.instances as instances %}
+
+                    {% for id, inst in instances.items %}
+                    {% if inst.logs|length > 0 %}
+                    {% with inst.logs|last as lastelem %}
+                    {% if 'Success' in lastelem.status  %}
+                    <tr style="display:block;" id="ipmi-block-{{id}}">
+                    {% else %}
+                    <tr style="display:none;" id="ipmi-block-{{id}}">
+                    {% endif %}
+                    {% endwith %}
+                    {% endif %}
+                        <td>
+                            <div id="power-icon-{{id}}" class="spinner-border text-primary square-20"></div>
+                        </td>
+                        <td id="ipmi-host-{{id}}">
+                            <!-- Actual Host -->
+                            {{inst.assigned_host}}
+                        </td>
+                        <td>
+                            <button id="poweron-{{id}}" class="btn-secondary btn float-right">Power On</button>
+                        </td>
+                        <td>
+                            <button id="poweroff-{{id}}" class="btn-secondary btn float-right">Power Off</button>
+                        </td>
+                        <td>
+                            <button id="powerreboot-{{id}}" class="btn-secondary btn float-right">Reboot</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% endwith %}
+                </table>
+            </div>
+        </div>
+        <div class="card mb-3">
+            <div class="card-header d-flex">
+                <h4 class="d-inline">IPMI Tools</h4>
+            </div>
+            <div class="collapse show" id="panel_ipmi">
+                <table class="table m-0">
+                    <tr>
+                        <th>Host Power Status</th>
+                        <th>Assigned Host</th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    {% with status.instances as instances %}
+
+                    {% for id, inst in instances.items %}
+                    {% if inst.logs|length > 0 %}
+                    {% with inst.logs|last as lastelem %}
+                    {% if 'Success' in lastelem.status  %}
+                    <tr style="display:block;" id="ipmi-block-{{id}}">
+                    {% else %}
+                    <tr style="display:none;" id="ipmi-block-{{id}}">
+                    {% endif %}
+                    {% endwith %}
+                    {% endif %}
+                        <td>
+                            <div id="power-icon-{{id}}" class="spinner-border text-primary square-20"></div>
+                        </td>
+                        <td id="ipmi-host-{{id}}">
+                            <!-- Actual Host -->
+                            {{inst.assigned_host}}
+                        </td>
+                        <td>
+                            <button id="poweron-{{id}}" class="btn-secondary btn float-right">Power On</button>
+                        </td>
+                        <td>
+                            <button id="poweroff-{{id}}" class="btn-secondary btn float-right">Power Off</button>
+                        </td>
+                        <td>
+                            <button id="powerreboot-{{id}}" class="btn-secondary btn float-right">Reboot</button>
+                        </td>
                     </tr>
                     {% endfor %}
                     {% endwith %}
@@ -314,7 +451,6 @@ code {
 {% endfor %}
 
 <script>
-    
     function updateSSHCommand(selectedHost) {
       const sshHost = selectedHost + '.opnfv.iol.unh.edu'; 
 
@@ -378,12 +514,17 @@ code {
             const instance = instances[aggId]
             const status = instance.logs.pop()
 
+            ipmiStatus(aggId)
+
             let icon_class = "spinner-border text-primary square-20"
+            let display_string = "none"
             if (status.status.includes('Success')) {
                 icon_class = "rounded-circle bg-success square-20"
+                display_string = "block"
             } else if (status.status.includes('Fail')) {
                 icon_class = "rounded-circle bg-danger square-20"
             }
+            document.getElementById('ipmi-block-' + aggId).style.display = display_string
 
             // icon
             document.getElementById("icon-" + aggId).className = icon_class;
@@ -417,6 +558,83 @@ code {
       const ip_address = await fetchHostIP(assigned_host);
       document.getElementById("p-hostname-output").innerText = ip_address;
       $("#resolveHostModal").modal('show');
+    }
+
+    async function ipmiStatus(hostid) {
+        let request = new XMLHttpRequest()
+        let url = '../../../liblaas/ipmi/get/' + hostid
+        request.onreadystatechange = function() {
+            if (request.readyState == 4) {
+                switch(request.status) {
+                case 200:
+                    answer = JSON.parse(request.responseText);
+                    updateIpmi(hostid, answer.power_state);
+                    break;
+                case 400:
+                    updateIpmi(hostid, "bad request");
+                    break;
+                case 500:
+                    updateIpmi(hostid, "internal server error");
+                    break;
+                default:
+                    updateIpmi(hostid, "unknown error with response code " + request.status);
+                    break;
+        }
+            }
+        };
+        request.open("GET", url, true)
+        request.send(null)
+    }
+
+    async function ipmiCommand(command, hostid) {
+        let request = new XMLHttpRequest()
+        let url = '../../../liblaas/ipmi/set/' + hostid
+        request.onreadystatechange = function() {
+            if (request.readyState == 4) {
+                switch(request.status) {
+                case 200:
+                    answer = JSON.parse(request.responseText);
+                    updateIpmi(hostid, answer.power_state);
+                    break;
+                case 400:
+                    updateIpmi(hostid, "bad request");
+                    break;
+                case 500:
+                    updateIpmi(hostid, "internal server error");
+                    break;
+                default:
+                    updateIpmi(hostid, "unknown error with response code " + request.status);
+                    break;
+        }
+            }
+        };
+        request.open("POST", url, true)
+        request.setRequestHeader("Content-Type", "application/json")
+        var data = '{"command":' + command + ', "timeout_config": {"max_retries": 5, "retry_interval": 10, "timeout_duration": 60}}'
+        request.send(data)
+    }
+
+    async function updateIpmi(hostid, response) {
+        let ipmi_icon_class = "spinner-border text-primary square-20"
+        if (response === "On") {
+            ipmi_icon_class = "rounded-circle bg-success square-20"
+        } else if (response === "Off") {
+            ipmi_icon_class = "rounded-circle bg-danger square-20"
+        } else {
+            console.log("Unexpected IPMI response was: " + response)
+        }
+
+        document.getElementById("power-icon-" + hostid).className = ipmi_icon_class;
+
+        document.getElementById("poweron-" + hostid).addEventListener('click', function(){
+            ipmiCommand("PowerOn", hostid)
+        });
+        document.getElementById("poweroff-" + hostid).addEventListener('click', function(){
+            ipmiCommand("PowerOff", hostid)
+        });
+        document.getElementById("powerreboot-" + hostid).addEventListener('click', function(){
+            ipmiCommand("Restart", hostid)
+        });
     }
 </script>
 

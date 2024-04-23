@@ -251,3 +251,26 @@ def request_set_ssh(request):
         status=406
     )
 
+def request_ipmi_setpower(request, host_id) -> HttpResponse:
+    data = json.loads(request.body.decode('utf-8'))
+
+    success = booking_ipmi_setpower(host_id, data)
+
+    if (success is None):
+        return HttpResponse(status=500)
+    else:
+        return JsonResponse(
+            data = success,
+            status = 200,
+        )
+
+def request_ipmi_getpower(request, host_id) -> HttpResponse:
+    success = booking_ipmi_getpower(host_id)
+
+    if (success is None):
+        return HttpResponse(status=500)
+    else:
+        return JsonResponse(
+            data = success,
+            status = 200,
+        )
