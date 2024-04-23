@@ -10,11 +10,11 @@
 # Unauthenticated requests to liblaas. If a call makes it to here, it is assumed to be authenticated
 # Responses that return json will return the unwrapped json data, otherwise it will return whether the request was successful or not
 
-import os
 import requests
 import json
+from laas_dashboard.settings import LIBLAAS_BASE_URL
 
-base = os.environ.get("LIBLAAS_BASE_URL")
+base = LIBLAAS_BASE_URL
 post_headers = {'Content-Type': 'application/json'}
 
 def liblaas_docs():
@@ -60,6 +60,30 @@ def booking_create_booking(booking_blob: dict) -> str:
     url = f'{base}{endpoint}'
     try:
         response = requests.post(url, data=json.dumps(booking_blob), headers=post_headers)
+        return response.json()
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return None
+
+# POST
+def booking_ipmi_setpower(host_id: str, command: dict) -> dict:
+    endpoint = f'booking/ipmi/{host_id}/setpower'
+    url = f'{base}{endpoint}'
+    try:
+        response = requests.post(url, data=json.dumps(command), headers=post_headers)
+        return response.json()
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return None
+
+# GET
+def booking_ipmi_getpower(host_id: str) -> dict:
+    endpoint = f'booking/ipmi/{host_id}/powerstatus'
+    url = f'{base}{endpoint}'
+    try:
+        response = requests.get(url)
         return response.json()
     except Exception as e:
         print(f"Error at {url}")

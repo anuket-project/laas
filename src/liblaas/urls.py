@@ -21,4 +21,6 @@ urlpatterns = [
     url(r'^migrate/conflict/$', request_migrate_conflict, name='migrate_conflict'),
     url(r'^ipa/ssh/$', request_set_ssh, name='set_ssh'),
     url(r'^ipa/company/$', request_set_company, name='set_company'),
+    url(r'^ipmi/set/(?P<host_id>[A-Za-z0-9_-]+)$', request_ipmi_setpower, name='ipmi_set'),
+    url(r'^ipmi/get/(?P<host_id>[A-Za-z0-9_-]+)$', request_ipmi_getpower, name='ipmi_get'),
 ]

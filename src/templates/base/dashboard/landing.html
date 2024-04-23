@@ -99,7 +99,7 @@
                     <input type="text" class="form-control" name="username" id="username" style="width: 300px;" placeholder="New VPN Username" {% if ipa_status != "conflict" %} hidden {% endif %}>
 
                     <label for="email">Email:</label>
-                    <input type="text" class="form-control" name="email" id="email" style="width: 300px;"  value="{{profile.email}}" disabled>
+                    <input type="text" class="form-control" name="email" id="email" style="width: 300px;"  value="{{user.userprofile.email_addr}}" disabled>
 
                 </div>
             </form>

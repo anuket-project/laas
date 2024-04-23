@@ -236,7 +236,6 @@ async function submitForm(endpoint) {
         $('#ipa-modal').modal({backdrop: 'static', keyboard: false});
         $('#ipa-modal').modal('show');
     } else {
-      user = "{{user}}"
       workflow = new BookingWorkflow();
       workflow.startWorkflow();
     }

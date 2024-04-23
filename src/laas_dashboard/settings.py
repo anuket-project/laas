@@ -91,6 +91,8 @@ if os.environ.get('EXPECT_HOST_FORWARDING') == 'True':
 ROOT_URLCONF = 'laas_dashboard.urls'
 
 PROJECT = os.environ.get("PROJECT", "")  # the project for the current deployment (i.e. anuket or lfedge)
+HOST_DOMAIN = os.environ.get("HOST_DOMAIN", "") # Domain for provisioned hosts (i.e opnfv.iol.unh.edu or akr.iol.unh.edu)
+LIBLAAS_BASE_URL = os.environ.get("LIBLAAS_BASE_URL") # API URL
 TEMPLATE_DIRS = ["base"]  # where all the base templates are
 
 # If the user has a custom template directory,
