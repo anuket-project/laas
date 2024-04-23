@@ -76,7 +76,6 @@ class LibLaaSAPI {
     }
 
     static async makeTemplate(templateBlob) { // -> UUID or null
-        templateBlob.owner = user; // todo - remove this and handle this in django
         return await this.handleResponse(this.makeRequest(endpoint.MAKE_TEMPLATE, {"template_blob": templateBlob}));
     }
 

@@ -112,7 +112,6 @@ def landing_view(request):
             'bookings': bookings,
             'LFID': LFID,
             'ipa_status': ipa_status,
-            'profile': profile
         }
     )
 

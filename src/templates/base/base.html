@@ -37,7 +37,9 @@
                     <li class="dropdown ml-auto">
                         {% block userDropDownText %}
                         <a class="nav-link p-0 p-2 Anuket-Text" data-toggle="dropdown" href="#">
-                            {% if request.user.username %}
+                            {% if user.userprofile.ipa_username %}
+                            {{user.userprofile.ipa_username}}
+                            {% elif request.user.username %}
                             {{request.user.username}}
                             {% else %}
                             <i class="fas fa-user"></i>
