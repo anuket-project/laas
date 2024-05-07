@@ -21,6 +21,8 @@ from booking.models import Booking
 from liblaas.views import booking_booking_status, user_get_user, flavor_list_flavors
 from django.http import HttpResponse, JsonResponse
 
+from liblaas.views import booking_ipmi_fqdn
+
 from laas_dashboard.settings import HOST_DOMAIN, PROJECT
 from booking.lib import resolve_hostname
 
@@ -101,25 +103,32 @@ def booking_detail_view(request, booking_id):
         profile = UserProfile.objects.get(user=request.user)
         flavorlist = flavor_list_flavors(PROJECT)
         hosts = []
-        for host in statuses.get("template").get("hosts"):
-            curr_host = {}
-            curr_host["name"] = host.get("hostname")
-            for flavor in flavorlist:
-                if host.get("flavor") == flavor.get("flavor_id"):
-                    curr_host["flavor"] = flavor.get("name")
-                    for image in flavor.get("images"):
-                        if host.get("image") == image.get("image_id"):
-                            curr_host["image"] = image.get("name")
-            hosts.append(curr_host)
+        host_ipmi_fqdns = {}
+        if statuses:
+            for host in statuses.get("template").get("hosts"):
+                curr_host = {}
+                curr_host["name"] = host.get("hostname")
+                for flavor in flavorlist:
+                    if host.get("flavor") == flavor.get("flavor_id"):
+                        curr_host["flavor"] = flavor.get("name")
+                        for image in flavor.get("images"):
+                            if host.get("image") == image.get("image_id"):
+                                curr_host["image"] = image.get("name")
+                hosts.append(curr_host)
+
+            for instance in statuses.get("instances"):
+                access = statuses.get("instances").get(instance).get("assigned_host")
+                host_ipmi_fqdns[access] = booking_ipmi_fqdn(instance)
 
         context = {
             "title": "Booking Details",
             "booking": booking,
             "status": statuses,
             "collab_string": ", ".join(map(str, booking.collaborators.all())),
-            "ipa_username": profile.ipa_username,
             "contact_email": Lab.objects.filter(name="UNH_IOL").first().contact_email,
             "templatehosts": hosts,
+            "ipmi_fqdns": host_ipmi_fqdns,
+            "host_domain": HOST_DOMAIN
         }
 
         return render(request, "booking/booking_detail.html", context)

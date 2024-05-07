@@ -90,6 +90,18 @@ def booking_ipmi_getpower(host_id: str) -> dict:
         print(e)
         return None
 
+# GET
+def booking_ipmi_fqdn(host_id: str) -> str:
+    endpoint = f'booking/ipmi/{host_id}/getfqdn'
+    url = f'{base}{endpoint}'
+    try:
+        response = requests.get(url)
+        return response.content.decode()
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return None
+
 ### FLAVOR
 
 # GET
