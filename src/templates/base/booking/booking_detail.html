@@ -386,7 +386,7 @@ code {
           <div class="card-body">
             <h5 class="card-title">Command format</h5>
             <pre><code class="card-text">
-              ipmitool -I lanplus -C 3 -H &lt;host's FQDN&gt; -U {{ ipa_username }} -P &lt;your password&gt; -L OPERATOR &lt;command&gt;
+              ipmitool -I lanplus -C 3 -H &lt;host's FQDN&gt; -U '{{ status.config.ipmi_username }}' -P '{{ status.config.ipmi_password }}' -L OPERATOR &lt;command&gt;
             </code></pre>
             <table class="table">
               <thead>
@@ -455,12 +455,12 @@ code {
                   <th scope="col">IPMI FQDN</th>
                 </tr>
               </thead>
+              {% for hostname, ipmi_fqdn in ipmi_fqdns.items %}
               <tr>
-                {% for hostname, ipmi_fqdn in ipmi_fqdns.items %}
                 <td>{{ hostname }}</td>
                 <td>{{ ipmi_fqdn }}</td>
-                {% endfor %}
               </tr>
+              {% endfor %}
             </table>
           </div>
         </div>
