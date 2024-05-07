@@ -117,9 +117,9 @@ def booking_detail_view(request, booking_id):
             "booking": booking,
             "status": statuses,
             "collab_string": ", ".join(map(str, booking.collaborators.all())),
-            "ipa_username": profile.ipa_username,
             "contact_email": Lab.objects.filter(name="UNH_IOL").first().contact_email,
             "templatehosts": hosts,
+            "host_domain": HOST_DOMAIN
         }
 
         return render(request, "booking/booking_detail.html", context)

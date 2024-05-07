@@ -108,46 +108,6 @@ code {
               </table>
           </div>
       </div>
-        <div class="card mb-3">
-          <div class="card-header d-flex">
-              <h4>Template Information</h4>
-          </div>
-          <div>
-              <table class="table m-0">
-                  {% with status.template as template %}
-                  <tr>
-                      <th>Name</th>
-                      <td>{{ template.name }}</td>
-                      <td></td>
-                  </tr>
-                  <tr>
-                      <th>Description</th>
-                      <td>{{template.description}}</td>
-                      <td></td>
-                  </tr>
-                  <tr>
-                      <th>Owner</th>
-                      <td>{{template.owner}}</td>
-                      <td></td>
-                  </tr>
-                  {% endwith %}
-                  <table class="table-borderless table-striped table">
-                    <tr>
-                      <th>Name</th>
-                      <th>Image</th>
-                      <th>Flavor</th>
-                    </tr>
-                  {% for host in templatehosts %}
-                  <tr>
-                      <td style="border:none;">{{host.name}}</th>
-                      <td style="border:none;">{{host.image}}</td>
-                      <td style="border:none;">{{host.flavor}}</td>
-                  </tr>
-                  {% endfor %}
-                  </table>
-              </table>
-          </div>
-      </div>
     </div>
     <div class="col">
         <div class="card mb-3">
@@ -163,7 +123,7 @@ code {
                 {% for id, inst in status.instances.items %}
                   {% if forloop.first %}
                     <div>
-                    ~$ ssh <span id="sshUser">{{ ipa_username }}</span>@<span id="sshHost">{{ inst.assigned_host }}.opnfv.iol.unh.edu</span>
+                    ~$ ssh <span id="sshUser">{{ user.userprofile.ipa_username }}</span>@<span id="sshHost">{{ inst.assigned_host }}.{{ host_domain }}</span>
                     </div>
                     {% endif %}
                 {% endfor %}
@@ -196,6 +156,8 @@ code {
                         <th>Name</th>
                         <th>Host</th>
                         <th>Status</th>
+                        <th><!-- log button --></th>
+                        <th><!-- ip button --></th>
                     </tr>
                     {% with status.instances as instances %}
 
@@ -227,20 +189,17 @@ code {
                             <!-- Logs -->
                             {% if inst.logs|length > 0 %}
                             {% with inst.logs|last as lastelem %}
-                            <div class="d-flex justify-content-around align-items-start">
 
                               <p id="status-{{id}}">
                               {{lastelem.status}}
                               </p>
 
-                              <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" data-target="#logsModal-{{ id }}">Show Logs</button>
-                            </div>
                             {% endwith %}
 
                             {% endif %}
                           </td>
                           <td>
-                            <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showIPModal('{{inst.assigned_host}}')">Show IP</button>
+                            <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showLogsModal('{{inst.instance}}')">Show Logs</button>
                           </td>
                           <td>
                             <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showIPModal('{{inst.assigned_host}}')">Show IP</button>
@@ -251,18 +210,16 @@ code {
                 </table>
             </div>
         </div>
-        <div class="card mb-3">
+        <div class="card mb-3" hidden="true" id="ipmitool-card">
             <div class="card-header d-flex">
                 <h4 class="d-inline">IPMI Tools</h4>
             </div>
             <div class="collapse show" id="panel_ipmi">
                 <table class="table m-0">
                     <tr>
-                        <th>Host Power Status</th>
-                        <th>Assigned Host</th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
+                        <th>Power</th>
+                        <th>Host</th>
+                        <th>Controls</th>
                     </tr>
                     {% with status.instances as instances %}
 
@@ -270,9 +227,7 @@ code {
                     {% if inst.logs|length > 0 %}
                     {% with inst.logs|last as lastelem %}
                     {% if 'Success' in lastelem.status  %}
-                    <tr style="display:block;" id="ipmi-block-{{id}}">
-                    {% else %}
-                    <tr style="display:none;" id="ipmi-block-{{id}}">
+                    <tr id="ipmi-block-{{id}}">
                     {% endif %}
                     {% endwith %}
                     {% endif %}
@@ -284,61 +239,22 @@ code {
                             {{inst.assigned_host}}
                         </td>
                         <td>
-                            <button id="poweron-{{id}}" class="btn-secondary btn float-right">Power On</button>
-                        </td>
-                        <td>
-                            <button id="poweroff-{{id}}" class="btn-secondary btn float-right">Power Off</button>
-                        </td>
-                        <td>
-                            <button id="powerreboot-{{id}}" class="btn-secondary btn float-right">Reboot</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    {% endwith %}
-                </table>
-            </div>
-        </div>
-        <div class="card mb-3">
-            <div class="card-header d-flex">
-                <h4 class="d-inline">IPMI Tools</h4>
-            </div>
-            <div class="collapse show" id="panel_ipmi">
-                <table class="table m-0">
-                    <tr>
-                        <th>Host Power Status</th>
-                        <th>Assigned Host</th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                    {% with status.instances as instances %}
 
-                    {% for id, inst in instances.items %}
-                    {% if inst.logs|length > 0 %}
-                    {% with inst.logs|last as lastelem %}
-                    {% if 'Success' in lastelem.status  %}
-                    <tr style="display:block;" id="ipmi-block-{{id}}">
-                    {% else %}
-                    <tr style="display:none;" id="ipmi-block-{{id}}">
-                    {% endif %}
-                    {% endwith %}
-                    {% endif %}
-                        <td>
-                            <div id="power-icon-{{id}}" class="spinner-border text-primary square-20"></div>
-                        </td>
-                        <td id="ipmi-host-{{id}}">
-                            <!-- Actual Host -->
-                            {{inst.assigned_host}}
-                        </td>
-                        <td>
-                            <button id="poweron-{{id}}" class="btn-secondary btn float-right">Power On</button>
-                        </td>
-                        <td>
-                            <button id="poweroff-{{id}}" class="btn-secondary btn float-right">Power Off</button>
-                        </td>
-                        <td>
-                            <button id="powerreboot-{{id}}" class="btn-secondary btn float-right">Reboot</button>
-                        </td>
+                        <table>
+                            <tr>
+                                <td class="border-top-0">
+                                    <button id="poweron-{{id}}" class="btn-secondary btn-sm btn ml-3 text-nowrap" onclick="ipmiCommand('PowerOn', '{{id}}')">Power On</button>
+                                </td>
+                                <td class="border-top-0">
+                                    <button id="poweroff-{{id}}" class="btn-secondary btn-sm btn ml-3 text-nowrap" onclick="ipmiCommand('PowerOff', '{{id}}')">Power Off</button>
+                                </td>
+                                <td class="border-top-0">
+                                    <button id="powerreboot-{{id}}" class="btn-secondary btn-sm btn ml-3 text-nowrap" onclick="ipmiCommand('Restart', '{{id}}')">Reboot</button>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+
                     </tr>
                     {% endfor %}
                     {% endwith %}
@@ -385,10 +301,10 @@ code {
           <div class="card-body">
             <h5 class="card-title">Step 3: Connect to Your Hosts</h5>
             <p class="card-text">
-              Once connected, you can access your provisioned hosts over SSH. Each host is accessible at <strong>&lt;host&gt;.opnfv.iol.unh.edu</strong>, where <strong>&lt;host&gt;</strong> is your assigned host name.
+              Once connected, you can access your provisioned hosts over SSH. Each host is accessible at <strong>&lt;host&gt;.{{ host_domain }}</strong>, where <strong>&lt;host&gt;</strong> is your assigned host name.
             </p>
             <div class="alert" style="background-color: #f3f6f4;" role="alert">
-              For example, for the host <strong>hpe0</strong>, you would run <strong>ssh &lt;your_username&gt;@hpe0.opnfv.iol.unh.edu</strong>.
+              For example, for the host <strong>hpe0</strong>, you would run <strong>ssh &lt;your_username&gt;@hpe0.{{ host_domain }}</strong>.
             </div>
             <p class="card-text">
               Optionally, you can also use the <strong>Copy</strong> and <strong>Select Host</strong> buttons located on this page to copy the complete SSH command to your clipboard for your desired host.
@@ -423,46 +339,40 @@ code {
   </div>
 </div>
 
-{% for id, inst in status.instances.items %}
-<div class="modal fade" id="logsModal-{{ id }}" tabindex="-1" role="dialog" aria-labelledby="logsModalLabel-{{ id }}" aria-hidden="true">
+<div class="modal fade" id="logsModal" tabindex="-1" role="dialog" aria-labelledby="logsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="logsModalLabel-{{ id }}">Logs for {{ inst.host_alias }}</h5>
+                <h5 class="modal-title" id="logsModalLabel">Provision Logs</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body" style="padding: 0px;">
                 <table class="table table-striped">
-                    <th>Time</th>
-                    <th>Message</th>
-                    {% for log in inst.logs %}
-                    <tr>
-                        <td>{{ log.time }}</td>
-                        <td>{{ log.status }}</td>
+                  <tbody  id="log-table">
+                    <tr id="log-th">
+                      <th>Time</th>
+                      <th>Message</th>
                     </tr>
-                    {% endfor %}
+                  </tbody>
                 </table>
             </div>
         </div>
     </div>
 </div>
-{% endfor %}
 
 <script>
+
+    // Store latest fetch of logs for use in modal
+    const logs_cache = new Map(); // map instance id to logs
+
     function updateSSHCommand(selectedHost) {
-      const sshHost = selectedHost + '.opnfv.iol.unh.edu'; 
+      const sshHost = selectedHost + '.{{ host_domain }}';
 
       document.getElementById('sshHost').innerText = sshHost;
     }
 
-    const agg_id = "{{booking.aggregateId}}"
-    setInterval(function () {
-        fetchBookingStatus();
-    }, 5000);
-
-    
     function copySSHCommand() {
     const sshUser = document.getElementById("sshUser").innerText;
     const sshHost = document.getElementById("sshHost").innerText;
@@ -473,7 +383,7 @@ code {
     });
     }
 
-    async function fetchBookingStatus() {
+    async function fetchBookingStatus(agg_id, progress_map) {
         data = {"agg_id": agg_id}
         $.ajax({
             url: '',
@@ -486,7 +396,7 @@ code {
             dataType: 'text',
         })
         .done(function(response) {
-            updateStatuses(JSON.parse(response))
+            updateStatuses(JSON.parse(response), agg_id, progress_map)
         })
     }
 
@@ -506,25 +416,30 @@ code {
         return JSON.parse(response);
     }
 
-    async function updateStatuses(status) {
+    async function updateStatuses(status, aggId, progress_map) {
         const instances = status.instances;
         if (!instances) return;
 
-        Object.keys(instances).forEach((aggId) => {
+        let instance_iter = Object.keys(instances);
+        instance_iter.forEach((aggId) => {
             const instance = instances[aggId]
             const status = instance.logs.pop()
 
-            ipmiStatus(aggId)
-
             let icon_class = "spinner-border text-primary square-20"
-            let display_string = "none"
             if (status.status.includes('Success')) {
                 icon_class = "rounded-circle bg-success square-20"
-                display_string = "block"
+                progress_map.set(instance.instance, true)
             } else if (status.status.includes('Fail')) {
                 icon_class = "rounded-circle bg-danger square-20"
+                progress_map.set(instance.instance, false)
             }
-            document.getElementById('ipmi-block-' + aggId).style.display = display_string
+
+            logs_cache.set(instance.instance, instance.logs);
+
+            if (progress_map.size == instance_iter.length) {
+            document.getElementById("ipmitool-card").removeAttribute("hidden");
+            fetchIpmiStatus(aggId);
+            }
 
             // icon
             document.getElementById("icon-" + aggId).className = icon_class;
@@ -534,19 +449,6 @@ code {
             document.getElementById("host-" + aggId).innerText = instance.assigned_host;
             // status
             document.getElementById("status-" + aggId).innerText = status.status;
-            // logs
-            const log_table = document.getElementById("logs-" + aggId);
-            log_table.innerHTML = "";
-            for (const log of instance.logs) {
-                const tr = document.createElement('tr');
-                const td_status = document.createElement('td')
-                td_status.innerText = log.status;
-                const td_time = document.createElement('td')
-                td_time.innerText = log.time;
-                tr.appendChild(td_status)
-                tr.appendChild(td_time)
-                log_table.appendChild(tr)
-            }
         })
 
         // IPMI
@@ -560,82 +462,96 @@ code {
       $("#resolveHostModal").modal('show');
     }
 
-    async function ipmiStatus(hostid) {
+    async function showLogsModal(instance_id) {
+      $("#logsModal").modal('show');
+
+      let log_table = document.getElementById('log-table');
+      let log_th = document.getElementById('log-th');
+
+      log_table.innerHTML = ``
+      log_table.appendChild(log_th);
+
+      for (const log of logs_cache.get(instance_id)) {
+        let log_tr = document.createElement('tr');
+        let log_time_td = document.createElement('td');
+        let log_message_td = document.createElement('td');
+
+        log_message_td.innerText = log.status;
+        log_time_td.innerText = log.time;
+
+        log_tr.appendChild(log_time_td);
+        log_tr.appendChild(log_message_td);
+        log_table.appendChild(log_tr);
+      }
+    }
+
+    async function fetchIpmiStatus(hostid) {
         let request = new XMLHttpRequest()
         let url = '../../../liblaas/ipmi/get/' + hostid
         request.onreadystatechange = function() {
             if (request.readyState == 4) {
                 switch(request.status) {
                 case 200:
-                    answer = JSON.parse(request.responseText);
-                    updateIpmi(hostid, answer.power_state);
+                    power = JSON.parse(request.responseText).power_state;
+                    updatePowerIcon(hostid, power);
                     break;
                 case 400:
-                    updateIpmi(hostid, "bad request");
+                    console.log("bad request");
                     break;
                 case 500:
-                    updateIpmi(hostid, "internal server error");
+                    console.log("internal server error");
                     break;
                 default:
-                    updateIpmi(hostid, "unknown error with response code " + request.status);
+                    console.log("unknown error with response code " + request.status);
                     break;
         }
             }
         };
-        request.open("GET", url, true)
-        request.send(null)
+
+        request.open("GET", url, true);
+        request.setRequestHeader('X-CSRFToken', document.getElementsByName('csrfmiddlewaretoken')[0].value);
+        request.send(null);
     }
 
     async function ipmiCommand(command, hostid) {
         let request = new XMLHttpRequest()
         let url = '../../../liblaas/ipmi/set/' + hostid
-        request.onreadystatechange = function() {
-            if (request.readyState == 4) {
-                switch(request.status) {
-                case 200:
-                    answer = JSON.parse(request.responseText);
-                    updateIpmi(hostid, answer.power_state);
-                    break;
-                case 400:
-                    updateIpmi(hostid, "bad request");
-                    break;
-                case 500:
-                    updateIpmi(hostid, "internal server error");
-                    break;
-                default:
-                    updateIpmi(hostid, "unknown error with response code " + request.status);
-                    break;
-        }
-            }
-        };
         request.open("POST", url, true)
         request.setRequestHeader("Content-Type", "application/json")
-        var data = '{"command":' + command + ', "timeout_config": {"max_retries": 5, "retry_interval": 10, "timeout_duration": 60}}'
-        request.send(data)
+        request.setRequestHeader('X-CSRFToken', document.getElementsByName('csrfmiddlewaretoken')[0].value);
+        let data = {
+          command: command,
+          timeout_config: {
+            max_retries: 5,
+            retry_interval: 10,
+            timeout_duration: 60
+          }
+        }
+        request.send(JSON.stringify(data));
     }
 
-    async function updateIpmi(hostid, response) {
+    async function updatePowerIcon(hostid, power_state) {
         let ipmi_icon_class = "spinner-border text-primary square-20"
-        if (response === "On") {
+        if (power_state === "On") {
             ipmi_icon_class = "rounded-circle bg-success square-20"
-        } else if (response === "Off") {
+        } else if (power_state === "Off") {
             ipmi_icon_class = "rounded-circle bg-danger square-20"
-        } else {
-            console.log("Unexpected IPMI response was: " + response)
         }
 
         document.getElementById("power-icon-" + hostid).className = ipmi_icon_class;
-
-        document.getElementById("poweron-" + hostid).addEventListener('click', function(){
-            ipmiCommand("PowerOn", hostid)
-        });
-        document.getElementById("poweroff-" + hostid).addEventListener('click', function(){
-            ipmiCommand("PowerOff", hostid)
-        });
-        document.getElementById("powerreboot-" + hostid).addEventListener('click', function(){
-            ipmiCommand("Restart", hostid)
-        });
     }
+
+    // Main loop
+    let agg_id = "{{booking.aggregateId}}"
+
+    // keep a map of instance ids
+    // if status is success or fail (not spinning), add it to map with true or false.
+    // if map.key count == instance count, show ip modal and enable checking
+    let progress_map = new Map();
+    fetchBookingStatus(agg_id, progress_map);
+    setInterval(function () {
+        fetchBookingStatus(agg_id, progress_map);
+    }, 5000);
 </script>
 
 {% endblock content %}
