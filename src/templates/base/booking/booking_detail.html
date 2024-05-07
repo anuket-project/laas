@@ -54,6 +54,11 @@ code {
                         <td>{{ booking.lab }}</td>
                     </tr>
                     <tr>
+                      <td span="2">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#ipmiModal">Show IPMI Instructions</button>
+                      </td>
+                    </tr>
+                    <tr>
                         <td>IPMI Username</td>
                         <td><code id="ipmi-username">{{ status.config.ipmi_username }}</code></td>
                     </tr>
@@ -128,7 +133,7 @@ code {
                     {% endif %}
                 {% endfor %}
                 <div class="btn-group">
-                  <button class="btn btn-md btn-outline-secondary" onclick="copySSHCommand()")>Copy</button>
+                  <button class="btn btn-md btn-outline-secondary" onclick="copySSHCommand()">Copy</button>
                   <button type="button" class="btn btn-md btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-expanded="false">
                     <span>Select Host</span>
                   </button>
@@ -361,6 +366,117 @@ code {
         </div>
     </div>
 </div>
+
+
+<div class="modal fade" id="ipmiModal" tabindex="-1" role="dialog" aria-labelledby="ipmiModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="ipmiModalLabel">IPMItool Instructions</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info" role="alert">
+          If you are on Linux, search and install "ipmitool" via your system's package manager. If you are on Windows, install <a href="https://www.dell.com/support/home/en-us/drivers/driversdetails?driverid=96ph4">Dell's BMC Utility</a> and use ipmitool from there.
+        </div>
+        
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Command format</h5>
+            <pre><code class="card-text">
+              ipmitool -I lanplus -C 3 -H &lt;host's FQDN&gt; -U {{ ipa_username }} -P &lt;your password&gt; -L OPERATOR &lt;command&gt;
+            </code></pre>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Command</th>
+                  <th scope="col">Function</th>
+                </tr>
+              </thead>
+              <tr>
+                <td><strong>chassis power on</strong></td>
+                <td>Powers on the server.</td>
+              </tr>
+              <tr>
+                <td><strong>chassis power off</strong></td>
+                <td>Powers off the server.</td>
+              </tr>
+              <tr>
+                <td><strong>chassis status</strong></td>
+                <td>Checks the server status.</td>
+              </tr>
+              <tr>
+                <td><strong>chassis power cycle</strong></td>
+                <td>Power cycle the server.</td>
+              </tr>
+              <tr>
+                <td><strong>sol activate</strong></td>
+                <td>Activates SOL system console.</td>
+              </tr>
+              <tr>
+                <td><strong>sol deactivate</strong></td>
+                <td>Deactivates SOL system console.</td>
+              </tr>
+              <tr>
+                <td><strong>sel list</strong></td>
+                <td>Returns an error log.</td>
+              </tr>
+              <tr>
+                <td><strong>sdr list</strong></td>
+                <td>Lists status of all sensors.</td>
+              </tr>
+              <tr>
+                <td><strong>sol set retry-interval &lt;value&gt;</strong></td>
+                <td>Sets the default retry-interval value in milliseconds.</td>
+              </tr>
+              <tr>
+                <td><strong>fpu print</strong></td>
+                <td>Prints the FRU information.</td>
+              </tr>
+              <tr>
+                <td><strong>user list</strong></td>
+                <td>Lists the IPMI users.</td>
+              </tr>
+            </table>
+            <p class="card-text">Any other commands should work so long as the rest of the text remains.</p>
+          </div>
+        </div>
+
+        {% if ipmi_fqdns.items|length != 0 %}
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">IPMI FQDNs for your hosts</h5>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Host</th>
+                  <th scope="col">IPMI FQDN</th>
+                </tr>
+              </thead>
+              <tr>
+                {% for hostname, ipmi_fqdn in ipmi_fqdns.items %}
+                <td>{{ hostname }}</td>
+                <td>{{ ipmi_fqdn }}</td>
+                {% endfor %}
+              </tr>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="alert alert-warning">
+          <strong>Need Help?</strong> If you encounter any issues or require assistance, please <a style="color: inherit; text-decoration: underline;" href="mailto:{{contact_email}}">contact us here</a>.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script>
 
