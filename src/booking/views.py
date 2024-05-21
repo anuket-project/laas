@@ -100,7 +100,6 @@ def booking_detail_view(request, booking_id):
                 request, "dashboard/login.html", {"title": "This page is private"}
             )
 
-        profile = UserProfile.objects.get(user=request.user)
         flavorlist = flavor_list_flavors(PROJECT)
         hosts = []
         host_ipmi_fqdns = {}
