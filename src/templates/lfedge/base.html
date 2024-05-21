@@ -6,6 +6,22 @@
 <nav class="navbar navbar-light LFEdge navbar-fixed-top border-bottom py-0 mb-0" role="navigation">
 {% endblock bgColor %}
 
+{% block dropDown %}
+<a href="{% url 'workflow:book_a_pod' %}" onclick=""
+    class="list-group-item list-group-item-action nav-bg">
+    Book a Pod
+</a>
+{% endblock %}
+
+{% block accountDropDown %}
+<a href="{% url 'account:my-bookings' %}"
+
+    class="list-group-item list-group-item-action nav-bg">
+    My Bookings
+</a>
+
+{% endblock accountDropDown %}
+
 {% block logo %}
 <div class="barClamp col-12 col-sm order-1 order-sm-2 text-center text-lg-left">
     <a href="https://www.lfedge.org/" class="navbar-brand">

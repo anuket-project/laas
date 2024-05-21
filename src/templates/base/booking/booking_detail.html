@@ -19,9 +19,8 @@ code {
         <div class="card mb-3">
             <div class="card-header d-flex align-items-center">
                 <h4>Overview</h4>
-                <!-- <button data-toggle="collapse" data-target="#panel_overview" class="btn btn-outline-secondary ml-auto">Expand</button> -->
             </div>
-            <div class="collapse show" id="panel_overview">
+            <div id="panel_overview">
                 <table class="table m-0">
                     <tr>
                         <td>Owner</td>
@@ -52,19 +51,6 @@ code {
                     <tr>
                         <td>Lab Deployed At</td>
                         <td>{{ booking.lab }}</td>
-                    </tr>
-                    <tr>
-                      <td span="2">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#ipmiModal">Show IPMI Instructions</button>
-                      </td>
-                    </tr>
-                    <tr>
-                        <td>IPMI Username</td>
-                        <td><code id="ipmi-username">{{ status.config.ipmi_username }}</code></td>
-                    </tr>
-                    <tr>
-                        <td>IPMI Password</td>
-                        <td><code id="ipmi-password">{{ status.config.ipmi_password }}</code></td>
                     </tr>
                     <tr>
                         <td>Aggregate ID</td>
@@ -115,7 +101,7 @@ code {
       </div>
     </div>
     <div class="col">
-        <div class="card mb-3">
+        <div class="card mb-3 requires-ready" hidden="true">
           <div class="card-header d-flex align-items-center">
             <h4>Connect to Your Hosts</h4>
           </div>
@@ -151,10 +137,11 @@ code {
           </button>
         </div>
         <div class="card mb-3">
-            <div class="card-header d-flex">
-                <h4>Deployment Progress</h4>
+            <div class="card-header">
+                <h4>Deployment</h4>
+                <h5 id="progress-header">In Progress - IPMI and connection information will be shown when the booking is ready</h5>
             </div>
-            <div class="collapse show" id="panel_tasks">
+            <div id="panel_tasks">
                 <table class="table m-0">
                     <tr>
                         <th></th>
@@ -207,7 +194,7 @@ code {
                             <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showLogsModal('{{inst.instance}}')">Show Logs</button>
                           </td>
                           <td>
-                            <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showIPModal('{{inst.assigned_host}}')">Show IP</button>
+                            <button class="btn-secondary btn-sm btn ml-3 text-nowrap requires-ready" data-toggle="modal" onclick="showIPModal('{{inst.assigned_host}}')" hidden="true">Show IP</button>
                           </td>
                     </tr>
                     {% endfor %}
@@ -215,11 +202,11 @@ code {
                 </table>
             </div>
         </div>
-        <div class="card mb-3" hidden="true" id="ipmitool-card">
+        <div class="card mb-3 requires-ready" hidden="true" id="ipmitool-card">
             <div class="card-header d-flex">
                 <h4 class="d-inline">IPMI Tools</h4>
             </div>
-            <div class="collapse show" id="panel_ipmi">
+            <div class="" id="panel_ipmi">
                 <table class="table m-0">
                     <tr>
                         <th>Power</th>
@@ -265,6 +252,7 @@ code {
                     {% endwith %}
                 </table>
             </div>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#ipmiModal">Show IPMI Instructions</button>
         </div>
         
     </div>
@@ -444,6 +432,21 @@ code {
           </div>
         </div>
 
+        <div class="card mb-3">
+          <div class="card-body">
+            <table class="table m-0">
+              <tr>
+                  <td class="border-top-0">IPMI Username</td>
+                  <td class="border-top-0"><code id="ipmi-username">{{ status.config.ipmi_username }}</code></td>
+              </tr>
+              <tr>
+                  <td>IPMI Password</td>
+                  <td><code id="ipmi-password">{{ status.config.ipmi_password }}</code></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
         {% if ipmi_fqdns.items|length != 0 %}
         <div class="card mb-3">
           <div class="card-body">
@@ -480,6 +483,12 @@ code {
 
 <script>
 
+    const agg_id = "{{booking.aggregateId}}"
+    const host_count = "{{templatehosts|length}}"
+    
+    // if status for a host is success or fail (not spinning), add it to map with true or false.
+    const progress_map = new Map();
+
     // Store latest fetch of logs for use in modal
     const logs_cache = new Map(); // map instance id to logs
 
@@ -499,7 +508,7 @@ code {
     });
     }
 
-    async function fetchBookingStatus(agg_id, progress_map) {
+    async function fetchBookingStatus() {
         data = {"agg_id": agg_id}
         $.ajax({
             url: '',
@@ -512,7 +521,7 @@ code {
             dataType: 'text',
         })
         .done(function(response) {
-            updateStatuses(JSON.parse(response), agg_id, progress_map)
+            updateStatuses(JSON.parse(response))
         })
     }
 
@@ -532,7 +541,7 @@ code {
         return JSON.parse(response);
     }
 
-    async function updateStatuses(status, aggId, progress_map) {
+    async function updateStatuses(status) {
         const instances = status.instances;
         if (!instances) return;
 
@@ -552,11 +561,6 @@ code {
 
             logs_cache.set(instance.instance, instance.logs);
 
-            if (progress_map.size == instance_iter.length) {
-            document.getElementById("ipmitool-card").removeAttribute("hidden");
-            fetchIpmiStatus(aggId);
-            }
-
             // icon
             document.getElementById("icon-" + aggId).className = icon_class;
             // host alias
@@ -565,6 +569,10 @@ code {
             document.getElementById("host-" + aggId).innerText = instance.assigned_host;
             // status
             document.getElementById("status-" + aggId).innerText = status.status;
+
+            if (bookingIsReady()) {
+              showAllHidden();
+            }
         })
 
         // IPMI
@@ -572,9 +580,26 @@ code {
         document.getElementById("ipmi-password").innerText = status.config.ipmi_password;
     }
 
+    function showAllHidden() {
+      let requires_ready = document.getElementsByClassName("requires-ready");
+      for (const e of requires_ready) {
+        e.removeAttribute("hidden");
+      }
+
+      let progress_header = document.getElementById("progress-header");
+      progress_header.innerText = "Your booking is ready"
+    }
+
     async function showIPModal(assigned_host) {
-      const ip_address = await fetchHostIP(assigned_host);
-      document.getElementById("p-hostname-output").innerText = ip_address;
+
+      let p_element = document.getElementById("p-hostname-output");
+      let text = "The booking is not ready yet. Please wait until all hosts have finished provisioning.";
+      if (bookingIsReady()) {
+        text = await fetchHostIP(assigned_host);
+      }
+
+      p_element.innerText = text;
+
       $("#resolveHostModal").modal('show');
     }
 
@@ -657,17 +682,18 @@ code {
         document.getElementById("power-icon-" + hostid).className = ipmi_icon_class;
     }
 
-    // Main loop
-    let agg_id = "{{booking.aggregateId}}"
+    function bookingIsReady() {
+        return progress_map.size == host_count
+    }
 
-    // keep a map of instance ids
-    // if status is success or fail (not spinning), add it to map with true or false.
-    // if map.key count == instance count, show ip modal and enable checking
-    let progress_map = new Map();
-    fetchBookingStatus(agg_id, progress_map);
-    setInterval(function () {
-        fetchBookingStatus(agg_id, progress_map);
+    function main() {
+      fetchBookingStatus();
+      setInterval(function () {
+        fetchBookingStatus();
     }, 5000);
+    }
+
+    main()
 </script>
 
 {% endblock content %}
