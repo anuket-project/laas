@@ -4,3 +4,9 @@
     <p>The Shared Community Lab at the IOL aims to help development and testing of LF Edge projects by hosting hardware and providing access to the community.</p>
     <p>To get started, you can request access to a pod at the right.</p>
 {% endblock about_us %}
+
+{% block btnGrp %}
+<a class="btn btn-primary btn-lg d-flex flex-column justify-content-center align-content-center border p-4 btnAnuket" href="{% url 'workflow:book_a_pod' %}" >
+    Book a Pod
+</a>
+{% endblock %}
