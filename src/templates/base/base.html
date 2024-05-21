@@ -104,16 +104,17 @@
                                 Create <i class="fas fa-angle-down rotate"></i>
                             </a>
                             <div class="collapse" id="createList">
+                                <a href="{% url 'workflow:design_a_pod' %}" onclick=""
+                                class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                Design a Pod
+                                </a>
                                 <a href="{% url 'workflow:book_a_pod' %}" onclick=""
                                     class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
                                     Book a Pod
                                 </a>
-                                <a href="{% url 'workflow:design_a_pod' %}" onclick=""
-                                    class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    Design a Pod
-                                </a>
                             </div>
                             {% endblock dropDown %}
+                            {% block accountDropDown %}
                             <a class="list-group-item list-group-item-action nav-bg" data-toggle="collapse"
                                 href="#accountList" role="button">
                                 Account <i class="fas fa-angle-down rotate"></i>
@@ -128,6 +129,7 @@
                                     My Bookings
                                 </a>
                             </div>
+                            {% endblock accountDropDown %}
                             <a class="list-group-item list-group-item-action nav-bg" data-toggle="collapse"
                                 href="#labInfo" role="button">
                                 Lab Info <i class="fas fa-angle-down rotate"></i>
