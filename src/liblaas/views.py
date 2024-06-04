@@ -31,12 +31,12 @@ def liblaas_docs():
 ### BOOKING
 
 # DELETE
-def booking_end_booking(agg_id: str) -> bool:
+def booking_end_booking(agg_id: str) -> dict:
     endpoint = f'booking/{agg_id}/end'
     url = f'{base}{endpoint}'
     try:
         response = requests.delete(url)
-        return True # liblaas actually doesn't return an HTTP response here for some reason
+        return response.json()
     except Exception as e:
         print(f"Error at {url}")
         print(e)
