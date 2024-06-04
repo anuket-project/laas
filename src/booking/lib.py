@@ -10,6 +10,9 @@
 from account.models import UserProfile
 import os
 
+from booking.models import Booking
+from liblaas.views import booking_end_booking
+
 def get_user_field_opts():
     return {
         'show_from_noentry': False,
@@ -49,3 +52,41 @@ def resolve_hostname(server_address) -> str:
         return data.strip()
     
     return f"Unable to resolve IP for {server_address}"
+
+def attempt_end_booking(booking: Booking) -> tuple[bool, str]:
+    """
+    Attempts to end the given booking.
+    If there is an aggregate id associated with the booking, it will make a request to LibLaaS to end the booking.
+    If the request fails or returns an error, the booking will not be marked as complete. Otherwise, it is marked as complete.
+    If there is no aggregate id associated with the booking, it is marked as complete.
+    Returns True if successfully ended. Otherwise, False.
+    """
+
+    if booking is None:
+        print("Attempted to end Booking but booking was None!")
+        return (False, "Booking not found.")
+
+    if booking.complete:
+        print("Attempted to end booking with booking id " + str(booking.id) + ", but was already complete!")
+        return (False, "Booking already complete.")
+
+    if not booking.aggregateId:
+        print("expiring booking " + str(booking.id) + " has no agg id: ending without hitting LibLaaS")
+        booking.complete = True
+        booking.save()
+    else:
+        message = "Unable to end booking"
+        print("ending booking " + str(booking.id) + " with agg id: ", booking.aggregateId)
+        result: dict = booking_end_booking(booking.aggregateId)
+        if result is None:
+            print("failed to end booking - no response from LibLaaS!")
+        elif result["success"] is True:
+            print("ended booking successfully")
+            booking.complete = True
+            booking.save()
+            message = "Success"
+        else:
+            print("Failed to end booking with reason " + result["details"])
+            message = result["details"]
+
+    return (booking.complete, message)

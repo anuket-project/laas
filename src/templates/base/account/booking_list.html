@@ -111,8 +111,9 @@
         .done(function() {
             location.reload()
         })
-        .fail(function() {
-            alert("Unable to cancel booking.")
+        .fail(function(response, textStatus, errorThrown) {
+            console.log(response, textStatus, errorThrown)
+            alert("Unable to cancel booking - " + JSON.parse(response.responseText).details)
         })
     }
 </script>

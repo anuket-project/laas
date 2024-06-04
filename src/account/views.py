@@ -17,10 +17,11 @@ from django.contrib.auth import logout
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.generic import RedirectView
 from django.shortcuts import render
+from booking.lib import attempt_end_booking
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 from laas_dashboard.settings import PROJECT
 
@@ -227,16 +228,12 @@ def account_cancel_booking(request):
     if not (booking.owner == request.user):
         return HttpResponse(401)
 
-    # LibLaaS
-    response = booking_end_booking(booking.aggregateId)
-
-    # Dashboard
-    booking.end = timezone.now()
-    booking.save()
-
-    if (response):
+    result: tuple[bool, str] = attempt_end_booking(booking)
+    if result[0]:
+        booking.end = timezone.now()
+        booking.save()
         return HttpResponse(status=200)
-
-    return HttpResponse(status=500)
+    else:
+        return JsonResponse({"details": result[1]}, status=500)
 
 
