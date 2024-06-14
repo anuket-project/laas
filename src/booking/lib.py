@@ -26,7 +26,7 @@ def get_user_field_opts():
 
 
 def get_user_items(exclude=None):
-    qs = UserProfile.objects.filter(public_user=True).select_related('user').exclude(user=exclude)
+    qs = UserProfile.objects.filter(public_user=True).filter(ipa_username__startswith='').select_related('user').exclude(user=exclude)
     items = {}
     for up in qs:
         item = {

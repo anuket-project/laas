@@ -3,10 +3,10 @@
 {% load bootstrap4 %}
 
 {% block extrahead %}
-    {{block.super}}
     <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
-{% endblock %}
+    <script src="{% static "/js/forms.js" %}"></script>
 
+{% endblock %}
 <style>
 code {
     overflow: scroll;
@@ -27,9 +27,13 @@ code {
                         <td>{{ booking.owner }}</td>
                     </tr>
                     <tr>
-                        <td>Collaborators</td>
+                        <td>Collaborators
+                        </td>
                         <td>
-                            {{ collab_string}}
+                            <span id="collab_string">{{ collab_string }}</span>
+                          {% if booking.owner == user %}
+                            <button class="btn btn-success btn-sm requires-ready" onclick="showAddCollabModal()" disabled="true" title="Inviting additional collaborators is possible after the booking is ready.">+</button>
+                          {% endif%}
                         </td>
                     </tr>
                     <tr>
@@ -480,6 +484,44 @@ code {
   </div>
 </div>
 
+{% if booking.owner == user %}
+<div class="modal fade" id="addCollabModal" tabindex="-1" role="dialog" aria-labelledby="addCollabModal" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Collaborators</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert-info" role="alert">
+          Invite additional users to collaborate on this booking.
+          New collaborators will be given VPN access and permission to view this page.
+        </div>
+        <div class="alert alert-warning" role="alert">
+          Please note:
+          <ol>
+            <li>
+              Only users that have marked their profile as "public" will appear in this list.
+            </li>
+            <li>
+              SSH keys and users for the invited collaborators will <strong>NOT</strong> be added to the booked resources.
+            </li>
+            <li>Collaborators cannot be removed without contacting support.</li>
+          </ol>
+        </div>
+        <div>
+          {% bootstrap_field form.users label="Collaborators" %}
+        </div>
+
+        <button class="btn btn-success float-right" onclick="submitAddCollabs()">Submit</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 
 <script>
 
@@ -584,6 +626,7 @@ code {
       let requires_ready = document.getElementsByClassName("requires-ready");
       for (const e of requires_ready) {
         e.removeAttribute("hidden");
+        e.removeAttribute("disabled");
       }
 
       let progress_header = document.getElementById("progress-header");
@@ -601,6 +644,35 @@ code {
       p_element.innerText = text;
 
       $("#resolveHostModal").modal('show');
+    }
+
+    function showAddCollabModal() {
+      $("#addCollabModal").modal('show');
+    }
+
+    async function submitAddCollabs() {
+      let collab_ids = collectCollabs();
+        $.ajax({
+            url: '../../collaborators/{{booking.id}}/',
+            type: 'post',
+            data: collab_ids,
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+        })
+        .done(function(response) {
+            let collabs = JSON.parse(response);
+            document.getElementById("collab_string").innerText = collabs.collaborators;
+        })
+        .fail(function(response, textStatus, errorThrown) {
+            console.log(response, textStatus, errorThrown)
+            alert("Unable to add collaborators at this time. If this issue persists, please contact support.")
+        })
+
+        $("#addCollabModal").modal('hide');
+
     }
 
     async function showLogsModal(instance_id) {
@@ -684,6 +756,14 @@ code {
 
     function bookingIsReady() {
         return progress_map.size == host_count
+    }
+
+    function collectCollabs() {
+      // Widget value is initialized to '' but is set to '[]' after adding and removing
+  
+      let value = document.getElementById('selector').value;
+      if (value === '') value = '[]';
+      return value;
     }
 
     function main() {

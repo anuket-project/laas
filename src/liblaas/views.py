@@ -231,6 +231,28 @@ def user_set_email(uid: str, email: str) -> bool:
         print(f"Error at {url}")
         print(e)
         return None
+    
+def user_add_users(agg_id: str, users: list[str]) -> list[str]:
+    """
+    Adds collaborators to the user list for an aggregate and grants VPN access
+    Returns list of all aggregate collabs if successful.
+    Returns None if failed.
+    """
+
+    endpoint = f'user/{agg_id}/addusers'
+    url = f'{base}{endpoint}'
+    try:
+        response = requests.post(url, data=json.dumps({'users': users}), headers=post_headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(response.json())
+            return None
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return None
+
 
 # utils
 def clean_ssh_keys(ssh_key_list: list[str]) -> list[str]:

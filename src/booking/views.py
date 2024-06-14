@@ -15,10 +15,11 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.generic import TemplateView
 from django.shortcuts import redirect, render
+from workflow.forms import BookingMetaForm
 
 from account.models import Downtime, Lab, UserProfile
 from booking.models import Booking
-from liblaas.views import booking_booking_status, user_get_user, flavor_list_flavors
+from liblaas.views import booking_booking_status, flavor_list_flavors, user_add_users
 from django.http import HttpResponse, JsonResponse
 
 from liblaas.views import booking_ipmi_fqdn
@@ -127,7 +128,8 @@ def booking_detail_view(request, booking_id):
             "contact_email": Lab.objects.filter(name="UNH_IOL").first().contact_email,
             "templatehosts": hosts,
             "ipmi_fqdns": host_ipmi_fqdns,
-            "host_domain": HOST_DOMAIN
+            "host_domain": HOST_DOMAIN,
+            "form": BookingMetaForm(initial={}, user_initial=[], owner=request.user),
         }
 
         return render(request, "booking/booking_detail.html", context)
@@ -165,3 +167,32 @@ def get_host_ip(request):
         return JsonResponse(status=200, data=response, safe=False)
 
     return HttpResponse(status=500)
+
+def manage_collaborators(request, booking_id) -> HttpResponse:
+
+    booking: Booking = Booking.objects.get(id=booking_id)
+
+    if request.user != booking.owner:
+        return HttpResponse(status=401)
+
+    if request.method == "GET":
+        return JsonResponse({"collaborators": ", ".join(map(str, booking.collaborators.all()))}, status=200)
+
+    if request.method == "POST":
+        data: list[int] = json.loads(request.body.decode('utf-8'))
+        profiles: list[UserProfile] = list(UserProfile.objects.filter(id__in=data))
+        ipa_usernames: list[str] = list(map(lambda profile: profile.ipa_username, profiles))
+
+        liblaas_collabs = user_add_users(booking.aggregateId, ipa_usernames)
+
+        if liblaas_collabs:
+            for profile in profiles:
+                booking.collaborators.add(profile.user)
+            booking.save()
+        return JsonResponse({"collaborators": ", ".join(map(str, booking.collaborators.all()))}, status=200)
+
+    if request.method == "DELETE":
+        # Remove collabs - unimplemented
+        return HttpResponse(status=501)
+
+    return HttpResponse(status=405)
