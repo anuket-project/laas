@@ -588,8 +588,8 @@ code {
         if (!instances) return;
 
         let instance_iter = Object.keys(instances);
-        instance_iter.forEach((aggId) => {
-            const instance = instances[aggId]
+        instance_iter.forEach((instanceId) => {
+            const instance = instances[instanceId]
             const status = instance.logs.pop()
 
             let icon_class = "spinner-border text-primary square-20"
@@ -604,15 +604,16 @@ code {
             logs_cache.set(instance.instance, instance.logs);
 
             // icon
-            document.getElementById("icon-" + aggId).className = icon_class;
+            document.getElementById("icon-" + instanceId).className = icon_class;
             // host alias
-            document.getElementById("alias-" + aggId).innerText = instance.host_alias;
+            document.getElementById("alias-" + instanceId).innerText = instance.host_alias;
             // assigned host
-            document.getElementById("host-" + aggId).innerText = instance.assigned_host;
+            document.getElementById("host-" + instanceId).innerText = instance.assigned_host;
             // status
-            document.getElementById("status-" + aggId).innerText = status.status;
+            document.getElementById("status-" + instanceId).innerText = status.status;
 
             if (bookingIsReady()) {
+              fetchIpmiStatus(instanceId)
               showAllHidden();
             }
         })
