@@ -10,6 +10,8 @@
 # Unauthenticated requests to liblaas. If a call makes it to here, it is assumed to be authenticated
 # Responses that return json will return the unwrapped json data, otherwise it will return whether the request was successful or not
 
+from datetime import datetime
+from email.utils import format_datetime
 import requests
 import json
 from laas_dashboard.settings import LIBLAAS_BASE_URL
@@ -101,6 +103,19 @@ def booking_ipmi_fqdn(host_id: str) -> str:
         print(f"Error at {url}")
         print(e)
         return None
+
+# POST
+def booking_notify_aggregate_expiring(agg_id: str, end_date: datetime) -> bool:
+    endpoint = f'booking/{agg_id}/notify/expiring'
+    url = f'{base}{endpoint}'
+    try:
+        response = requests.post(url, data=json.dumps(format_datetime(end_date)), headers=post_headers)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return False
+
 
 ### FLAVOR
 

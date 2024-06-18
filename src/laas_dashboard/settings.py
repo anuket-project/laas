@@ -229,10 +229,13 @@ RABBITMQ_DEFAULT_PASS = os.environ['RABBITMQ_DEFAULT_PASS']
 CELERY_BROKER_URL = 'amqp://' + RABBITMQ_DEFAULT_USER + ':' + RABBITMQ_DEFAULT_PASS + '@rabbitmq:5672//'
 
 CELERY_BEAT_SCHEDULE = {
-    # Keeping commented as an example for the future
     'booking_poll': {
         'task': 'dashboard.tasks.end_expired_bookings',
         'schedule': timedelta(minutes=1)
+    },
+    'notification_poll': {
+        'task': 'dashboard.tasks.send_notifications',
+        'schedule': timedelta(minutes=2)
     }
 }
 
