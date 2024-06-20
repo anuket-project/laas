@@ -20,13 +20,36 @@ from workflow.forms import BookingMetaForm
 from account.models import Downtime, Lab, UserProfile
 from booking.models import Booking
 from liblaas.views import booking_booking_status, flavor_list_flavors, user_add_users
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpRequest
+from django.contrib.auth.models import User
 
 from liblaas.views import booking_ipmi_fqdn
 
 from laas_dashboard.settings import HOST_DOMAIN, PROJECT
 from booking.lib import resolve_hostname
+from datetime import timedelta
 
+
+def owner_action(action):
+    """
+    Decorator to verify that the request user is the booking owner and that the booking is not complete.
+    Passes the entire booking object to the decorated function.
+    Each function that is decorated by 'owner_action' needs to take an HttpRequest and a Booking id as arguments
+    The decorator function will pass the queried Booking object (obtained from the id) to the action function, so there is no need to make a second query.
+    """
+    def decorator_function(request: HttpRequest, booking_id: int, **kwargs) -> HttpResponse:
+
+        booking: Booking = Booking.objects.get(id=booking_id)
+        user: User = request.user
+
+        if booking.owner != user:
+            return JsonResponse(status=403, data={"message": "Only the booking owner may perform this action!"})
+        
+        if booking.complete:
+            return JsonResponse(status=403, data={"message": "This action can only be performed on an active booking!"})
+
+        return action(request, booking_id, booking=booking)
+    return decorator_function
 class BookingView(TemplateView):
     template_name = "booking/booking_detail.html"
 
@@ -194,5 +217,45 @@ def manage_collaborators(request, booking_id) -> HttpResponse:
     if request.method == "DELETE":
         # Remove collabs - unimplemented
         return HttpResponse(status=501)
+
+    return HttpResponse(status=405)
+
+@owner_action
+def extend_booking(request: HttpRequest, booking_id: int, **kwargs) -> HttpResponse:
+    # booking kwarg is set in the decorator call, retreived from booking_id
+    booking: Booking = kwargs["booking"]
+
+    if request.method == "POST":
+        days: int = json.loads(request.body.decode('utf-8'))["days"]
+        if days > 0 and days <= booking.ext_days:
+            booking.ext_days -= days
+            booking.end += timedelta(days)
+            booking.save()
+        else:
+            return HttpResponse(status=400)
+
+        extensions_remaining = booking.ext_days
+
+        # Jinja automically formats the datetime when the page is loaded for the first time. We aren't re-rendering the page so we need to do it manually
+        # It is not a 100% match but it's close
+        updated_end_time = booking.end.strftime("%B %-d, %Y, %-I:%M ") + ("a.m." if booking.end.strftime("%P") == "am" else "p.m.")
+        return JsonResponse(status=200, data={"extensions_remaining": extensions_remaining, "updated_end_time": updated_end_time})
+
+    return HttpResponse(status=405)
+
+@owner_action
+def request_extend_booking(request: HttpRequest, booking_id: int, **kwargs) -> HttpResponse:
+    # unimplemented
+    return HttpResponse(501)
+    booking: Booking = kwargs["booking"]
+
+    if request.method == "POST":
+        post_data: dict = json.loads(request.body.decode('utf-8'))
+        date: str = post_data["date"]
+        reason: str = post_data["reason"]
+    
+        # todo - hit liblaas
+
+        return HttpResponse(200)
 
     return HttpResponse(status=405)

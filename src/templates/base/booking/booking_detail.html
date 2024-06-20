@@ -25,40 +25,55 @@ code {
                     <tr>
                         <td>Owner</td>
                         <td>{{ booking.owner }}</td>
+                        <td><!-- Owner Action Buttons --></td>
                     </tr>
                     <tr>
                         <td>Collaborators
                         </td>
                         <td>
                             <span id="collab_string">{{ collab_string }}</span>
+                        </td>
+                        <td>
                           {% if booking.owner == user %}
-                            <button class="btn btn-success btn-sm requires-ready" onclick="showAddCollabModal()" disabled="true" title="Inviting additional collaborators is possible after the booking is ready.">+</button>
-                          {% endif%}
+                          <button class="btn btn-success btn-sm requires-ready" onclick="showAddCollabModal()" disabled="true" title="Inviting additional collaborators is possible after the booking is ready.">Add Collaborators</button>
+                        {% endif%}
                         </td>
                     </tr>
                     <tr>
                         <td>Project</td>
                         <td>{{ booking.project }}</td>
+                        <td></td>
                     </tr>
                     <tr>
                         <td>Purpose</td>
                         <td>{{ booking.purpose }}</td>
+                        <td></td>
                     </tr>
                     <tr>
                         <td>Start Time</td>
                         <td>{{ booking.start }}</td>
+                        <td></td>
                     </tr>
                     <tr>
                         <td>End Time</td>
-                        <td>{{ booking.end }}</td>
+                        <td id="end_time_text">{{ booking.end }}</td>
+
+                        <td>
+                          {% if booking.owner == user %}
+                          <button class="btn btn-primary btn-sm requires-ready" onclick="showExtendModal()" title="Inviting additional collaborators is possible after the booking is ready.">Extend Booking</button>
+                          {% endif%}
+                        </td>
+
                     </tr>
                     <tr>
                         <td>Lab Deployed At</td>
                         <td>{{ booking.lab }}</td>
+                        <td></td>
                     </tr>
                     <tr>
                         <td>Aggregate ID</td>
                         <td>{{booking.aggregateId}}</td>
+                        <td></td>
                     </tr>
                 </table>
             </div>
@@ -520,6 +535,70 @@ code {
     </div>
   </div>
 </div>
+</div>
+
+<div class="modal fade" id="extendModal" tabindex="-1" role="dialog" aria-labelledby="extendModal" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Extend Booking</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert alert-info" role="alert">
+          You have <span id="span_days">{{booking.ext_days}}</span> extension days remaining. Additional extensions beyond this limit will require approval from the LaaS team.
+        </div>
+        <div class="d-flex justify-content-center">
+          <input id="days_slider_input" type="range" min="1" max="{{booking.ext_days}}" value="1" class="form-control form-control-lg col-xl-5 col-9 p-0" placeholder="Length" oninput="onDaysSliderChange()">
+        </div>
+        <div class="text-center">
+          <span class="col-md-1 col-2 p-0">Days to Extend: <span id="days_number">1</span></span>
+        </div>
+        <div class="text-center">
+          <span id="extend_error_text" class="text-danger"></span>
+        </div>
+        <button class="btn btn-success float-right" onclick="submitExtendBooking()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Extension Form -->
+<div class="modal fade" id="extendForm" tabindex="-1" role="dialog" aria-labelledby="extendForm" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Request Booking Extension</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body" id="request-form-modal-body">
+        <!--Temporary until LibLaaS endpoint for alerting admins with the extension request is ready -->
+        <div class="alert alert-info" role="alert">
+          Additional extensions for this booking will require administrator approval. Please <a href="mailto:nfv-lab@iol.unh.edu">contact us here</a> with the details of your extension request.
+        </div>
+        <!-- <div class="alert alert-info" role="alert">
+          Additional extensions for this booking will require administrator approval. Please enter the details for your extension request, so administrators may review it.
+        </div> -->
+        <!-- <form class="form-group">
+          <label for="extend-request-date-input">Requested End Date</label>
+          <input class="form-control" type="date" id="extend-request-date-input"/>
+          <br>
+          <label for="extend-request-text-input">Reason for Extension</label>
+          <textarea class="form-control" id="extend-request-text-input"></textarea>
+        </form>
+        <p class="text-danger" id="extend-form-error"></p>
+        <button class="btn btn-success float-right" onclick="submitExtendForm()">Submit</button> -->
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endif %}
 
 
@@ -527,12 +606,12 @@ code {
 
     const agg_id = "{{booking.aggregateId}}"
     const host_count = "{{templatehosts|length}}"
-    
     // if status for a host is success or fail (not spinning), add it to map with true or false.
     const progress_map = new Map();
 
     // Store latest fetch of logs for use in modal
     const logs_cache = new Map(); // map instance id to logs
+    const ext_days_remaining = [Number("{{booking.ext_days}}")]
 
     function updateSSHCommand(selectedHost) {
       const sshHost = selectedHost + '.{{ host_domain }}';
@@ -651,6 +730,19 @@ code {
       $("#addCollabModal").modal('show');
     }
 
+    function showExtendModal() {
+      if (ext_days_remaining > 0) {
+        $("#extendModal").modal('show');
+      } else {
+        $("#extendForm").modal('show');
+      }
+    }
+
+    function onDaysSliderChange() {
+      let value = document.getElementById("days_slider_input").value;
+      document.getElementById("days_number").innerText = value;
+    }
+
     async function submitAddCollabs() {
       let collab_ids = collectCollabs();
         $.ajax({
@@ -674,6 +766,77 @@ code {
 
         $("#addCollabModal").modal('hide');
 
+    }
+
+    async function submitExtendBooking() {
+      const slider = document.getElementById("days_slider_input");
+      const end_time_text = document.getElementById("end_time_text");
+      const span_days = document.getElementById("span_days");
+      const error_text = document.getElementById("extend_error_text");
+      const days_number = document.getElementById("days_number");
+      $.ajax({
+            url: '../../extend/{{booking.id}}/',
+            type: 'post',
+            data: JSON.stringify({
+              "days": Number(slider.value)
+            }),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+        })
+        .done(function(response) {
+          $("#extendModal").modal('hide');
+          let response_data = JSON.parse(response)
+          // update end time on page
+          end_time_text.innerText = response_data.updated_end_time;
+          // update extension days remaining on page
+          ext_days_remaining[0] = response_data.extensions_remaining;
+          slider.setAttribute("max", ext_days_remaining[0]);
+          span_days.innerText = ext_days_remaining[0];
+          days_number.innerText = 1;
+          // reset slider values
+          slider.value = 1;
+        })
+        .fail(function(response, textStatus, errorThrown) {
+          error_text.innerText = "There was an error. Please try again later."
+        })
+    }
+
+    async function submitExtendForm() {
+      const modal_body = document.getElementById("request-form-modal-body");
+      const date_input = document.getElementById("extend-request-date-input");
+      const reason_input = document.getElementById("extend-request-text-input");
+      const error_text = document.getElementById("extend-form-error");
+      if (!date_input.value || !reason_input.value) {
+        error_text.innerText = "Please fill out all fields."
+        return;
+      }
+
+        $.ajax({
+            url: '../../request-extend/{{booking.id}}/',
+            type: 'post',
+            data: JSON.stringify({
+              "date": date_input.value,
+              "reason": reason_input.value
+            }),
+            headers: {
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+                'Content-Type': 'application/json'
+            },
+            dataType: 'text',
+        })
+        .done(function(response) {
+          modal_body.innerHTML = "";
+          const success_text = document.createElement("div");
+          success_text.classList.add("alert-success", "alert");
+          success_text.innerText = "Your extension request was received. You will receive an email shortly with the result of your request.";
+          modal_body.appendChild(success_text);
+        })
+        .fail(function(response, textStatus, errorThrown) {
+          error_text.innerText = "There was an error. Please try again later."
+        })
     }
 
     async function showLogsModal(instance_id) {

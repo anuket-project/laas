@@ -32,8 +32,8 @@ class Booking(models.Model):
     end = models.DateTimeField()
     reset = models.BooleanField(default=False)
     purpose = models.CharField(max_length=300, blank=False)
-    # bookings can be extended a limited number of times
-    ext_count = models.IntegerField(default=2)
+    # bookings can be extended without admin approval up to the limit
+    ext_days = models.IntegerField(default=42)
     # the hardware that the user has booked
     project = models.CharField(max_length=100, default="", blank=True, null=True)
     lab = models.ForeignKey(Lab, null=True, on_delete=models.SET_NULL)

@@ -116,6 +116,9 @@ def booking_notify_aggregate_expiring(agg_id: str, end_date: datetime) -> bool:
         print(e)
         return False
 
+# todo - implement in liblaas
+def booking_request_extension():
+    pass
 
 ### FLAVOR
 

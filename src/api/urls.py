@@ -35,7 +35,6 @@ from api.views import (
     lab_users,
     lab_user,
     GenerateTokenView,
-    extend_booking,
     list_labs,
     all_users,
 )
@@ -46,9 +45,6 @@ urlpatterns = [
     path('labs/<slug:lab_name>/downtime', lab_downtime),
     path('labs/<slug:lab_name>/users', lab_users),
     path('labs/<slug:lab_name>/users/<int:user_id>', lab_user),
-
-    path('booking/<int:booking_id>/extendBooking/<int:days>', extend_booking),
-
     path('users', all_users),
     path('labs', list_labs),
 
