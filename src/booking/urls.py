@@ -32,7 +32,10 @@ from booking.views import (
     BookingDeleteView,
     bookingDelete,
     BookingListView,
-    get_host_ip
+    get_host_ip,
+    manage_collaborators,
+    extend_booking,
+    request_extend_booking
 )
 
 app_name = 'booking'
@@ -43,5 +46,9 @@ urlpatterns = [
     url(r'^delete/(?P<booking_id>[0-9]+)/$', BookingDeleteView.as_view(), name='delete'),
     url(r'^delete/(?P<booking_id>[0-9]+)/confirm/$', bookingDelete, name='delete_booking'),
     url(r'^list/$', BookingListView.as_view(), name='list'),
-    url(r'^resolve/$', get_host_ip, name='get_host_ip')
+    url(r'^resolve/$', get_host_ip, name='get_host_ip'),
+    url(r'^collaborators/(?P<booking_id>[0-9]+)/$', manage_collaborators, name='collaborators'),
+    url(r'^extend/(?P<booking_id>[0-9]+)/$', extend_booking, name='extend'),
+    url(r'^request-extend/(?P<booking_id>[0-9]+)/$', request_extend_booking, name='extend')
+
 ]

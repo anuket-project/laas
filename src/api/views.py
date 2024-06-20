@@ -160,35 +160,6 @@ def auth_and_log(request, endpoint):
 
 
 """
-Booking API Views
-"""
-
-
-@csrf_exempt
-def extend_booking(request, booking_id="", days=""):
-    token = auth_and_log(request, 'booking/{}/extendBooking/{}'.format(booking_id, days))
-
-    if isinstance(token, HttpResponse):
-        return token
-
-    booking = get_object_or_404(Booking, pk=booking_id, owner=token.user)
-
-    if booking.end < timezone.now():
-        return HttpResponse("This booking is already over, cannot extend")
-
-    if days > 30:
-        return HttpResponse("Cannot extend a booking longer than 30 days")
-
-    if booking.ext_count == 0:
-        return HttpResponse("Booking has already been extended 2 times, cannot extend again")
-
-    booking.end += timedelta(days=days)
-    booking.ext_count -= 1
-    booking.save()
-
-    return HttpResponse("Booking successfully extended")
-
-"""
 User API Views
 """
 
