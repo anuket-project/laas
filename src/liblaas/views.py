@@ -116,9 +116,21 @@ def booking_notify_aggregate_expiring(agg_id: str, end_date: datetime) -> bool:
         print(e)
         return False
 
-# todo - implement in liblaas
-def booking_request_extension():
-    pass
+# POST
+def booking_request_extension(agg_id: str, reason: str, date: str) -> bool:
+    endpoint = f'booking/{agg_id}/request-extension'
+    url = f'{base}{endpoint}'
+
+    try:
+        response = requests.post(url, data=json.dumps({
+            "reason": reason,
+            "date": date
+        }), headers=post_headers)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return False
 
 ### FLAVOR
 
@@ -192,10 +204,26 @@ def template_make_template(template_blob: dict) -> str:
 
 # GET
 def user_get_user(uid: str) -> dict:
+    """
+    uid: ipa username of user to fetch.
+    Returns User object as a dict or None if request failed
+    """
     endpoint = f'user/{uid}'
     url = f'{base}{endpoint}'
     try:
         response = requests.get(url)
+        return response.json()
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return None
+
+# POST
+def user_get_many_users(uids: list[str]) -> list[dict]:
+    endpoint = f'user/many'
+    url = f'{base}{endpoint}'
+    try:
+        response = requests.post(url, data=json.dumps(uids), headers=post_headers)
         return response.json()
     except Exception as e:
         print(f"Error at {url}")

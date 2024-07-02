@@ -11,7 +11,7 @@
 
 from account.models import UserProfile
 from liblaas.views import *
-from liblaas.utils import validate_collaborators
+from liblaas.utils import find_invalid_collaborators
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.models import User
 from booking.models import Booking
@@ -62,19 +62,18 @@ def request_create_booking(request) -> HttpResponse:
     
     data = data["booking_blob"]
 
-    # Validate and build collaborators list
-    valid = validate_collaborators(data["allowed_users"])
-    if (not valid["valid"]):
-        return JsonResponse(
-            data={"message": valid["message"], "error": True},
-            status=200,
-            safe=False
-        )
-    ipa_users = []
-    ipa_users.append(UserProfile.objects.get(user=request.user).ipa_username)
-    for user in data["allowed_users"]:
-        collab_profile = UserProfile.objects.get(user=User.objects.get(username=user))
-        ipa_users.append(collab_profile.ipa_username)
+    # Warnings are issues that won't affect the booking's ability to provision, but may lead to unexpected behavior for the user
+    warnings: list[str] = []
+
+    collab_profiles = [UserProfile.objects.get(user=User.objects.get(username=dashboard_username)) for dashboard_username in data["allowed_users"]]
+
+    invalid_collaborators: list[UserProfile] = find_invalid_collaborators(collab_profiles)
+
+    for ic in invalid_collaborators:
+        warnings.append(f"Unable to find SSH key for {str(ic)}. VPN access will be added, but no user will be created on the booked resource(s).")
+
+    # Assume there is an ipa username linked
+    ipa_users = [p.ipa_username for p in collab_profiles]
 
     # Reformat post data
     bookingBlob = {
@@ -124,7 +123,10 @@ def request_create_booking(request) -> HttpResponse:
     print(f"Created new booking with id {booking.id} and aggregate {aggregateId}")
 
     return JsonResponse(
-        data = {"bookingId": booking.id},
+        data = {
+            "bookingId": booking.id,
+            "warnings": warnings
+            },
         status=200,
         safe=False
     )
