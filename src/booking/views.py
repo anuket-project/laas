@@ -21,7 +21,7 @@ from account.models import Downtime, Lab, UserProfile
 from booking.models import Booking
 from liblaas.views import booking_booking_status, flavor_list_flavors, user_add_users, booking_request_extension
 from django.http import HttpResponse, JsonResponse, HttpRequest
-from django.contrib.auth.models import User, HttpRequest
+from django.contrib.auth.models import User
 
 from liblaas.views import booking_ipmi_fqdn
 
