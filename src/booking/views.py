@@ -19,9 +19,9 @@ from workflow.forms import BookingMetaForm
 
 from account.models import Downtime, Lab, UserProfile
 from booking.models import Booking
-from liblaas.views import booking_booking_status, flavor_list_flavors, user_add_users
+from liblaas.views import booking_booking_status, flavor_list_flavors, user_add_users, booking_request_extension
 from django.http import HttpResponse, JsonResponse, HttpRequest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, HttpRequest
 
 from liblaas.views import booking_ipmi_fqdn
 
@@ -245,17 +245,16 @@ def extend_booking(request: HttpRequest, booking_id: int, **kwargs) -> HttpRespo
 
 @owner_action
 def request_extend_booking(request: HttpRequest, booking_id: int, **kwargs) -> HttpResponse:
-    # unimplemented
-    return HttpResponse(501)
     booking: Booking = kwargs["booking"]
 
     if request.method == "POST":
         post_data: dict = json.loads(request.body.decode('utf-8'))
-        date: str = post_data["date"]
         reason: str = post_data["reason"]
-    
-        # todo - hit liblaas
+        date: str = post_data["date"]
 
-        return HttpResponse(200)
+        if booking_request_extension(booking.aggregateId, reason, date) == True:
+            return HttpResponse(status=200)
+        else:
+            return HttpResponse(status=500)
 
     return HttpResponse(status=405)
