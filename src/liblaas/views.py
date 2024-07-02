@@ -192,10 +192,26 @@ def template_make_template(template_blob: dict) -> str:
 
 # GET
 def user_get_user(uid: str) -> dict:
+    """
+    uid: ipa username of user to fetch.
+    Returns User object as a dict or None if request failed
+    """
     endpoint = f'user/{uid}'
     url = f'{base}{endpoint}'
     try:
         response = requests.get(url)
+        return response.json()
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return None
+
+# POST
+def user_get_many_users(uids: list[str]) -> list[dict]:
+    endpoint = f'user/many'
+    url = f'{base}{endpoint}'
+    try:
+        response = requests.post(url, data=json.dumps(uids), headers=post_headers)
         return response.json()
     except Exception as e:
         print(f"Error at {url}")

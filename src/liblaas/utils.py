@@ -9,32 +9,52 @@
 
 from django.contrib.auth.models import User
 from account.models import UserProfile
-from liblaas.views import user_get_user
+from liblaas.views import user_get_user, user_get_many_users
 
-def validate_collaborators(collab_list: list[str]) -> dict:
-    result = {"message": "n/a", "valid": False}
+def isValidCollaborator(profile: UserProfile) -> bool:
+    """
+    Fetches the related user from LibLaaS (and IPA subsequently) then returns whether the user has required fields.
+    Current required fields are ["ipasshpublickey"]
+    """
 
-    for user in collab_list:
-        collab_profile = UserProfile.objects.get(user=User.objects.get(username=user))
-        ipa_username = collab_profile.ipa_username
-        if ipa_username == None:
-            result["message"] = f"{str(collab_profile)} has not linked their IPA account yet. Please ask them to log into the LaaS dashboard, or remove them from the booking to continue."
-            return result
+    if not profile:
+        print("UserProfile was None!")
+        return False
 
-        ipa_account = user_get_user(ipa_username)
-        print(ipa_account)
+    ipa_username = profile.ipa_username
 
-        if not "ou" in ipa_account or ipa_account["ou"] == "":
-            result["message"] = f"{str(collab_profile)} has not set their company yet. Please ask them to log into the LaaS dashboard, go to the settings page and add it. Otherwise, remove them from the booking to continue."
-            return result
+    if not ipa_username:
+        print("No ipa username for", profile)
+        return False
+    
+    ipa_account = user_get_user(ipa_username)
 
-        if not "ipasshpubkey" in ipa_account:
-            result["message"] = f"{str(collab_profile)} has not added an SSH public key yet. Please ask them to log into the LaaS dashboard, go to the settings page and add it. Otherwise, remove them from the booking to continue."
-            return result
+    if not ipa_account:
+        print("Failed to retreieve user for", profile)
+        return False
 
-    result["valid"] = True
+    if not "ipasshpubkey" in ipa_account:
+        print("No SSH key for", profile)
+        return False
 
-    return result
+    print("Valid user", profile)
+    return True
+
+
+def find_invalid_collaborators(profiles: list[UserProfile]) -> list[UserProfile]:
+    """
+    Verifies that the linked IPA accounts of the given userprofiles are valid collaborators.
+    See isValidCollaborator() to see what determines if a collaborator is valid or now.
+
+    Assumes ipa_username is set for all provided collaborators
+    """
+    accounts: list[dict] = user_get_many_users([p.ipa_username for p in profiles])
+    failed = []
+    for a in accounts:
+        if not "ipasshpubkey" in a:
+            failed.append(a["uid"])
+
+    return failed
 
 # Returns whether the user has linked their ipa account. If not, determines how it needs to be linked.
 def get_ipa_status(dashboard_user: User) -> str:

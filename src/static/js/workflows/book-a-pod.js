@@ -10,6 +10,8 @@ const steps = {
     BOOKING_SUMMARY: 3
   }
 
+const BOOKING_OVERVIEW_PAGE = -2
+
   class BookingWorkflow extends Workflow {
     constructor(savedBookingBlob) {
         super(["select_template", "cloud_init", "booking_details" , "booking_summary"])
@@ -223,6 +225,14 @@ const steps = {
         return[passed, message, section];
     }
 
+    onclickConfirmError(alert_destination) {
+        if (alert_destination == BOOKING_OVERVIEW_PAGE) {
+            window.location.href = "../../booking/detail/" + this.bookingId + "/";
+        } else {
+            this.goTo(alert_destination);
+        }
+    }
+
     // onclickCancel() {
     //     if (confirm("Are you sure you wish to discard this booking?")) {
     //         location.reload();
@@ -249,8 +259,18 @@ const steps = {
         }
         const r = JSON.parse(response)
         if (r.bookingId) {
-            showError("The booking has been successfully created.", -1)
-            window.location.href = "../../booking/detail/" + r.bookingId + "/";
+            this.bookingId = r.bookingId;
+            let msg = "The booking has been successfully created.";
+            if (r.warnings.length > 0) {
+                msg += "\n\nWarnings:"
+            }
+
+            for (const w of r.warnings) {
+                msg += `\n${w}\n`
+            }
+
+            console.log(r.warnings);
+            showError(msg, BOOKING_OVERVIEW_PAGE);
             return;
         } else {
             if (r.error == true) {
