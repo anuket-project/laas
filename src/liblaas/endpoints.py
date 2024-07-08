@@ -75,6 +75,9 @@ def request_create_booking(request) -> HttpResponse:
     # Assume there is an ipa username linked
     ipa_users = [p.ipa_username for p in collab_profiles]
 
+    # Add the owner
+    ipa_users.append(UserProfile.objects.get(user=request.user).ipa_username)
+
     # Reformat post data
     bookingBlob = {
     "template_id": data["template_id"],
