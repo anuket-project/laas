@@ -23,4 +23,5 @@ urlpatterns = [
     url(r'^ipa/company/$', request_set_company, name='set_company'),
     url(r'^ipmi/set/(?P<host_id>[A-Za-z0-9_-]+)$', request_ipmi_setpower, name='ipmi_set'),
     url(r'^ipmi/get/(?P<host_id>[A-Za-z0-9_-]+)$', request_ipmi_getpower, name='ipmi_get'),
+    url(r'^reimage/(?P<host_id>[A-Za-z0-9_-]+)$', request_image_set, name='image_set'),
 ]
