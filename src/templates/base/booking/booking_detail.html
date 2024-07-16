@@ -262,6 +262,9 @@ code {
                                 <td class="border-top-0">
                                     <button id="powerreboot-{{id}}" class="btn-secondary btn-sm btn ml-3 text-nowrap" onclick="ipmiCommand('Restart', '{{id}}')">Reboot</button>
                                 </td>
+                                <td class="border-top-0">
+                                    <button type="button" class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showRedeployModal('{{id}}')">Redeploy Host</button>
+                                </td>
                             </tr>
                         </table>
                     </td>
@@ -598,6 +601,37 @@ code {
 
 {% endif %}
 
+{% for id, inst in status.instances.items %}
+<div class="modal fade" id="redeployModal-{{ id }}" tabindex="-1" role="dialog" aria-labelledby="redeployModal-{{ id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Redeploy Host {{ inst.assigned_host }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="text-danger" id="proctor-message-{{ id }}"></p>
+        <p class="text-success" id="success-message-{{ id }}"></p>
+        <p class="text-danger" id="failure-message-{{ id }}"></p>
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="image-selector-{{ id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Select Image
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            {% for im in inst.image_list %}
+            <a class="dropdown-item" onclick="selectImageForInstance('{{ id }}', '{{ im.image_id }}', '{{ im.name }}')">{{ im.name }}</a>
+            {% endfor %}
+          </div>
+        </div>
+          <button class="btn btn-success float-right" id="submit-button-{{ id }}" onclick="submitRedeploy('{{ id }}')">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
 
 <script>
 
@@ -609,6 +643,8 @@ code {
     // Store latest fetch of logs for use in modal
     const logs_cache = new Map(); // map instance id to logs
     const ext_days_remaining = [Number("{{booking.ext_days}}")]
+
+    const selected_image = new Map(); // Map assigning selected image to each instance based on dropdown
 
     function updateSSHCommand(selectedHost) {
       const sshHost = selectedHost + '.{{ host_domain }}';
@@ -672,6 +708,7 @@ code {
             if (status.status.includes('Success')) {
                 icon_class = "rounded-circle bg-success square-20"
                 progress_map.set(instance.instance, true)
+                document.getElementById("submit-button-" + instanceId).classList.remove("invisible");
             } else if (status.status.includes('Fail')) {
                 icon_class = "rounded-circle bg-danger square-20"
                 progress_map.set(instance.instance, false)
@@ -725,6 +762,10 @@ code {
 
     function showAddCollabModal() {
       $("#addCollabModal").modal('show');
+    }
+
+    function showRedeployModal(id) {
+      $("#redeployModal-" + id).modal('show');
     }
 
     function showExtendModal() {
@@ -878,7 +919,7 @@ code {
                 default:
                     console.log("unknown error with response code " + request.status);
                     break;
-        }
+                }
             }
         };
 
@@ -892,7 +933,7 @@ code {
         let url = '../../../liblaas/ipmi/set/' + hostid
         request.open("POST", url, true)
         request.setRequestHeader("Content-Type", "application/json")
-        request.setRequestHeader('X-CSRFToken', document.getElementsByName('csrfmiddlewaretoken')[0].value);
+        request.setRequestHeader('X-CSRFToken', document.getElementsByName('csrfmiddlewaretoken')[0].value)
         let data = {
           command: command,
           timeout_config: {
@@ -901,7 +942,62 @@ code {
             timeout_duration: 60
           }
         }
-        request.send(JSON.stringify(data));
+        request.send(JSON.stringify(data))
+    }
+
+    async function submitRedeploy(instance_id , image) {
+        if (selected_image[instance_id] == undefined) {
+            document.getElementById("proctor-message-" + instance_id).innerHTML = 'Please select an image.'
+        } else {
+            let request = new XMLHttpRequest()
+            let url = '../../../liblaas/reimage/' + instance_id
+            request.onreadystatechange = function() {
+                if (request.readyState == 4) {
+                    switch(request.status) {
+                    case 200:
+                        document.getElementById("success-message-" + instance_id).innerHTML = "Host is now redeploying.";
+                        document.getElementById("proctor-message-" + instance_id).innerHTML = "";
+                        document.getElementById("failure-message-" + instance_id).innerHTML = "";
+                        document.getElementById("submit-button-" + instance_id).classList.add("invisible");
+                        break;
+                    case 500:
+                        document.getElementById("success-message-" + instance_id).innerHTML = "";
+                        document.getElementById("proctor-message-" + instance_id).innerHTML = "";
+                        document.getElementById("failure-message-" + instance_id).innerHTML = "There was an error. If this persists, please contact the admins.";
+                        break;
+                    default:
+                        console.log("unknown error with response code " + request.status);
+                        break;
+                    }
+                }
+            };
+            request.open("POST", url, true)
+            request.setRequestHeader("Content-Type", "application/json")
+            request.setRequestHeader('X-CSRFToken', document.getElementsByName('csrfmiddlewaretoken')[0].value);
+            let data = {
+              image_id: selected_image[instance_id],
+            };
+            request.send(JSON.stringify(data));
+        }
+    }
+
+    async function successfulRedeploy(instance_id) {
+      if (selected_image[instance_id] == undefined) {
+          document.getElementById("proctor-message-" + instance_id).innerHTML = 'Please select an image.'
+      } else {
+          document.getElementById("success-message-" + instance_id).innerHTML = "Host is now redeploying.";
+          document.getElementById("proctor-message-" + instance_id).innerHTML = "";
+          document.getElementById("submit-button-" + instance_id).classList.add("invisible");
+          let request = new XMLHttpRequest()
+          let url = '../../../liblaas/reimage/' + instance_id
+          request.open("POST", url, true)
+          request.setRequestHeader("Content-Type", "application/json")
+          request.setRequestHeader('X-CSRFToken', document.getElementsByName('csrfmiddlewaretoken')[0].value);
+          let data = {
+            image_id: selected_image[instance_id],
+          };
+          request.send(JSON.stringify(data));
+      }
     }
 
     async function updatePowerIcon(hostid, power_state) {
@@ -925,6 +1021,11 @@ code {
       let value = document.getElementById('selector').value;
       if (value === '') value = '[]';
       return value;
+    }
+
+    function selectImageForInstance(instance_id, image_id, image_name) {
+        document.querySelector("#image-selector-" + instance_id).innerHTML = image_name;        
+        selected_image[instance_id] = image_id;
     }
 
     function main() {

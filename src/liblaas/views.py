@@ -93,12 +93,12 @@ def booking_ipmi_getpower(host_id: str) -> dict:
         return None
 
 # GET
-def booking_ipmi_fqdn(host_id: str) -> str:
+def booking_ipmi_fqdn(host_id: str) -> dict:
     endpoint = f'booking/ipmi/{host_id}/getfqdn'
     url = f'{base}{endpoint}'
     try:
         response = requests.get(url)
-        return response.content.decode()
+        return response.json()
     except Exception as e:
         print(f"Error at {url}")
         print(e)
@@ -131,6 +131,23 @@ def booking_request_extension(agg_id: str, reason: str, date: str) -> bool:
         print(f"Error at {url}")
         print(e)
         return False
+
+# POST
+def booking_set_image(instance_key: str, image: dict) -> dict:
+    endpoint = f'booking/{instance_key}/reimage'
+    url = f'{base}{endpoint}'
+    try:
+        output = {}
+        response = requests.post(url, data=json.dumps(image), headers=post_headers)
+        if response.status_code == 200:
+            output["code"] = 200
+        else:
+            output["code"] = 500
+        return output
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return None
 
 ### FLAVOR
 

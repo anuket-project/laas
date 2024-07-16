@@ -27,7 +27,6 @@ def request_list_flavors(request, lab_name) -> HttpResponse:
     response = flavor_list_flavors(lab_name)
     return JsonResponse(status=200, data={"flavors_list": response})
 
-
 def request_list_template(request, lab_name) -> HttpResponse:
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
@@ -170,8 +169,6 @@ def request_migrate_new(request) -> HttpResponse:
         status=406
     )
 
-
-
 def request_migrate_conflict(request) -> HttpResponse:
     user = request.user
     profile = UserProfile.objects.get(user=user)
@@ -269,7 +266,7 @@ def request_ipmi_setpower(request, host_id) -> HttpResponse:
             status = 200,
         )
 
-def request_ipmi_getpower(request, host_id) -> HttpResponse:
+def request_ipmi_getpower(host_id) -> HttpResponse:
     success = booking_ipmi_getpower(host_id)
 
     if (success is None):
@@ -278,4 +275,15 @@ def request_ipmi_getpower(request, host_id) -> HttpResponse:
         return JsonResponse(
             data = success,
             status = 200,
+        )
+    
+def request_image_set(request, host_id) -> HttpResponse:
+    data = json.loads(request.body.decode('utf-8'))
+    success = booking_set_image(host_id, data)
+    
+    if (success.get("code") == 200):
+        return HttpResponse(status=200)
+    else:
+        return HttpResponse(
+            status = 500,
         )

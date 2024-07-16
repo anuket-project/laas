@@ -141,7 +141,13 @@ def booking_detail_view(request, booking_id):
 
             for instance in statuses.get("instances"):
                 access = statuses.get("instances").get(instance).get("assigned_host")
-                host_ipmi_fqdns[access] = booking_ipmi_fqdn(instance)
+                ipmi_fqdn_response = booking_ipmi_fqdn(instance)
+                if (ipmi_fqdn_response is not None):
+                    host_ipmi_fqdns[access] = ipmi_fqdn_response.get("ipmi_fqdn")
+                for host in statuses.get("template").get("hosts"):
+                    for flavor in flavorlist:
+                        if (host.get("hostname") == statuses.get("instances").get(instance).get("host_alias")) & (flavor.get("flavor_id") == host.get("flavor")):
+                            statuses.get("instances").get(instance)["image_list"] = flavor.get("images")
 
         context = {
             "title": "Booking Details",
