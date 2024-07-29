@@ -100,6 +100,7 @@ def landing_view(request):
         bookings = None
 
     LFID = True if settings.AUTH_SETTING == 'LFID' else False
+    dev_login = True if settings.AUTH_SETTING == 'DEV_NORMAL' else False
 
     if request.method != "GET":
         return HttpResponse(status_code=405)
@@ -111,6 +112,7 @@ def landing_view(request):
             'title': "Welcome to the Lab as a Service Dashboard",
             'bookings': bookings,
             'LFID': LFID,
+            'dev_login': dev_login,
             'ipa_status': ipa_status,
         }
     )

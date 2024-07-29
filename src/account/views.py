@@ -13,7 +13,7 @@ import os
 import pytz
 import json
 from django.utils import timezone
-from django.contrib.auth import logout
+from django.contrib.auth import logout, authenticate,login as django_login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -23,7 +23,7 @@ from django.views.generic import RedirectView
 from django.shortcuts import render
 from booking.lib import attempt_end_booking
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
-from laas_dashboard.settings import PROJECT
+from laas_dashboard.settings import PROJECT, AUTH_SETTING
 
 from account.models import UserProfile
 from booking.models import Booking
@@ -237,3 +237,23 @@ def account_cancel_booking(request):
         return JsonResponse({"details": result[1]}, status=500)
 
 
+
+def account_dev_login_view(request):
+    dev_login = True if AUTH_SETTING == 'DEV_NORMAL' else False
+    if not dev_login:
+        template = "dashboard/404.html"
+        return render(request, template)
+    else:
+        template = "account/dev_login.html"
+        if request.method == "GET":
+            return render(request, template)
+        if request.method  == "POST":
+            username = request.POST['username']
+            password = request.POST['password']
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            django_login(request, user)
+            template_dash = "dashboard/landing.html"
+            return render(request, template_dash)
+        else:
+            return render(request, template, {'error_message': 'Incorrect username and / or password.'})

@@ -80,6 +80,9 @@ if AUTH_SETTING == 'LFID':
 
     if OIDC_RP_SIGN_ALGO == "RS256":
         OIDC_OP_JWKS_ENDPOINT = os.environ.get("OIDC_OP_JWKS_ENDPOINT")
+elif AUTH_SETTING == 'DEV_NORMAL':
+    
+    print("dev mode")
 else:
     raise Exception('AUTH_SETTING set to invalid value')
 

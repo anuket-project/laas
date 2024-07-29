@@ -34,7 +34,8 @@ from account.views import (
     account_resource_view,
     account_booking_view,
     account_detail_view,
-    account_settings_view
+    account_settings_view,
+    account_dev_login_view
 )
 
 app_name = 'account'
@@ -46,4 +47,5 @@ urlpatterns = [
     url(r'^my/resources/$', account_resource_view, name='my-resources'),
     url(r'^my/bookings/$', account_booking_view, name='my-bookings'),
     url(r'^my/$', account_detail_view, name='my-account'),
+    url(r'^dev_login/$', account_dev_login_view, name='dev-login'),
 ]
