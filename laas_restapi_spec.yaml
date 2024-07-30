@@ -1,0 +1,444 @@
+openapi: "3.0.0"
+info:
+  version: "1"
+  title: "laas-openapi-spec"
+  description: ""
+paths:
+  /booking:
+    get:
+      operationId: "get_booking"
+      description: ""
+      parameters:
+        - in: "query"
+          name: "active"
+          schema:
+            type: "boolean"
+      responses:
+        200:
+          description: "booking"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/booking"
+      security:
+        - BearerAuth: []
+    post:
+      operationId: "create_booking"
+      description: ""
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/booking_blob"
+      responses:
+        200:
+          description: "Created booking"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/booking"
+        401:
+          description: "User not authenticated"
+          content:
+            application/json:
+              schema:
+                type: "string"
+        422:
+          description: "Data not booking blob"
+          content:
+            application/json:
+              schema:
+                type: "string"
+        500:
+          description: "Not successful"
+          content:
+            application/json:
+              schema:
+                type: "string"
+      security:
+        - BearerAuth: []
+  /booking/{booking_id}:
+    delete:
+      operationId: "cancel_booking"
+      description: ""
+      parameters:
+        - in: "path"
+          name: "booking_id"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "Cancel booking does not delete booking object"
+          content:
+            application/json:
+              schema:
+                type: "string"
+      security:
+        - BearerAuth: []
+    get:
+      operationId: "get_booking_details"
+      description: ""
+      parameters:
+        - in: "path"
+          name: "booking_id"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "Basic booking details"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/booking"
+      security:
+        - BearerAuth: []
+  /booking/{booking_id}/status:
+    get:
+      operationId: "booking_status"
+      description: ""
+      parameters:
+        - in: "path"
+          name: "booking_id"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "Booking status"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/booking_status"
+      security:
+        - BearerAuth: []
+  /booking/{booking_id}/collaborators:
+    get:
+      operationId: "return_all_collaborators_deatils"
+      description: ""
+      parameters:
+        - in: "path"
+          name: "booking_id"
+          required: true
+          schema:
+            type: "string"
+        - in: "query"
+          name: "full"
+          schema:
+            type: "boolean"
+      responses:
+        200:
+          description: "List of colaborators"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/user"
+      security:
+        - BearerAuth: []
+    post:
+      operationId: "adds_collaborators"
+      description: ""
+      parameters:
+        - in: "path"
+          name: "booking_id"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "array"
+              items:
+                type: "string"
+      responses:
+        200:
+          description: "Added collaborators"
+          content:
+            application/json:
+              schema:
+                type: "string"
+      security:
+        - BearerAuth: []
+  /booking/{booking_id}/instance/{instance_id}/power:
+    post:
+      operationId: "set_host_power"
+      description: ""
+      parameters:
+        - in: "path"
+          name: "booking_id"
+          required: true
+          schema:
+            type: "string"
+        - in: "path"
+          name: "instance_id"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "string"
+      responses:
+        200:
+          description: "Successfully changed power"
+          content:
+            application/json:
+              schema:
+                type: "string"
+        500:
+          description: "Could not perform that action internal error "
+          content:
+            application/json:
+              schema:
+                type: "string"
+      security:
+        - BearerAuth: []
+  /booking/{booking_id}/instance/{instance_id}/reprovision:
+    post:
+      operationId: "reprovisions_host"
+      description: ""
+      parameters:
+        - in: "path"
+          name: "booking_id"
+          required: true
+          schema:
+            type: "string"
+        - in: "path"
+          name: "instance_id"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "string"
+      responses:
+        200:
+          description: "Reprovision host success"
+          content:
+            application/json:
+              schema:
+                type: "string"
+      security:
+        - BearerAuth: []
+  /booking/{booking_id}/extend:
+    post:
+      operationId: "extends_booking"
+      description: ""
+      parameters:
+        - in: "path"
+          name: "booking_id"
+          required: true
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "number"
+      responses:
+        200:
+          description: "Booking end date time"
+          content:
+            application/json:
+              schema:
+                type: "string"
+      security:
+        - BearerAuth: []
+components:
+  securitySchemes:
+    BearerAuth:
+      type: "http"
+      scheme: "bearer"
+      bearerFormat: "JWT"
+  schemas:
+    collaborators:
+      properties:
+        dashboard_name:
+          nullable: false
+          type: "string"
+        IPA_username:
+          nullable: false
+          type: "string"
+        email:
+          nullable: false
+          type: "string"
+    booking_blob:
+      properties:
+        template_id:
+          nullable: false
+          type: "string"
+        allowed_users:
+          nullable: false
+          type: "string"
+        global_cifile:
+          nullable: false
+          type: "array"
+          items:
+            type: "string"
+        metadata:
+          nullable: false
+          type: "array"
+          items:
+            $ref: "#/components/schemas/metadata_booking_blob"
+        origin:
+          nullable: false
+          type: "string"
+    date_time:
+      properties:
+        date:
+          nullable: false
+          type: "integer"
+        time:
+          nullable: false
+          type: "integer"
+    metadata_booking_blob:
+      properties:
+        booking_id:
+          nullable: false
+          type: "string"
+        owner:
+          nullable: false
+          type: "string"
+        lab:
+          nullable: false
+          type: "string"
+        purpose:
+          nullable: false
+          type: "string"
+        project:
+          nullable: false
+          type: "string"
+        length_of_booking:
+          nullable: false
+          type: "integer"
+    user:
+      properties:
+        dashboard_username:
+          nullable: false
+          type: "string"
+        vpn_username:
+          nullable: false
+          type: "string"
+        email:
+          nullable: false
+          type: "string"
+        company:
+          nullable: true
+          type: "string"
+        ssh_public_keys:
+          nullable: true
+          type: "array"
+          items:
+            type: "string"
+    booking:
+      properties:
+        id:
+          nullable: false
+          type: "integer"
+        owner:
+          nullable: false
+          type: "string"
+        collabrators:
+          nullable: false
+          type: "array"
+          items:
+            type: "string"
+        start_time:
+          nullable: false
+          type: "string"
+        end_time:
+          nullable: false
+          type: "string"
+        purpose:
+          nullable: false
+          type: "string"
+        extension_days:
+          nullable: false
+          type: "integer"
+        project:
+          nullable: false
+          type: "string"
+        aggregateId:
+          nullable: false
+          type: "string"
+        complete:
+          nullable: false
+          type: "boolean"
+    logs:
+      properties:
+        instance_status_update:
+          nullable: false
+          type: "array"
+          items:
+            $ref: "#/components/schemas/instance_status_update"
+    assigned_host_info:
+      properties:
+        hostname:
+          nullable: false
+          type: "string"
+        ipmi_fqdn:
+          nullable: false
+          type: "string"
+    instance_status_update:
+      properties:
+        status_info:
+          nullable: false
+          $ref: "#/components/schemas/status_info"
+        sentiment:
+          nullable: false
+          type: "string"
+        time:
+          nullable: false
+          type: "string"
+    instance_status:
+      properties:
+        instance:
+          nullable: false
+          type: "string"
+        logs:
+          nullable: false
+          type: "array"
+          items:
+            $ref: "#/components/schemas/instance_status_update"
+        assigned_host_info:
+          nullable: true
+          $ref: "#/components/schemas/assigned_host_info"
+        host_alias:
+          nullable: false
+          type: "string"
+    booking_status:
+      properties:
+        instances:
+          nullable: false
+          type: "array"
+          items:
+            $ref: "#/components/schemas/instance_status"
+        config:
+          nullable: false
+          $ref: "#/components/schemas/aggregate_configuration"
+    aggregate_configuration:
+      properties:
+        ipmi_username:
+          nullable: false
+          type: "string"
+        ipmi_password:
+          nullable: false
+          type: "string"
+    status_info:
+      properties:
+        headline:
+          nullable: false
+          type: "string"
+        subline:
+          nullable: false
+          type: "string"
