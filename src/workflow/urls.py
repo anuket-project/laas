@@ -8,11 +8,11 @@
 ##############################################################################
 
 
-from django.conf.urls import url
+from django.urls import path
 from workflow.views import design_a_pod_view, book_a_pod_view
 
 app_name = 'workflow'
 urlpatterns = [
-    url(r'^design/$', design_a_pod_view, name='design_a_pod'),
-    url(r'^book/$', book_a_pod_view, name='book_a_pod'),
+    path('design/', design_a_pod_view, name='design_a_pod'),
+    path('book/', book_a_pod_view, name='book_a_pod'),
 ]

@@ -25,7 +25,6 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url
 from django.urls import path
 
 from api.views import (
@@ -48,5 +47,5 @@ urlpatterns = [
     path('users', all_users),
     path('labs', list_labs),
 
-    url(r'^token$', GenerateTokenView.as_view(), name='generate_token'),
+    path('token', GenerateTokenView.as_view(), name='generate_token'),
 ]

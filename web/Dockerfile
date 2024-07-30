@@ -6,7 +6,7 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-FROM python:3.9
+FROM python:3.12
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y npm host

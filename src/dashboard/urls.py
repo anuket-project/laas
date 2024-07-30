@@ -25,7 +25,7 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url
+from django.urls import path
 from dashboard.views import (
     landing_view,
     lab_list_view,
@@ -35,8 +35,8 @@ from dashboard.views import (
 
 app_name = 'dashboard'
 urlpatterns = [
-    url(r'^$', landing_view, name='index'),
-    url(r'^lab/$', lab_list_view, name='all_labs'),
-    url(r'^lab/(?P<lab_name>.+)/$', lab_detail_view, name='lab_detail'),
-    url(r'^hosts/$', host_profile_detail_view, name="hostprofile_detail")
+    path('', landing_view, name='index'),
+    path('lab/', lab_list_view, name='all_labs'),
+    path('lab/<path:lab_name>/', lab_detail_view, name='lab_detail'),
+    path('hosts/', host_profile_detail_view, name="hostprofile_detail")
 ]

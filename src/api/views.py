@@ -49,7 +49,7 @@ class GenerateTokenView(View):
 
 
 def lab_status(request, lab_name=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_token = request.headers.get('auth-token')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
     if request.method == "POST":
         return JsonResponse(lab_manager.set_status(request.POST), safe=False)
@@ -57,26 +57,26 @@ def lab_status(request, lab_name=""):
 
 
 def lab_users(request, lab_name=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_token = request.headers.get('auth-token')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
     return HttpResponse(lab_manager.get_users(), content_type="text/plain")
 
 
 def lab_user(request, lab_name="", user_id=-1):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_token = request.headers.get('auth-token')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
     return HttpResponse(lab_manager.get_user(user_id), content_type="text/plain")
 
 
 def lab_profile(request, lab_name=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_token = request.headers.get('auth-token')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
     return JsonResponse(lab_manager.get_profile(), safe=False)
 
 
 
 def lab_downtime(request, lab_name=""):
-    lab_token = request.META.get('HTTP_AUTH_TOKEN')
+    lab_token = request.headers.get('auth-token')
     lab_manager = LabManagerTracker.get(lab_name, lab_token)
     if request.method == "GET":
         return JsonResponse(lab_manager.get_downtime_json())
@@ -115,7 +115,7 @@ def auth_and_log(request, endpoint):
     in the API log model. This is to keep record of
     all calls to the dashboard
     """
-    user_token = request.META.get('HTTP_AUTH_TOKEN')
+    user_token = request.headers.get('auth-token')
     response = None
 
     if user_token is None:
@@ -130,7 +130,7 @@ def auth_and_log(request, endpoint):
         else:
             response = HttpResponse('Unauthorized', status=401)
 
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    x_forwarded_for = request.headers.get('x-forwarded-for')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0]
     else:

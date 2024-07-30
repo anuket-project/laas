@@ -25,7 +25,7 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url
+from django.urls import path
 
 from booking.views import (
     booking_detail_view,
@@ -40,15 +40,15 @@ from booking.views import (
 
 app_name = 'booking'
 urlpatterns = [
-    url(r'^detail/(?P<booking_id>[0-9]+)/$', booking_detail_view, name='detail'),
-    url(r'^(?P<booking_id>[0-9]+)/$', booking_detail_view, name='booking_detail'),
-    url(r'^delete/$', BookingDeleteView.as_view(), name='delete_prefix'),
-    url(r'^delete/(?P<booking_id>[0-9]+)/$', BookingDeleteView.as_view(), name='delete'),
-    url(r'^delete/(?P<booking_id>[0-9]+)/confirm/$', bookingDelete, name='delete_booking'),
-    url(r'^list/$', BookingListView.as_view(), name='list'),
-    url(r'^resolve/$', get_host_ip, name='get_host_ip'),
-    url(r'^collaborators/(?P<booking_id>[0-9]+)/$', manage_collaborators, name='collaborators'),
-    url(r'^extend/(?P<booking_id>[0-9]+)/$', extend_booking, name='extend'),
-    url(r'^request-extend/(?P<booking_id>[0-9]+)/$', request_extend_booking, name='extend')
+    path('detail/<int:booking_id>/', booking_detail_view, name='detail'),
+    path('<int:booking_id>/', booking_detail_view, name='booking_detail'),
+    path('delete/', BookingDeleteView.as_view(), name='delete_prefix'),
+    path('delete/<int:booking_id>/', BookingDeleteView.as_view(), name='delete'),
+    path('delete/<int:booking_id>/confirm/', bookingDelete, name='delete_booking'),
+    path('list/', BookingListView.as_view(), name='list'),
+    path('resolve/', get_host_ip, name='get_host_ip'),
+    path('collaborators/<int:booking_id>/', manage_collaborators, name='collaborators'),
+    path('extend/<int:booking_id>/', extend_booking, name='extend'),
+    path('request-extend/<int:booking_id>/', request_extend_booking, name='extend')
 
 ]

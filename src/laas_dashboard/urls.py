@@ -26,23 +26,23 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls import url, include
+from django.urls import include, path, re_path
 from django.conf.urls.static import static
 from django.contrib import admin
 
 
 urlpatterns = [
 
-    url(r'^workflow/', include('workflow.urls', namespace='workflow')),
-    url(r'^', include('dashboard.urls', namespace='dashboard')),
-    url(r'^booking/', include('booking.urls', namespace='booking')),
-    url(r'^accounts/', include('account.urls', namespace='account')),
-    url(r'^admin/', admin.site.urls),
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^api/', include('api.urls')),
-    url(r'^oidc/', include('mozilla_django_oidc.urls')),
-    url(r'^resource/', include('resource_inventory.urls', namespace='resource')),
-    url(r'^liblaas/', include('liblaas.urls', namespace='liblaas'))
+    path('workflow/', include('workflow.urls', namespace='workflow')),
+    path('', include('dashboard.urls', namespace='dashboard')),
+    path('booking/', include('booking.urls', namespace='booking')),
+    path('accounts/', include('account.urls', namespace='account')),
+    re_path(r'^admin/', admin.site.urls),
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api/', include('api.urls')),
+    path('oidc/', include('mozilla_django_oidc.urls')),
+    path('resource/', include('resource_inventory.urls', namespace='resource')),
+    path('liblaas/', include('liblaas.urls', namespace='liblaas'))
 ]
 
 handler404 = 'dashboard.views.handler404'

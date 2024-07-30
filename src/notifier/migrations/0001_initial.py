@@ -2,8 +2,6 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import fernet_fields.fields
-
 
 class Migration(migrations.Migration):
 
@@ -38,7 +36,6 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('title', models.CharField(max_length=240)),
-                ('content', fernet_fields.fields.EncryptedTextField()),
                 ('sender', models.CharField(default='unknown', max_length=240)),
                 ('message_type', models.CharField(choices=[('email', 'Email'), ('webnotification', 'Web Notification')], default='email', max_length=240)),
                 ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='account.UserProfile')),
