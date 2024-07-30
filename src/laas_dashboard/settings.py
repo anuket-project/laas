@@ -56,7 +56,14 @@ MIDDLEWARE = [
     'account.middleware.TimezoneMiddleware',
 ]
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 # AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend', 'account.views.MyOIDCAB']
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
@@ -80,6 +87,9 @@ if AUTH_SETTING == 'LFID':
 
     if OIDC_RP_SIGN_ALGO == "RS256":
         OIDC_OP_JWKS_ENDPOINT = os.environ.get("OIDC_OP_JWKS_ENDPOINT")
+elif AUTH_SETTING == 'DEV_NORMAL':
+    
+    print("dev mode")
 else:
     raise Exception('AUTH_SETTING set to invalid value')
 
@@ -155,7 +165,6 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_L10N = True
 
 USE_TZ = True
 
@@ -198,6 +207,8 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT')
     }
 }
+
+DEFAULT_AUTO_FIELD='django.db.models.AutoField' 
 
 # Rest API Settings
 REST_FRAMEWORK = {

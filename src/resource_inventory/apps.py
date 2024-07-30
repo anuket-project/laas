@@ -6,9 +6,3 @@
 # which accompanies this distribution, and is available at
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-
-from django.apps import AppConfig
-
-
-class ResourcesConfig(AppConfig):
-    name = 'hwresource'

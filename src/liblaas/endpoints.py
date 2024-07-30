@@ -266,7 +266,7 @@ def request_ipmi_setpower(request, host_id) -> HttpResponse:
             status = 200,
         )
 
-def request_ipmi_getpower(host_id) -> HttpResponse:
+def request_ipmi_getpower(request, host_id) -> HttpResponse:
     success = booking_ipmi_getpower(host_id)
 
     if (success is None):

@@ -25,8 +25,7 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url
-from django.urls import path
+from django.urls import path, re_path
 
 from account.views import (
     OIDCLoginView,
@@ -34,16 +33,18 @@ from account.views import (
     account_resource_view,
     account_booking_view,
     account_detail_view,
-    account_settings_view
+    account_settings_view,
+    account_dev_login_view
 )
 
 app_name = 'account'
 
 urlpatterns = [
-    url(r'^settings/', account_settings_view, name='settings'),
-    url(r'^login/$', OIDCLoginView.as_view(), name='login'),
-    url(r'^logout/$', LogoutView.as_view(), name='logout'),
-    url(r'^my/resources/$', account_resource_view, name='my-resources'),
-    url(r'^my/bookings/$', account_booking_view, name='my-bookings'),
-    url(r'^my/$', account_detail_view, name='my-account'),
+    path('settings/', account_settings_view, name='settings'),
+    path('login/', OIDCLoginView.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('my/resources/', account_resource_view, name='my-resources'),
+    path('my/bookings/', account_booking_view, name='my-bookings'),
+    path('my/', account_detail_view, name='my-account'),
+    path('dev_login/', account_dev_login_view, name='dev-login'),
 ]

@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% load bootstrap4 %}
-{% load staticfiles %}
+{% load static %}
 {% block extrahead %}
 
 
@@ -75,6 +75,12 @@
 
                                 logout_btn.onclick = function () { logout_form.submit(); };
                             </script>
+                            {% elif dev_login %}
+                            <a href="{% url 'account:dev-login' %}" class="dropdown-item Anuket-Text">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Login as dev
+                            </a>
+
                             {% else %}
                             <a href="{% url 'oidc_authentication_init' %}" class="dropdown-item Anuket-Text">
                                 <i class="fas fa-sign-in-alt"></i>

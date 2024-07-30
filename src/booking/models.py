@@ -14,13 +14,13 @@ from datetime import timedelta
 from account.models import Lab
 from django.contrib.auth.models import User
 from django.db import models
-from typing_extensions import Self
 from django.db.models.query import QuerySet
 from django.utils import timezone
 from liblaas.views import booking_notify_aggregate_expiring
 from django.db.models. signals import pre_save, post_save
 from django.dispatch import receiver
-
+from datetime import datetime
+from typing import Self
 class Booking(models.Model):
     id = models.AutoField(primary_key=True)
     # All bookings are owned by the user who requested it
@@ -49,6 +49,38 @@ class Booking(models.Model):
 
     def __str__(self):
         return str(self.purpose) + ' from ' + str(self.start) + ' until ' + str(self.end)
+    
+    @staticmethod
+    def create_booking(
+        owner: User,
+        start: datetime,
+        end: datetime,
+        purpose: str,
+        project: str,
+        lab: Lab,
+        **kwargs
+    ) -> Self:
+        """
+        Creates a new booking with the provided fields.
+        
+        kwargs:
+            - collaborators: Iterable[User]
+        """
+        booking =  Booking.objects.create(
+            owner=owner,
+            start=start,
+            end=end,
+            purpose=purpose,
+            project=project,
+            lab=lab,
+        )
+
+        if "collaborators" in kwargs:
+            for c in kwargs["collaborators"]:
+                booking.collaborators.add(c)
+
+        return booking
+        
 
 class AbstractScheduledNotification(models.Model):
     """

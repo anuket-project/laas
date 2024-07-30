@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+{% load bootstrap4 %}
+
+{% block content %}
+<h1>Dev login</h1>
+   
+<form method="POST"> 
+    {% csrf_token %}
+    {% if error_message %}
+        <p class="error">{{ error_message }}</p>
+    {% endif %}
+    <div class="Username">
+        <label for="username">Username</label>
+        <input name="username" value="" type="text" class="form-control" />
+    </div>
+    <div class="Password">
+        <label for="password">Password</label>
+        <input name="password" value="" type="password" class="form-control" />
+
+    </div>
+    <input name="login" type="submit" formmethod="POST" value="Login" class="btn btn-success" />
+</form>
+
+{% endblock content %}

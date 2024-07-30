@@ -9,7 +9,7 @@
 ##############################################################################
 
 import os
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView
 from django.shortcuts import render
 from django.db.models import Q
@@ -81,7 +81,7 @@ def landing_view(request):
     user = request.user
     ipa_status = "n/a"
     profile = {}
-
+    
     if not user.is_anonymous:
         bookings = Booking.objects.filter(
             Q(owner=user) | Q(collaborators=user), end__gte=datetime.now(pytz.utc)
@@ -100,6 +100,7 @@ def landing_view(request):
         bookings = None
 
     LFID = True if settings.AUTH_SETTING == 'LFID' else False
+    dev_login = True if settings.AUTH_SETTING == 'DEV_NORMAL' else False
 
     if request.method != "GET":
         return HttpResponse(status_code=405)
@@ -111,18 +112,19 @@ def landing_view(request):
             'title': "Welcome to the Lab as a Service Dashboard",
             'bookings': bookings,
             'LFID': LFID,
+            'dev_login': dev_login,
             'ipa_status': ipa_status,
         }
     )
 
 def handler404(request, exception):
-    response = render_to_response("dashboard/404.html")
+    response = render(request, "dashboard/404.html")
     response.status_code = 404
     return response
 
 
 def handler500(request):
-    response = render_to_response("dashboard/500.html")
+    response = render(request, "dashboard/500.html")
     response.status_code = 500
     return response
 

@@ -13,6 +13,12 @@ from django.db import models
 from django.apps import apps
 import json
 import random
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from collections import Counter
 
@@ -55,6 +61,14 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+    @staticmethod
+    def create_tokens_for_all():
+        for user in User.objects.all():
+            Token.objects.get_or_create(user=user)
+    @receiver(post_save, sender=settings.AUTH_USER_MODEL)
+    def auth_token_signal(sender, instance=None, created=False, **kwargs):
+        if created:
+            Token.objects.create(user=instance)
 
 class Lab(models.Model):
     """
