@@ -132,6 +132,8 @@ class LogoutView(LoginRequiredMixin, RedirectView):
 
 
 def account_detail_view(request):
+    
+
     template = "account/details.html"
     return render(request, template)
 

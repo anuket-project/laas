@@ -1,8 +1,33 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 from account.models import UserProfile, Lab, LabStatus
 from django.db.models import QuerySet
 from django.db.utils import IntegrityError
+
+# Small test script in order to test if user auth tokens are being created
+# as expected
+class TokenTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create()
+        userprof = UserProfile.objects.create(user=self.user)
+        user_2 = User.objects.create(username='2')
+        userprof_2 = UserProfile.objects.create(user=user_2)
+        user_3 = User.objects.create(username='3')
+        userprof_3 = UserProfile.objects.create(user=user_3)
+    # Checking if calling the single use create tokens for all
+    # leaves users who have token
+    def test_no_double_tokens(self):
+        UserProfile.create_tokens_for_all()
+        UserProfile.create_tokens_for_all()
+        self.assertEqual(len(Token.objects.filter(user=self.user)), 1)
+    # Checking each user has one token
+    def test_one_to_one_tokens(self):
+        self.assertEqual(len(Token.objects.all()), len(UserProfile.objects.all()))
+    # Checking if the new user profile created has token
+    def test_tokens_created(self):
+        self.assertEqual(len(Token.objects.filter(user=self.user)), 1)
+
 class SchemaTests(TestCase):
 
     @classmethod

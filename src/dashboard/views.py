@@ -81,7 +81,7 @@ def landing_view(request):
     user = request.user
     ipa_status = "n/a"
     profile = {}
-
+    
     if not user.is_anonymous:
         bookings = Booking.objects.filter(
             Q(owner=user) | Q(collaborators=user), end__gte=datetime.now(pytz.utc)
