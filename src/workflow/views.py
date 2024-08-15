@@ -30,6 +30,9 @@ def design_a_pod_view(request):
     if (not profile or profile.ipa_username == None):
         return redirect("dashboard:index")
 
+    if user_get_user(profile.ipa_username) is None:
+        raise Exception("Unable to query user from IPA")
+
     constraints = get_workflow_contraints(PROJECT)
     template = "workflow/design_a_pod.html"
     context = {
