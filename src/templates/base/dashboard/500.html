@@ -1,11 +1,8 @@
-<style>
-    h1, p {
-        text-align: center;
-    }
-</style>
-<html>
-    <body>
-        <h1>500-As-A-Service</h1>
-        <p>Something is wrong on our end. Click <a href="/">here</a> to return to the dashboard. Please contact support if this issue persists.</p>
-    </body>
-</html>
+{% extends "base.html" %}
+{% load static %}
+{% load bootstrap4 %}
+
+{% block content %}
+<h1>Service Currently Unavailable</h1>
+<h2>Something is wrong on our end, and LaaS is currently unavailable. Please contact <a href="mailto:{{ contact }}">support</a> if this problem persists.</h2>
+{% endblock content %}

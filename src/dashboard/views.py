@@ -21,7 +21,7 @@ from django.http import HttpResponse
 from account.models import Lab, UserProfile
 from booking.models import Booking
 from laas_dashboard import settings
-from laas_dashboard.settings import PROJECT
+from laas_dashboard.settings import PROJECT, SITE_CONTACT
 from liblaas.utils import get_ipa_status
 
 from liblaas.views import flavor_list_flavors, flavor_list_hosts
@@ -124,7 +124,10 @@ def handler404(request, exception):
 
 
 def handler500(request):
-    response = render(request, "dashboard/500.html")
+    context = {
+        "contact": SITE_CONTACT
+    }
+    response = render(request, "dashboard/500.html", context)
     response.status_code = 500
     return response
 
