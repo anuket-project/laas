@@ -133,7 +133,7 @@ code {
                 {% for id, inst in status.instances.items %}
                   {% if forloop.first %}
                     <div>
-                    ~$ ssh <span id="sshUser">{{ user.userprofile.ipa_username }}</span>@<span id="sshHost">{{ inst.assigned_host }}.{{ host_domain }}</span>
+                    ~$ ssh <span id="sshUser">{{ user.userprofile.ipa_username }}</span>@<span id="sshHost">{{ inst.assigned_host_info.hostname }}.{{ host_domain }}</span>
                     </div>
                     {% endif %}
                 {% endfor %}
@@ -144,7 +144,7 @@ code {
                   </button>
                   <div class="dropdown-menu">
                     {% for id, inst in status.instances.items %}
-                      <a class="dropdown-item" onclick="updateSSHCommand(this.innerText)" href="#">{{ inst.assigned_host }}</a>
+                      <a class="dropdown-item" onclick="updateSSHCommand(this.innerText)" href="#">{{ inst.assigned_host_info.hostname }}</a>
                     {% endfor %}
                   </div>
                 </div>
@@ -167,6 +167,7 @@ code {
                         <th>Name</th>
                         <th>Host</th>
                         <th>Status</th>
+                        <th>Host Info</th>
                         <th><!-- log button --></th>
                         <th><!-- ip button --></th>
                     </tr>
@@ -194,7 +195,7 @@ code {
                         </td>
                         <td id="host-{{id}}">
                             <!-- Actual Host -->
-                            {{inst.assigned_host}}
+                            {{inst.assigned_host_info.hostname}}
                         </td>
                         <td>
                             <!-- Logs -->
@@ -213,7 +214,7 @@ code {
                             <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showLogsModal('{{inst.instance}}')">Show Logs</button>
                           </td>
                           <td>
-                            <button class="btn-secondary btn-sm btn ml-3 text-nowrap requires-ready" data-toggle="modal" onclick="showIPModal('{{inst.assigned_host}}')" hidden="true">Show IP</button>
+                            <button class="btn-secondary btn-sm btn ml-3 text-nowrap" data-toggle="modal" onclick="showHostInfoModal('{{inst.instance}}')">Host Info</button>
                           </td>
                     </tr>
                     {% endfor %}
@@ -247,7 +248,7 @@ code {
                         </td>
                         <td id="ipmi-host-{{id}}">
                             <!-- Actual Host -->
-                            {{inst.assigned_host}}
+                            {{inst.assigned_host_info.hostname}}
                         </td>
                         <td>
 
@@ -337,18 +338,16 @@ code {
   </div>
 </div>
 
-<div class="modal fade" id="resolveHostModal" tabindex="-1" role="dialog" aria-labelledby="resolveHostModalLabel" aria-hidden="true">
+<div class="modal fade" id="HostInfoModal" tabindex="-1" role="dialog" aria-labelledby="HostInfoModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="instructionModalLabel">Resolve Hostname</h5>
+        <h5 class="modal-title" id="hostInfoModalLabel">Host Info</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-
-      <div class="modal-body">
-        <p id="p-hostname-output"></p>
+      <div class="modal-body" id="host-info-modal-body">
       </div>
     </div>
   </div>
@@ -646,6 +645,9 @@ code {
 
     const selected_image = new Map(); // Map assigning selected image to each instance based on dropdown
 
+    // Store latest fetch of logs for use in modal
+    const instance_cache = new Map(); // map instance id to 
+
     function updateSSHCommand(selectedHost) {
       const sshHost = selectedHost + '.{{ host_domain }}';
 
@@ -715,13 +717,13 @@ code {
             }
 
             logs_cache.set(instance.instance, instance.logs);
-
+            instance_cache.set(instance.instance, instance)
             // icon
             document.getElementById("icon-" + instanceId).className = icon_class;
             // host alias
             document.getElementById("alias-" + instanceId).innerText = instance.host_alias;
             // assigned host
-            document.getElementById("host-" + instanceId).innerText = instance.assigned_host;
+            document.getElementById("host-" + instanceId).innerText = instance.assigned_host_info.hostname;
             // status
             document.getElementById("status-" + instanceId).innerText = status.status;
 
@@ -729,6 +731,7 @@ code {
               fetchIpmiStatus(instanceId)
               showAllHidden();
             }
+            
         })
 
         // IPMI
@@ -747,17 +750,96 @@ code {
       progress_header.innerText = "Your booking is ready"
     }
 
-    async function showIPModal(assigned_host) {
+    async function showHostInfoModal(inst_id) {
+      $("#HostInfoModal").modal('show');
+      
+      let modal_body = document.getElementById("host-info-modal-body");
+      modal_body.innerHTML = ``;
 
-      let p_element = document.getElementById("p-hostname-output");
-      let text = "The booking is not ready yet. Please wait until all hosts have finished provisioning.";
       if (bookingIsReady()) {
-        text = await fetchHostIP(assigned_host);
+        // host info
+        const host_info = instance_cache.get(inst_id).assigned_host_info;
+        const host_info_table = document.createElement('table');
+        host_info_table.classList.add("table");
+        host_info_table.classList.add("table-striped");
+
+        modal_body.appendChild(host_info_table);
+
+        const tr_head = document.createElement('tr');
+        tr_head.setAttribute("hidden", "true");
+
+        // name
+        const tr_name = document.createElement('tr');
+        const td_title_name = document.createElement('td');
+        td_title_name.innerText = "Name";
+        td_title_name.classList.add("border-top-0");
+        const td_name = document.createElement('td')
+        td_name.classList.add("border-top-0");
+        td_name.innerText = host_info.hostname;
+        tr_name.appendChild(td_title_name);
+        tr_name.appendChild(td_name);
+        host_info_table.appendChild(tr_name);
+
+        // IP
+        const address_lists_promise = fetchHostIP(host_info.hostname);
+
+        const tr_ipv4 = document.createElement('tr');
+        const td_title_ipv4 = document.createElement('td');
+        td_title_ipv4.innerText = "IPv4";
+        const td_ipv4 = document.createElement('td');
+        td_ipv4.innerText = "Searching . . .";
+        tr_ipv4.appendChild(td_title_ipv4);
+        tr_ipv4.appendChild(td_ipv4);
+        host_info_table.appendChild(tr_ipv4);
+
+        const tr_ipv6 = document.createElement('tr');
+        const td_title_ipv6 = document.createElement('td');
+        td_title_ipv6.innerText = "IPv6";
+        const td_ipv6 = document.createElement('td')
+        td_ipv6.innerText = "Searching . . .";
+        tr_ipv6.appendChild(td_title_ipv6);
+        tr_ipv6.appendChild(td_ipv6);
+        host_info_table.appendChild(tr_ipv6);
+
+        // serial
+        const tr_serial = document.createElement('tr');
+        const td_title_serial = document.createElement('td');
+        td_title_serial.innerText = "Serial";
+        const td_serial = document.createElement('td');
+        td_serial.innerText = host_info.serial;
+        tr_serial.appendChild(td_title_serial);
+        tr_serial.appendChild(td_serial);
+        host_info_table.appendChild(tr_serial);
+
+        // brand
+        const tr_brand = document.createElement('tr');
+        const td_title_brand = document.createElement('td');
+        td_title_brand.innerText = "Brand";
+        const td_brand = document.createElement('td');
+        td_brand.innerText = host_info.brand;
+        tr_brand.appendChild(td_title_brand);
+        tr_brand.appendChild(td_brand);
+        host_info_table.appendChild(tr_brand);
+
+        // model
+        const tr_model = document.createElement('tr');
+        const td_title_model = document.createElement('td');
+        td_title_model.innerText = "Model";
+        const td_model = document.createElement('td');
+        td_model.innerText = host_info.model;
+        tr_model.appendChild(td_title_model);
+        tr_model.appendChild(td_model);
+        host_info_table.appendChild(tr_model);
+
+        const address_lists = await address_lists_promise;
+        td_ipv4.innerText = address_lists.v4;
+        td_ipv6.innerText = address_lists.v6;
+
+      } else {
+        let p_element = document.createElement('p');
+        p_element.innerText = "The booking is not ready yet. Please wait until all hosts have finished provisioning.";
+        modal_body.appendChild(p_element);
       }
-
-      p_element.innerText = text;
-
-      $("#resolveHostModal").modal('show');
     }
 
     function showAddCollabModal() {
