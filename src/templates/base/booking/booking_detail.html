@@ -560,6 +560,9 @@ code {
           <span class="col-md-1 col-2 p-0">Days to Extend: <span id="days_number">1</span></span>
         </div>
         <div class="text-center">
+          <span class="col-md-1 col-2 p-0">New End Date: <span id="new_end_date">--</span></span>
+        </div>
+        <div class="text-center">
           <span id="extend_error_text" class="text-danger"></span>
         </div>
         <button class="btn btn-success float-right" onclick="submitExtendBooking()">Submit</button>
@@ -567,6 +570,28 @@ code {
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="extendDoneModal" tabindex="-1" role="dialog" aria-labelledby="extendModal" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Extension Processed</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="text-center">
+          <span class="col-md-1 col-2 p-0" id="extendDoneModalText">Your booking has been extended.</span>
+        </div>
+        <button class="btn btn-success float-right" data-dismiss="modal">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 <!-- Extension Form -->
 <div class="modal fade" id="extendForm" tabindex="-1" role="dialog" aria-labelledby="extendForm" aria-hidden="true">
@@ -634,6 +659,7 @@ code {
 
 <script>
 
+    let $endTimeCache = +"{{end_formatted}}";
     const agg_id = "{{booking.aggregateId}}"
     const host_count = "{{templatehosts|length}}"
     // if status for a host is success or fail (not spinning), add it to map with true or false.
@@ -853,14 +879,30 @@ code {
     function showExtendModal() {
       if (ext_days_remaining > 0) {
         $("#extendModal").modal('show');
+
+        document.getElementById("new_end_date").textContent = new Date($endTimeCache + 86400000).toLocaleDateString(void 0, {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
       } else {
         $("#extendForm").modal('show');
+        const date_input = document.getElementById("extend-request-date-input");
+        const min = new Date($endTimeCache);
+        date_input.setAttribute("min", `${min.getFullYear()}-${(min.getMonth() + 1).toString().padStart(2, "0")}-${(min.getDay() + 1).toString().padStart(2, "0")}`);
       }
     }
 
     function onDaysSliderChange() {
       let value = document.getElementById("days_slider_input").value;
       document.getElementById("days_number").innerText = value;
+
+      // work.
+      document.getElementById("new_end_date").innerText = new Date($endTimeCache + 86400000 * +value).toLocaleDateString(void 0, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
     }
 
     async function submitAddCollabs() {
@@ -907,7 +949,7 @@ code {
             dataType: 'text',
         })
         .done(function(response) {
-          $("#extendModal").modal('hide');
+          $endTimeCache += 86400000 * +slider.value;
           let response_data = JSON.parse(response)
           // update end time on page
           end_time_text.innerText = response_data.updated_end_time;
@@ -918,6 +960,9 @@ code {
           days_number.innerText = 1;
           // reset slider values
           slider.value = 1;
+
+          $("#extendModal").modal('hide');
+          $("#extendDoneModal").modal("show");
         })
         .fail(function(response, textStatus, errorThrown) {
           error_text.innerText = "There was an error. Please try again later."

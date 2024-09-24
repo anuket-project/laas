@@ -159,6 +159,7 @@ def booking_detail_view(request, booking_id):
             "ipmi_fqdns": host_ipmi_fqdns,
             "host_domain": HOST_DOMAIN,
             "form": BookingMetaForm(initial={}, user_initial=[], owner=request.user),
+            "end_formatted": booking.end.timestamp() * 1000
         }
 
         return render(request, "booking/booking_detail.html", context)
