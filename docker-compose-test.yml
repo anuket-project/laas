@@ -1,0 +1,53 @@
+#This docker compose will not run Nginx but set up everything else including celery
+version: "3"
+services:
+  web:
+    image: opnfv/laas-dashboard:latest
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    restart: "no"
+    container_name: dg01
+    depends_on:
+        - postgres
+    links:
+        - postgres
+    env_file: config.env
+    volumes:
+        - laas-static:/static
+        - laas-media:/media
+    expose:
+        - "8000"
+    command: >
+      sh -c "./manage.py test --noinput"
+  postgres:
+    restart: "always"
+    image: postgres:16
+    container_name: ps01
+    env_file: config.env
+    volumes:
+      - laas-data:/var/lib/postgresql/data
+  rabbitmq:
+    restart: always
+    image: rabbitmq
+    container_name: rm01
+      #env_file: config.env
+    volumes:
+      - ./config/rabbitmq:/etc/rabbitmq
+    ports:
+        - "5672:5672"
+  worker:
+    image: opnfv/laas-celery:latest
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    restart: always
+    env_file: config.env
+    links:
+      - postgres
+      - rabbitmq
+volumes:
+    laas-media:
+    laas-static:
+    laas-data:
+        external: true

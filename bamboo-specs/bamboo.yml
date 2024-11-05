@@ -1,0 +1,107 @@
+---
+version: 2
+plan:
+  project-key: OST
+  key: LAAS
+  name: laas-django-unit-tests
+  description: This job runs the django unit tests for the laas repo
+stages:
+- Default Stage:
+    manual: false
+    final: false
+    jobs:
+    - Booking_api build_test
+Booking_api build_test:
+  key: JOB1
+  other:
+    all-other-apps:
+      custom:
+        auto: {}
+        buildHangingConfig.enabled: 'false'
+  tasks:
+  - checkout:
+      path: test
+      force-clean-build: false
+      description: Checkout branch from repo
+  - script:
+      interpreter: SHELL
+      scripts:
+      - cp config.env.sample config.env
+      working-dir: test
+      description: copy sample config
+  - script:
+      interpreter: SHELL
+      scripts:
+      - |-
+        docker build -f web/Dockerfile -t opnfv/laas-dashboard .
+        docker build -f worker/Dockerfile -t opnfv/laas-celery .
+      working-dir: test
+      description: Docker build web image / celery
+  - script:
+      interpreter: SHELL
+      scripts:
+      - "docker compose -f docker-compose-test.yml up -d\nwhile [ \"$(docker container inspect -f {{.State.Running}} dg01)\" == \"true\" ]\ndo\nsleep 1\ndone\n    STATUS=$(docker inspect dg01 --format='{{.State.ExitCode}}')\n    if [ \"$STATUS\" -eq \"0\" ]\n    then\n        printf success\n        exit 0\n        # docker stop $(docker ps -a -q) \n    else \n        printf djangodfail\n        exit 1\n    fi"
+      working-dir: test
+      description: Put up the laas dashboard front end
+  final-tasks:
+  - script:
+      interpreter: SHELL
+      scripts:
+      - |-
+        ls
+        docker compose -f docker-compose-test.yml down
+      working-dir: test
+      description: Docker down all
+  artifact-subscriptions: []
+repositories:
+- Laas (Django App):
+    type: bitbucket-server
+    server: UNH-IOL Bitbucket
+    project: OST
+    slug: laas
+    clone-url: ssh://git@bitbucket.iol.unh.edu:7999/ost/laas.git
+    branch: iol-dev
+    command-timeout-minutes: '180'
+    use-shallow-clones: false
+    cache-on-agents: true
+    submodules: false
+    ssh-key-applies-to-submodules: true
+    verbose-logs: false
+    fetch-all: false
+    lfs: false
+    viewer:
+      com.atlassian.bamboo.plugins.stash.atlassian-bamboo-plugin-stash:bbServerViewer: {}
+triggers:
+- bitbucket-server-trigger:
+    description: Changes commited to iol-dev
+branches:
+  create:
+    for-pull-request:
+      accept-fork: true
+  delete:
+    after-deleted-days: 7
+    after-inactive-days: 30
+  link-to-jira: true
+notifications: []
+labels: []
+dependencies:
+  require-all-stages-passing: false
+  enabled-for-branches: true
+  block-strategy: none
+  plans: []
+other:
+  concurrent-build-plugin: system-default
+---
+version: 2
+plan:
+  key: OST-LAAS
+plan-permissions:
+- groups:
+  - opnfv-developers
+  permissions:
+  - view
+  - edit
+  - build
+  - clone
+  - admin
+...
