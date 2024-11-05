@@ -54,7 +54,7 @@ def booking_booking_status(agg_id: str) -> dict:
     except Exception as e:
         print(f"Error at {url}")
         print(e)
-        return None
+        return None 
 
 # POST
 def booking_create_booking(booking_blob: dict) -> str:

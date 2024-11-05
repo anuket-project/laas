@@ -32,7 +32,7 @@ from django.contrib import admin
 
 
 urlpatterns = [
-
+    path('booking_api/', include('booking_api.urls', namespace='booking_api')),
     path('workflow/', include('workflow.urls', namespace='workflow')),
     path('', include('dashboard.urls', namespace='dashboard')),
     path('booking/', include('booking.urls', namespace='booking')),
