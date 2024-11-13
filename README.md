@@ -1,11 +1,6 @@
-##############################################################################
-# Copyright (c) 2016 Max Breitenfeldt and others.
-#
-# All rights reserved. This program and the accompanying materials
-# are made available under the terms of the Apache License, Version 2.0
-# which accompanies this distribution, and is available at
-# http://www.apache.org/licenses/LICENSE-2.0
-##############################################################################
+# Lab as a Service (LaaS)
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anuket-project/laas/badge)](https://scorecard.dev/viewer/?uri=github.com/anuket-project/laas)
 
 
 The dashboard is deployed using docker-compose.
@@ -13,7 +8,7 @@ The dashboard is deployed using docker-compose.
 Application / database files are saved in the 'laas-data' container
 which needs to be pre-built before bringing up the dashboard.
 
-Deployment:
+## Deployment
 
 - clone the repository
 - complete the config.env.sample file and save it as config.env
@@ -25,7 +20,7 @@ Deployment:
 Production will be running on port 80 by default.
 Development will be running on port 8000 by default.
 
-Updating:
+## Updating
 
 - run 'docker-compose pull'
 - run 'docker-compose up -d'
@@ -36,11 +31,11 @@ Updating:
 
 If there is migrations that need user input (like renaming a field), they need to be run manually!
 
-Logs / Shell access:
+## Logs / Shell access
 
 - there is some shortcuts in the makefile
 
-Development:
+## Development
 
 - Install dependencies listed in 'Deployment'
 - run 'make build'
@@ -48,7 +43,17 @@ Development:
 
     NOTE: DEBUG must be set to True in config.env when running development builds
 
-History: 
+## History
 - Development history of the project before 2023.10.26
   - Code: https://gerrit.opnfv.org/gerrit/gitweb?p=laas.git;a=summary
   - Reviews: https://gerrit.opnfv.org/gerrit/q/project:laas
+
+
+## License & Copyright 
+
+Copyright (c) 2016 Max Breitenfeldt and others
+
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Apache License, Version 2.0
+which accompanies this distribution, and is available at
+http://www.apache.org/licenses/LICENSE-2.0
