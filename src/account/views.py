@@ -23,7 +23,7 @@ from django.views.generic import RedirectView
 from django.shortcuts import render
 from booking.lib import attempt_end_booking
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
-from laas_dashboard.settings import PROJECT, AUTH_SETTING
+from laas_dashboard.settings import PROJECT, AUTH_SETTING, SITE_CONTACT
 
 from account.models import UserProfile
 from booking.models import Booking
@@ -118,6 +118,9 @@ class MyOIDCAB(OIDCAuthenticationBackend):
         up.email_addr = claims.get('email')
         up.save()
         return user
+
+    def user_can_authenticate(self, user):
+        return True
 
 
 class OIDCLoginView(RedirectView):
@@ -253,6 +256,7 @@ def account_dev_login_view(request):
             username = request.POST['username']
             password = request.POST['password']
         user = authenticate(username=username, password=password)
+
         if user is not None:
             django_login(request, user)
             template_dash = "dashboard/landing.html"
