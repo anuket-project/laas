@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load bootstrap4 %}
+
+{% block content %}
+<h1>Disabled Account</h1>
+
+<p>
+    Your account has been disabled. Please contact the administrator at <a href="mailto:{{contact_email}}">{{contact_email}}</a> and log out.
+</p>
+
+{% endblock content %}

@@ -10,9 +10,11 @@
 
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
+from django.shortcuts import render
 
 from account.models import UserProfile
 
+from laas_dashboard.settings import SITE_CONTACT
 
 class TimezoneMiddleware(MiddlewareMixin):
     """
@@ -33,3 +35,12 @@ class TimezoneMiddleware(MiddlewareMixin):
                 timezone.activate(tz)
         else:
             timezone.deactivate()
+
+class ActiveUserMiddleware(MiddlewareMixin):
+    def process_request(self, request):
+        if request.user.is_authenticated and not request.user.is_active and request.path != "/oidc/logout/":
+            return render(request, "account/account_disabled.html", {
+                "contact_email": SITE_CONTACT
+            })
+
+        return self.get_response(request)
