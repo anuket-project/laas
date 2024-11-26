@@ -144,7 +144,7 @@ class BookingIdViewSet(viewsets.ViewSet):
             except ObjectDoesNotExist:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
             if self.request.user == booking.owner:
-                booking.end = datetime.now()
+                booking.end = timezone.now()
                 booking.save()
                 response_end_booking = attempt_end_booking(booking=booking)
                 if response_end_booking[0] == False:
