@@ -261,3 +261,4 @@ EXPIRE_LIFETIME = 12  # Minimum lifetime of booking to send notification
 EXPIRE_HOURS = 48  # Notify when booking is expiring within this many hours
 
 SITE_CONTACT = os.environ.get("SITE_CONTACT")
+EVE_DOCS_URL = os.environ.get("EVE_DOCS_URL", "")
