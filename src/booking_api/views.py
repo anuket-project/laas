@@ -219,7 +219,7 @@ class BookingIdCollaboratorsViewSet(viewsets.ViewSet):
                     curr_collaborator = UserProfile.objects.get(user=collaborator)
                     collaborator_ipa_name = curr_collaborator.ipa_username
                     dict_collaborators.update({"vpn_username": collaborator_ipa_name})
-                    if not full:
+                    if full:
                         collaborator_company = user_get_user(
                             curr_collaborator.ipa_username
                         )

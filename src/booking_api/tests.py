@@ -134,7 +134,8 @@ class BookingViewSetTestCase(TestCase):
     # endpoint /booking/booking_id/collaborators
     def test_booking_id_collaborators(self):
         response: Response = self.client.get(
-            path=f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/collaborators/"
+            path=f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/collaborators/",
+            data={"full":"False"}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Data to add 'collaborator'
@@ -154,19 +155,20 @@ class BookingViewSetTestCase(TestCase):
             content_type="application/json",
         )
         response_after_bad_data = self.client.get(
-            path=f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/collaborators/"
+            path=f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/collaborators/",
+            data={"full":"False"}
         ).data
         expected_response_data = [
             {
                 "dashboard_username": "test",
                 "vpn_username": None,
-                "company": 'UNKNOWN',
+                "company": None,
                 "email": "email@mail.com",
             },
             {
                 "dashboard_username": "collaborator",
                 "vpn_username": None,
-                "company": 'UNKNOWN',
+                "company": None,
                 "email": "email@mail.com",
             },
         ]
