@@ -25,7 +25,7 @@ from django.contrib.auth.models import User
 
 from liblaas.views import booking_ipmi_fqdn
 
-from laas_dashboard.settings import HOST_DOMAIN, PROJECT
+from laas_dashboard.settings import HOST_DOMAIN, PROJECT, EVE_DOCS_URL
 from booking.lib import resolve_hostname
 from datetime import timedelta
 
@@ -149,6 +149,15 @@ def booking_detail_view(request, booking_id):
                         if (host.get("hostname") == statuses.get("instances").get(instance).get("host_alias")) & (flavor.get("flavor_id") == host.get("flavor")):
                             statuses.get("instances").get(instance)["image_list"] = flavor.get("images")
 
+        has_eve_host = False
+        has_ssh_host = False
+
+        for host in hosts:
+            if 'image' in host and "eve" in host['image'].lower():
+                has_eve_host = True
+            else:
+                has_ssh_host = True
+
         context = {
             "title": "Booking Details",
             "booking": booking,
@@ -159,7 +168,10 @@ def booking_detail_view(request, booking_id):
             "ipmi_fqdns": host_ipmi_fqdns,
             "host_domain": HOST_DOMAIN,
             "form": BookingMetaForm(initial={}, user_initial=[], owner=request.user),
-            "end_formatted": booking.end.timestamp() * 1000
+            "end_formatted": booking.end.timestamp() * 1000,
+            "has_eve_host": has_eve_host,
+            "has_ssh_host": has_ssh_host,
+            "eve_docs_url": EVE_DOCS_URL
         }
 
         return render(request, "booking/booking_detail.html", context)

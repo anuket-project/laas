@@ -2,46 +2,25 @@
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anuket-project/laas/badge)](https://scorecard.dev/viewer/?uri=github.com/anuket-project/laas)
 
+## Overview
 
-The dashboard is deployed using docker-compose.
+The Lab as a Service (LaaS) project aims to improve development, testing, and integration work in Anuket and the Linux Foundation Networking community by providing customizable hardware environments, or “labs”, to developers. Deploying and testing Anuket requires large amounts of baremetal hardware which is usually not available to developers.
 
-Application / database files are saved in the 'laas-data' container
-which needs to be pre-built before bringing up the dashboard.
+LaaS as a project is composed of the web portal that users interact with, as well as an API that the web portal provides for participating labs. Labs that want to participate in LaaS must host hardware and consume the web portal's API in order to configure and manage that hardware.
 
-## Deployment
+For more details, please check see https://lf-anuket.atlassian.net/wiki/spaces/HOME/pages/21861157/Lab+as+a+Service
 
-- clone the repository
-- complete the config.env.sample file and save it as config.env
-- install docker, docker-compose
-- run 'make data'
-- run 'make up' to run the dashboard (or 'make dev-up' for development)
-- get the rsa.pem and rsa.pub keys from your jira admin and place them in src/account
+## This Repository
+This repository contains code for a reference LaaS dashboard. It must be used alongside a custom backend. The reference backend can be found at [laas-reflab](https://github.com/anuket-project/laas-reflab).
 
-Production will be running on port 80 by default.
-Development will be running on port 8000 by default.
+This is largely maintained by the UNH-IOL, but bug fixes and features are welcome from the community.
 
-## Updating
+## Starting a local deployment using docker and docker compose
+1. Install docker and docker compose
+1. Copy `config.env.sample` to `config.env` and update fields as needed.
+1. Run `make dev-up` to build and run a local dashboard
 
-- run 'docker-compose pull'
-- run 'docker-compose up -d'
-- make stop
-- git pull
-- make build
-- make start
-
-If there is migrations that need user input (like renaming a field), they need to be run manually!
-
-## Logs / Shell access
-
-- there is some shortcuts in the makefile
-
-## Development
-
-- Install dependencies listed in 'Deployment'
-- run 'make build'
-- run 'make dev-up'
-
-    NOTE: DEBUG must be set to True in config.env when running development builds
+Note: You will need to also run a local backend to access most features of LaaS.
 
 ## History
 - Development history of the project before 2023.10.26

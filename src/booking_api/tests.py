@@ -9,8 +9,6 @@ from rest_framework.authtoken.models import Token
 import json
 from unittest.mock import patch
 
-
-# from liblaas import views
 class BookingViewSetTestCase(TestCase):
     # NOTE: Set up test data only runs once where set up runs for each test
     @classmethod
@@ -46,7 +44,6 @@ class BookingViewSetTestCase(TestCase):
         response_dict_of_get_data: dict = {}
         for booking in response_data:
             response_dict_of_get_data.update(booking)
-        # figure out how to access the class data
         expected_response_get_data = {
             "id": self.booking.id,
             "owner": "test",
@@ -137,7 +134,8 @@ class BookingViewSetTestCase(TestCase):
     # endpoint /booking/booking_id/collaborators
     def test_booking_id_collaborators(self):
         response: Response = self.client.get(
-            path=f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/collaborators/"
+            path=f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/collaborators/",
+            data={"full":"False"}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Data to add 'collaborator'
@@ -157,19 +155,20 @@ class BookingViewSetTestCase(TestCase):
             content_type="application/json",
         )
         response_after_bad_data = self.client.get(
-            path=f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/collaborators/"
+            path=f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/collaborators/",
+            data={"full":"False"}
         ).data
         expected_response_data = [
             {
                 "dashboard_username": "test",
                 "vpn_username": None,
-                "company": 'UNKNOWN',
+                "company": None,
                 "email": "email@mail.com",
             },
             {
                 "dashboard_username": "collaborator",
                 "vpn_username": None,
-                "company": 'UNKNOWN',
+                "company": None,
                 "email": "email@mail.com",
             },
         ]
@@ -187,8 +186,8 @@ class BookingViewSetTestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     # endpoint /booking/booking_id
-    @patch("booking_api.views.booking_end_booking")
-    def test_booking_id(self, mock_booking_end_booking):
+    @patch("booking_api.views.attempt_end_booking")
+    def test_booking_id(self, mock_attempt_end_booking):
         response: Response = self.client.get(
             f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/"
         )
@@ -213,7 +212,7 @@ class BookingViewSetTestCase(TestCase):
             expected_response["complete"], response_loaded_json["complete"]
         )
         # Test delete (DELETE DOES NOT DELETE DJANGO OBJECT!!!)
-        mock_booking_end_booking.return_value = "success from tascii"
+        mock_attempt_end_booking.return_value = (True, "success")
         response_delete: Response = self.client.delete(
             f"http://127.0.0.1:8000/booking_api/booking/{self.booking.id}/"
         )

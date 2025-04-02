@@ -120,6 +120,20 @@ code {
       </div>
     </div>
     <div class="col">
+      {% if has_eve_host %}
+      <div class="card mb-3 requires-ready" hidden="true">
+        <div class="card-header d-flex align-items-center">
+          <h4>Using Your EVE-OS Host</h4>
+        </div>
+
+        <p class="m-3">
+          Please refer to the guide <a href="{{eve_docs_url}}">here</a> for detailed steps on setting up and accessing your resource.
+          If there are any problems with your booking, please <a href="mailto:{{contact_email}}">contact us here</a>.
+        </p>
+      </div>
+      {% endif %}
+
+      {% if has_ssh_host %}
         <div class="card mb-3 requires-ready" hidden="true">
           <div class="card-header d-flex align-items-center">
             <h4>Connect to Your Hosts</h4>
@@ -155,6 +169,7 @@ code {
             View Instructions
           </button>
         </div>
+        {% endif %}
         <div class="card mb-3">
             <div class="card-header">
                 <h4>Deployment</h4>
@@ -784,7 +799,9 @@ code {
 
       if (bookingIsReady()) {
         // host info
-        const host_info = instance_cache.get(inst_id).assigned_host_info;
+        const instance_data = instance_cache.get(inst_id);
+        const host_info = instance_data.assigned_host_info;
+        const soft_serial = instance_data.soft_serial;
         const host_info_table = document.createElement('table');
         host_info_table.classList.add("table");
         host_info_table.classList.add("table-striped");
@@ -832,7 +849,11 @@ code {
         const td_title_serial = document.createElement('td');
         td_title_serial.innerText = "Serial";
         const td_serial = document.createElement('td');
-        td_serial.innerText = host_info.serial;
+        if (soft_serial) {
+          td_serial.innerText = soft_serial.replaceAll('"', '');
+        } else {
+          td_serial.innerText = host_info.serial;
+        }
         tr_serial.appendChild(td_title_serial);
         tr_serial.appendChild(td_serial);
         host_info_table.appendChild(tr_serial);

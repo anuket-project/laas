@@ -2,7 +2,6 @@
 version: "3"
 services:
   web:
-    image: opnfv/laas-dashboard:latest
     build:
       context: .
       dockerfile: web/Dockerfile
@@ -37,7 +36,6 @@ services:
     ports:
         - "5672:5672"
   worker:
-    image: opnfv/laas-celery:latest
     build:
       context: .
       dockerfile: worker/Dockerfile

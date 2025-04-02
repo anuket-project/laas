@@ -144,7 +144,7 @@ class BookingIdViewSet(viewsets.ViewSet):
             except ObjectDoesNotExist:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
             if self.request.user == booking.owner:
-                booking.end = datetime.now()
+                booking.end = timezone.now()
                 booking.save()
                 response_end_booking = attempt_end_booking(booking=booking)
                 if response_end_booking[0] == False:
@@ -219,7 +219,7 @@ class BookingIdCollaboratorsViewSet(viewsets.ViewSet):
                     curr_collaborator = UserProfile.objects.get(user=collaborator)
                     collaborator_ipa_name = curr_collaborator.ipa_username
                     dict_collaborators.update({"vpn_username": collaborator_ipa_name})
-                    if not full:
+                    if full:
                         collaborator_company = user_get_user(
                             curr_collaborator.ipa_username
                         )
