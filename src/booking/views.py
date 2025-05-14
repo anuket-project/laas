@@ -11,7 +11,7 @@
 from django.contrib import messages, admin
 import json
 from django.contrib import messages
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.generic import TemplateView
 from django.shortcuts import redirect, render
@@ -19,7 +19,12 @@ from workflow.forms import BookingMetaForm
 
 from account.models import Downtime, Lab, UserProfile
 from booking.models import Booking
-from liblaas.views import booking_booking_status, flavor_list_flavors, user_add_users, booking_request_extension
+from liblaas.views import (
+    booking_booking_status,
+    flavor_list_flavors,
+    user_add_users,
+    booking_request_extension,
+)
 from django.http import HttpResponse, JsonResponse, HttpRequest
 from django.contrib.auth.models import User
 
@@ -28,6 +33,9 @@ from liblaas.views import booking_ipmi_fqdn
 from laas_dashboard.settings import HOST_DOMAIN, PROJECT, EVE_DOCS_URL
 from booking.lib import resolve_hostname
 from datetime import timedelta
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def owner_action(action):
@@ -37,19 +45,33 @@ def owner_action(action):
     Each function that is decorated by 'owner_action' needs to take an HttpRequest and a Booking id as arguments
     The decorator function will pass the queried Booking object (obtained from the id) to the action function, so there is no need to make a second query.
     """
-    def decorator_function(request: HttpRequest, booking_id: int, **kwargs) -> HttpResponse:
+
+    def decorator_function(
+        request: HttpRequest, booking_id: int, **kwargs
+    ) -> HttpResponse:
 
         booking: Booking = Booking.objects.get(id=booking_id)
         user: User = request.user
 
         if booking.owner != user:
-            return JsonResponse(status=403, data={"message": "Only the booking owner may perform this action!"})
-        
+            return JsonResponse(
+                status=403,
+                data={"message": "Only the booking owner may perform this action!"},
+            )
+
         if booking.complete:
-            return JsonResponse(status=403, data={"message": "This action can only be performed on an active booking!"})
+            return JsonResponse(
+                status=403,
+                data={
+                    "message": "This action can only be performed on an active booking!"
+                },
+            )
 
         return action(request, booking_id, booking=booking)
+
     return decorator_function
+
+
 class BookingView(TemplateView):
     template_name = "booking/booking_detail.html"
 
@@ -101,8 +123,31 @@ class BookingListView(TemplateView):
         return context
 
 
+def get_flavor_name(flavor_list, flavor_id):
+    """
+    Return the human-readable flavor name for a given flavor_id.
+    """
+    for flavor in flavor_list:
+        if flavor.get("flavor_id") == flavor_id:
+            return flavor.get("name")
+    return None
+
+
+def get_image_name(flavor_list, flavor_id, image_id):
+    """
+    Return the human-readable image name for a given flavor_id and image_id.
+    """
+    for flavor in flavor_list:
+        if flavor.get("flavor_id") == flavor_id:
+            for image in flavor.get("images", []):
+                if image.get("image_id") == image_id:
+                    return image.get("name")
+    return None
+
+
 def booking_detail_view(request, booking_id):
     if request.method == "GET":
+        # make sure the user is authenticated
         user = None
         if request.user.is_authenticated:
             user = request.user
@@ -112,51 +157,79 @@ def booking_detail_view(request, booking_id):
             )
 
         booking = get_object_or_404(Booking, id=booking_id)
-        statuses = []
-        if booking.aggregateId:
-            statuses = booking_booking_status(booking.aggregateId)
+
+        # check booking permissions
+        # only let the owner and collaborators view the booking
         allowed_users = set(list(booking.collaborators.all()))
+        allowed_users.add(booking.owner)
+
+        # or superuser
         if request.user.is_superuser:
             allowed_users.add(request.user)
-        allowed_users.add(booking.owner)
+
+        # redirect if not allowed
         if user not in allowed_users:
             return render(
                 request, "dashboard/login.html", {"title": "This page is private"}
             )
 
-        flavorlist = flavor_list_flavors(PROJECT)
-        hosts = []
+        statuses = []
+        if booking.aggregateId:
+            # json returned by `booking/agg_id/status`
+            # {
+            #   instances: { ... }
+            #   config: { ... }
+            #   template: { ... }
+            # }
+            statuses = booking_booking_status(booking.aggregateId)
+
+        template_hosts = []
+        hosts_data = statuses.get("template", {}).get("hosts", []) if statuses else []
+
+        for host in hosts_data:
+            hostname = host.get("hostname")
+            flavor_id = host.get("flavor")
+            image_id = host.get("image")
+
+            flavorlist = flavor_list_flavors(PROJECT)
+
+            flavor_name = get_flavor_name(flavor_list=flavorlist, flavor_id=flavor_id)
+            image_name = get_image_name(
+                flavor_list=flavorlist, flavor_id=flavor_id, image_id=image_id
+            )
+
+            template_hosts.append(
+                {
+                    "name": hostname,
+                    "flavor": flavor_name,
+                    "image": image_name,
+                }
+            )
+
+        # build map of host_alias -> IPMI FQDN
         host_ipmi_fqdns = {}
-        if statuses:
-            for host in statuses.get("template").get("hosts"):
-                curr_host = {}
-                curr_host["name"] = host.get("hostname")
-                for flavor in flavorlist:
-                    if host.get("flavor") == flavor.get("flavor_id"):
-                        curr_host["flavor"] = flavor.get("name")
-                        for image in flavor.get("images"):
-                            if host.get("image") == image.get("image_id"):
-                                curr_host["image"] = image.get("name")
-                hosts.append(curr_host)
 
-            for instance in statuses.get("instances"):
-                access = statuses.get("instances").get(instance).get("assigned_host")
-                ipmi_fqdn_response = booking_ipmi_fqdn(instance)
-                if (ipmi_fqdn_response is not None):
-                    host_ipmi_fqdns[access] = ipmi_fqdn_response.get("ipmi_fqdn")
-                for host in statuses.get("template").get("hosts"):
-                    for flavor in flavorlist:
-                        if (host.get("hostname") == statuses.get("instances").get(instance).get("host_alias")) & (flavor.get("flavor_id") == host.get("flavor")):
-                            statuses.get("instances").get(instance)["image_list"] = flavor.get("images")
+        for instance_id, inst_data in statuses.get("instances", {}).items():
+            log.debug("Instance %s data: %r", instance_id, inst_data)
 
-        has_eve_host = False
-        has_ssh_host = False
+            host_alias = inst_data.get("host_alias")
+            if not host_alias:
+                continue
 
-        for host in hosts:
-            if 'image' in host and "eve" in host['image'].lower():
-                has_eve_host = True
-            else:
-                has_ssh_host = True
+            # fetch IPMI FQDN for this instance
+            ipmi_resp = booking_ipmi_fqdn(instance_id)
+            if ipmi_resp and ipmi_resp.get("ipmi_fqdn"):
+                host_ipmi_fqdns[host_alias] = ipmi_resp["ipmi_fqdn"]
+
+        # a host is either an ssh host or an eve host
+        has_eve_host = any(
+            host.get("image") and "eve" in host["image"].lower()
+            for host in template_hosts
+        )
+        has_ssh_host = any(
+            host.get("image") and "eve" not in host["image"].lower()
+            for host in template_hosts
+        )
 
         context = {
             "title": "Booking Details",
@@ -164,14 +237,14 @@ def booking_detail_view(request, booking_id):
             "status": statuses,
             "collab_string": ", ".join(map(str, booking.collaborators.all())),
             "contact_email": Lab.objects.filter(name="UNH_IOL").first().contact_email,
-            "templatehosts": hosts,
+            "templatehosts": template_hosts,
             "ipmi_fqdns": host_ipmi_fqdns,
             "host_domain": HOST_DOMAIN,
             "form": BookingMetaForm(initial={}, user_initial=[], owner=request.user),
             "end_formatted": booking.end.timestamp() * 1000,
             "has_eve_host": has_eve_host,
             "has_ssh_host": has_ssh_host,
-            "eve_docs_url": EVE_DOCS_URL
+            "eve_docs_url": EVE_DOCS_URL,
         }
 
         return render(request, "booking/booking_detail.html", context)
@@ -196,6 +269,7 @@ def update_booking_status(request):
 
     return HttpResponse(status=500)
 
+
 def get_host_ip(request):
     if request.method != "POST":
         return HttpResponse(status=405)
@@ -210,6 +284,7 @@ def get_host_ip(request):
 
     return HttpResponse(status=500)
 
+
 def manage_collaborators(request, booking_id) -> HttpResponse:
 
     booking: Booking = Booking.objects.get(id=booking_id)
@@ -218,12 +293,17 @@ def manage_collaborators(request, booking_id) -> HttpResponse:
         return HttpResponse(status=401)
 
     if request.method == "GET":
-        return JsonResponse({"collaborators": ", ".join(map(str, booking.collaborators.all()))}, status=200)
+        return JsonResponse(
+            {"collaborators": ", ".join(map(str, booking.collaborators.all()))},
+            status=200,
+        )
 
     if request.method == "POST":
-        data: list[int] = json.loads(request.body.decode('utf-8'))
+        data: list[int] = json.loads(request.body.decode("utf-8"))
         profiles: list[UserProfile] = list(UserProfile.objects.filter(id__in=data))
-        ipa_usernames: list[str] = list(map(lambda profile: profile.ipa_username, profiles))
+        ipa_usernames: list[str] = list(
+            map(lambda profile: profile.ipa_username, profiles)
+        )
 
         liblaas_collabs = user_add_users(booking.aggregateId, ipa_usernames)
 
@@ -231,7 +311,10 @@ def manage_collaborators(request, booking_id) -> HttpResponse:
             for profile in profiles:
                 booking.collaborators.add(profile.user)
             booking.save()
-        return JsonResponse({"collaborators": ", ".join(map(str, booking.collaborators.all()))}, status=200)
+        return JsonResponse(
+            {"collaborators": ", ".join(map(str, booking.collaborators.all()))},
+            status=200,
+        )
 
     if request.method == "DELETE":
         # Remove collabs - unimplemented
@@ -239,13 +322,14 @@ def manage_collaborators(request, booking_id) -> HttpResponse:
 
     return HttpResponse(status=405)
 
+
 @owner_action
 def extend_booking(request: HttpRequest, booking_id: int, **kwargs) -> HttpResponse:
     # booking kwarg is set in the decorator call, retreived from booking_id
     booking: Booking = kwargs["booking"]
 
     if request.method == "POST":
-        days: int = json.loads(request.body.decode('utf-8'))["days"]
+        days: int = json.loads(request.body.decode("utf-8"))["days"]
         if days > 0 and days <= booking.ext_days:
             booking.ext_days -= days
             booking.end += timedelta(days)
@@ -257,17 +341,28 @@ def extend_booking(request: HttpRequest, booking_id: int, **kwargs) -> HttpRespo
 
         # Jinja automically formats the datetime when the page is loaded for the first time. We aren't re-rendering the page so we need to do it manually
         # It is not a 100% match but it's close
-        updated_end_time = booking.end.strftime("%B %-d, %Y, %-I:%M ") + ("a.m." if booking.end.strftime("%P") == "am" else "p.m.")
-        return JsonResponse(status=200, data={"extensions_remaining": extensions_remaining, "updated_end_time": updated_end_time})
+        updated_end_time = booking.end.strftime("%B %-d, %Y, %-I:%M ") + (
+            "a.m." if booking.end.strftime("%P") == "am" else "p.m."
+        )
+        return JsonResponse(
+            status=200,
+            data={
+                "extensions_remaining": extensions_remaining,
+                "updated_end_time": updated_end_time,
+            },
+        )
 
     return HttpResponse(status=405)
 
+
 @owner_action
-def request_extend_booking(request: HttpRequest, booking_id: int, **kwargs) -> HttpResponse:
+def request_extend_booking(
+    request: HttpRequest, booking_id: int, **kwargs
+) -> HttpResponse:
     booking: Booking = kwargs["booking"]
 
     if request.method == "POST":
-        post_data: dict = json.loads(request.body.decode('utf-8'))
+        post_data: dict = json.loads(request.body.decode("utf-8"))
         reason: str = post_data["reason"]
         date: str = post_data["date"]
 
