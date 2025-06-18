@@ -13,6 +13,7 @@ import json
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
+import zoneinfo
 from django.views.generic import TemplateView
 from django.shortcuts import redirect, render
 from workflow.forms import BookingMetaForm
@@ -72,27 +73,6 @@ def owner_action(action):
     return decorator_function
 
 
-class BookingView(TemplateView):
-    template_name = "booking/booking_detail.html"
-
-    def get_context_data(self, **kwargs):
-        booking = get_object_or_404(Booking, id=self.kwargs["booking_id"])
-        title = "Booking Details"
-        contact = Lab.objects.filter(name="UNH_IOL").first().contact_email
-        downtime = Downtime.objects.filter(
-            lab=booking.lab, start__lt=timezone.now, end__gt=timezone.now()
-        ).first()
-        context = super(BookingView, self).get_context_data(**kwargs)
-        context.update(
-            {
-                "title": title,
-                "booking": booking,
-                "downtime": downtime,
-                "contact_email": contact,
-            }
-        )
-        return context
-
 
 class BookingDeleteView(TemplateView):
     template_name = "booking/booking_delete.html"
@@ -119,7 +99,11 @@ class BookingListView(TemplateView):
         bookings = Booking.objects.filter(end__gte=timezone.now())
         title = "Search Booking"
         context = super(BookingListView, self).get_context_data(**kwargs)
-        context.update({"title": title, "bookings": bookings})
+        context.update({
+            "title": title, 
+            "bookings": bookings,
+            "tz_label" : UserProfile.objects.get(user=self.request.user).timezone
+        })
         return context
 
 
@@ -231,10 +215,14 @@ def booking_detail_view(request, booking_id):
             for host in template_hosts
         )
 
+        # get user profile to get timezone label in context
+        up: UserProfile = UserProfile.objects.get(user=request.user)
+
         context = {
             "title": "Booking Details",
             "booking": booking,
             "status": statuses,
+            "tz_label" : zoneinfo.ZoneInfo(up.timezone),
             "collab_string": ", ".join(map(str, booking.collaborators.all())),
             "contact_email": Lab.objects.filter(name="UNH_IOL").first().contact_email,
             "templatehosts": template_hosts,
