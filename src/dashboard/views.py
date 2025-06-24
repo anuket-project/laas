@@ -28,43 +28,31 @@ from liblaas.views import flavor_list_flavors, flavor_list_hosts
 
 
 def lab_list_view(request):
-    labs = Lab.objects.all()
-    context = {"labs": labs, 'title': 'Labs'}
+    labs = Lab.objects.all().order_by("name")
+    
 
-    return render(request, "dashboard/lab_list.html", context)
-
-
-def lab_detail_view(request, lab_name):
-    user = None
-    if request.user.is_authenticated:
-        user = request.user
-
-    lab = get_object_or_404(Lab, name=lab_name)
     flavors_list = flavor_list_flavors(PROJECT)
     host_list = flavor_list_hosts(PROJECT)
 
+    # Make sure each host.flavor value has its id (for a link) and name
+        # Done in view instead of template since Django templating is limited and to reduce the amount of unnecessary values passed by context
     flavor_map = {}
     for flavor in flavors_list:
         flavor_map[flavor['flavor_id']] = flavor['name']
 
-
-    # Apparently Django Templating lacks many features that regular Jinja offers, so I need to get creative
     for host in host_list:
         id = host["flavor"]
         name = flavor_map[id]
         host["flavor"] = {"id": id, "name": name}
+ 
 
-    return render(
-        request,
-        "dashboard/lab_detail.html",
-        {
-            'title': "Lab Overview",
-            'lab': lab,
-            # 'hostprofiles': ResourceProfile.objects.filter(labs=lab),
-            'flavors': flavors_list,
-            'hosts': host_list
-        }
-    )
+    context = {
+        'labs': labs,
+        'hosts': host_list,
+        'title': 'Labs'
+    }
+
+    return render(request, "dashboard/lab_list.html", context)
 
 
 def host_profile_detail_view(request):
