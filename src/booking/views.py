@@ -99,10 +99,16 @@ class BookingListView(TemplateView):
         bookings = Booking.objects.filter(end__gte=timezone.now())
         title = "Search Booking"
         context = super(BookingListView, self).get_context_data(**kwargs)
+
+        if (self.request.user.is_authenticated):
+            tz_label = UserProfile.objects.get(user=self.request.user).timezone
+        else:
+            tz_label = 'UTC'
+
         context.update({
             "title": title, 
             "bookings": bookings,
-            "tz_label" : UserProfile.objects.get(user=self.request.user).timezone
+            "tz_label" : tz_label,
         })
         return context
 
