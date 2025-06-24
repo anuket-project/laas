@@ -86,6 +86,8 @@ class Lab(models.Model):
     # This token must apear in API requests from this lab
     api_token = models.CharField(max_length=50)
     description = models.CharField(max_length=240)
+    # An info_link is to the lab's page about their services, while the home_link is too their page
+        # For the IoL the info_link would be to the confluence wiki page, while the home_link would go to www.iol.uhh.edu
     lab_info_link = models.URLField(null=True)
     lab_home_link = models.URLField(null=True)
     lab_logo_link = models.URLField(null=True, help_text="Remote image resource, size will be constricted dynamically")

@@ -29,7 +29,6 @@ from django.urls import path
 from dashboard.views import (
     landing_view,
     lab_list_view,
-    lab_detail_view,
     host_profile_detail_view
 )
 
@@ -37,6 +36,5 @@ app_name = 'dashboard'
 urlpatterns = [
     path('', landing_view, name='index'),
     path('lab/', lab_list_view, name='all_labs'),
-    path('lab/<path:lab_name>/', lab_detail_view, name='lab_detail'),
     path('hosts/', host_profile_detail_view, name="hostprofile_detail")
 ]
