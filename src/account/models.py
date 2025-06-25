@@ -81,14 +81,18 @@ class Lab(models.Model):
     lab_user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=200, primary_key=True, unique=True, null=False, blank=False)
     contact_email = models.EmailField(max_length=200, null=True, blank=True)
-    contact_phone = models.CharField(max_length=20, null=True, blank=True)
     status = models.IntegerField(default=LabStatus.UP)
     location = models.TextField(default="unknown")
     # This token must apear in API requests from this lab
     api_token = models.CharField(max_length=50)
     description = models.CharField(max_length=240)
+    # An info_link is to the lab's page about their services, while the home_link is too their page
+        # For the IoL the info_link would be to the confluence wiki page, while the home_link would go to www.iol.uhh.edu
     lab_info_link = models.URLField(null=True)
+    lab_home_link = models.URLField(null=True)
+    lab_logo_link = models.URLField(null=True, help_text="Remote image resource, size will be constricted dynamically")
     project = models.CharField(default='LaaS', max_length=100)
+    about_text = models.TextField(default="")
 
     @staticmethod
     def make_api_token():

@@ -213,3 +213,10 @@ z-index: 1 !important;
     overflow-y: auto;
     overflow-x: hidden;
 }
+
+/* for lab_list.html to control lab logo(s) */
+.imgFit-control {
+    object-fit: contain;
+    display: block;
+
+}

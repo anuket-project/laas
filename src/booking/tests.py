@@ -38,7 +38,6 @@ class SchemaTests(TestCase):
         cls.lab = Lab.objects.create(
             name="TestLab",
             contact_email="test@email.com",
-            contact_phone="555-555-5555",
             location="Test Location",
             description="Test Description",
             project="Test Project",

@@ -32,7 +32,7 @@ def host_list_view(request):
         name = flavor_map[id]
         host["flavor"] = {"id": id, "name": name}
 
-    template = "resource/hosts.html"
+    template = "dashboard/table.html"
     context = {
         "hosts": host_list,
         "flavor_map": flavor_map

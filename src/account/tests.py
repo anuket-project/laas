@@ -83,32 +83,35 @@ class SchemaTests(TestCase):
     def test_create_lab_succeeds(self):
         name = "TestLab",
         contact_email = "test@email.com",
-        contact_phone =" 555-555-5555"
         location = "Test Location",
         description = "Test Description",
         project = "Test Project"
         lab_user = User.objects.create_user("admin")
+        about_text = "Test about us text"
 
         lab = Lab.objects.create(
             name=name,
             contact_email=contact_email,
-            contact_phone=contact_phone,
             location=location,
             description=description,
             project=project,
-            lab_user=lab_user
+            lab_user=lab_user,
+            about_text=about_text
         )
         
         self.assertEqual(name, lab.name)
         self.assertEqual(contact_email, lab.contact_email)
-        self.assertEqual(contact_phone, lab.contact_phone)
         self.assertEqual(location, lab.location)
         self.assertEqual(description, lab.description)
         self.assertEqual(project, lab.project)
         self.assertEqual(lab_user, lab.lab_user)
+        self.assertEqual(about_text, lab.about_text)
         
         # defaults
         self.assertEqual(lab.status, LabStatus.UP)
         self.assertEqual(lab.api_token, "")
         self.assertEqual(lab.lab_info_link, None)
+        self.assertEqual(lab.lab_logo_link, None)
+        self.assertEqual(lab.lab_home_link, None)
+        
 

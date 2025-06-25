@@ -110,13 +110,13 @@
                                 Create <i class="fas fa-angle-down rotate"></i>
                             </a>
                             <div class="collapse" id="createList">
+                                <a href="{% url 'workflow:book_a_pod' %}" onclick=""
+                                    class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
+                                    Book a Resource
+                                </a>
                                 <a href="{% url 'workflow:design_a_pod' %}" onclick=""
                                 class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
                                 Design a Pod
-                                </a>
-                                <a href="{% url 'workflow:book_a_pod' %}" onclick=""
-                                    class="list-group-item list-group-item-action list-group-item-secondary dropDown-bg">
-                                    Book a Pod
                                 </a>
                             </div>
                             {% endblock dropDown %}

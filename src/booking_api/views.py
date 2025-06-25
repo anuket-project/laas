@@ -106,7 +106,7 @@ class BookingViewSet(viewsets.ViewSet):
                 return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
             else:
 
-                return Response(booking_response, status=status.HTTP_200_OK)
+                return Response(str(booking.id), status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
@@ -258,7 +258,9 @@ class BookingIdCollaboratorsViewSet(viewsets.ViewSet):
                         booking.save()
                     except ObjectDoesNotExist:
                         print("object not found")
-            return Response(status=status.HTTP_200_OK)
+                return Response(status=status.HTTP_200_OK)
+            else: 
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
@@ -271,7 +273,7 @@ class BookingIdInstanceIdPowerViewSet(viewsets.ViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def power(self, **kwargs):
+    def power(self, *args, **kwargs):
         if self.request.user.is_authenticated:
             host_id = self.kwargs["booking_id"]
             command = self.request.data
@@ -292,7 +294,7 @@ class BookingIdInstanceIdReprovisionViewSet(viewsets.ViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def reprovision(self, **kwargs):
+    def reprovision(self, *args, **kwargs):
         if self.request.user.is_authenticated:
             try:
                 booking = Booking.objects.get(id=kwargs["booking_id"])

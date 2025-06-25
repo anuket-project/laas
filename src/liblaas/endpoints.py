@@ -19,7 +19,6 @@ from account.models import Lab
 from django.utils import timezone
 from datetime import timedelta
 from laas_dashboard.settings import PROJECT
-
 def request_list_flavors(request, lab_name) -> HttpResponse:
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
@@ -265,7 +264,6 @@ def request_ipmi_setpower(request, host_id) -> HttpResponse:
             data = success,
             status = 200,
         )
-
 def request_ipmi_getpower(request, host_id) -> HttpResponse:
     success = booking_ipmi_getpower(host_id)
 

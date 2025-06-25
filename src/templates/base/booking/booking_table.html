@@ -1,13 +1,14 @@
 
 
-
+<caption class="text-right">*All times are in the {{tz_label }} timezone <br>{% if request.user.is_authenticated %}Change your timezone in your account settings{% else%}Log in to be able to customize your timezone{% endif %}
+</caption>
 <thead>
 <tr class="Anuket-Text">
     <th>Owner</th>
     <th>Purpose</th>
     <th>Project</th>
-    <th>Start</th>
-    <th>End</th>
+    <th>Start*</th>
+    <th>End*</th>
 </tr>
 </thead>
 <tbody>
