@@ -12,13 +12,10 @@ const steps = {
 
 const BOOKING_OVERVIEW_PAGE = -2
 
-  class BookingWorkflow extends Workflow {
+class BookingWorkflow extends Workflow {
     constructor(savedBookingBlob) {
         super(["select_template", "cloud_init", "booking_details" , "booking_summary"])
 
-        // if (savedBookingBlob) {
-        //     this.resume_workflow()
-        // }
 
         this.bookingBlob = new BookingBlob({});
         this.userTemplates = null;
@@ -31,31 +28,22 @@ const BOOKING_OVERVIEW_PAGE = -2
         for (const fblob of flavorsList) {
             this.labFlavors.set(fblob.flavor_id, fblob);
         }
-        GUI.displayTemplates(this.userTemplates, this.labFlavors);
-        GUI.modifyCollabWidget();
         this.setEventListeners();
-        document.getElementById(this.sections[0]).scrollIntoView({behavior: 'smooth'});
+        GUI.modifyCollabWidget();
+        workflow.onchangeDays();
     }
 
     setEventListeners() {
-        const ci_textarea = document.getElementById('ci-textarea');
-        ci_textarea.value = ""
-        ci_textarea.addEventListener('focusin', this.onFocusInCIFile);
-        ci_textarea.addEventListener('focusout', this.onFocusOutCIFile);
         
-        const input_purpose = document.getElementById('input_purpose');
-        input_purpose.value = ""
-        input_purpose.addEventListener('focusin', this.onFocusInPurpose);
-        input_purpose.addEventListener('focusout', this.onFocusOutPurpose)
-
-        const input_project = document.getElementById('input_project');
-        input_project.value = ""
-        input_project.addEventListener('focusin', this.onFocusInProject);
-        input_project.addEventListener('focusout', this.onFocusOutProject);
-
-        const input_length = document.getElementById('input_length');
-        input_length.value = 1;
+        // Update the label for ci-file upload manually since Bootstrap 4 requires JS to update the label text for a file upload
+        document.getElementById('ci-file-input').addEventListener('change', function(e){
+            var fileName = document.getElementById('ci-file-input').files[0].name;
+            var label = document.getElementById('ci-file-label')
+            label.textContent = fileName
+        })
+        
     }
+
 
     getTemplateBlobFromId(templateId) {
         for (const t of this.userTemplates) {
@@ -66,15 +54,12 @@ const BOOKING_OVERVIEW_PAGE = -2
     }
 
     onclickSelectTemplate(templateCard, templateId) {
-        this.goTo(steps.SELECT_TEMPLATE)
-        const oldHighlight = document.querySelector("#default_templates_list .selected_node")
         if (oldHighlight) {
             GUI.unhighlightCard(oldHighlight)
         }
 
         GUI.highlightCard(templateCard);
         this.bookingBlob.template_id = templateId;
-        GUI.refreshSummaryHosts(this.getTemplateBlobFromId(templateId));
     }
 
     isValidCIFile(ci_file) {
@@ -108,21 +93,6 @@ const BOOKING_OVERVIEW_PAGE = -2
         return [passed, message]
     }
 
-    // Ci FIle
-    onFocusOutCIFile() {
-        const ci_textarea = document.getElementById('ci-textarea');
-        if (workflow.isValidCIFile(ci_textarea.value)) {
-            workflow.bookingBlob.global_cifile = ci_textarea.value;
-        } else {
-            GUI.highlightError(ci_textarea);
-        }
-    }
-
-    onFocusInCIFile() {
-        workflow.goTo(steps.CLOUD_INIT)
-        const ci_textarea = document.getElementById('ci-textarea')
-        GUI.unhighlightError(ci_textarea)
-    }
 
     // Purpose
     onFocusOutPurpose() {
@@ -130,51 +100,26 @@ const BOOKING_OVERVIEW_PAGE = -2
         const valid = workflow.isValidPurpose(input.value);
         if (valid[0]) {
             workflow.bookingBlob.metadata.purpose = input.value;
-            GUI.refreshSummaryDetails(workflow.bookingBlob.metadata)
+            // GUI.refreshSummaryDetails(workflow.bookingBlob.metadata)
         } else {
             GUI.showDetailsError(valid[1])
             GUI.highlightError(input);
         }
     }
 
-    onFocusInPurpose() {
-        workflow.goTo(steps.BOOKING_DETAILS)
-        const input = document.getElementById('input_purpose');
-        GUI.hideDetailsError()
-        GUI.unhighlightError(input)
-    }
-
-    // Project
-    onFocusOutProject() {
-        const input = document.getElementById('input_project');
-        const valid = workflow.isValidProject(input.value);
-        if (valid[0]) {
-            workflow.bookingBlob.metadata.project = input.value;
-            GUI.refreshSummaryDetails(workflow.bookingBlob.metadata)
-        } else {
-            GUI.showDetailsError(valid[1])
-            GUI.highlightError(input);
-        }
-    }
-
-    onFocusInProject() {
-        workflow.goTo(steps.BOOKING_DETAILS)
-        const input = document.getElementById('input_project');
-        GUI.hideDetailsError()
-        GUI.unhighlightError(input)
-    }
 
     onchangeDays() {
-        workflow.goTo(steps.BOOKING_DETAILS)
-        const counter = document.getElementById("booking_details_day_counter")
-        const input = document.getElementById('input_length')
-        workflow.bookingBlob.metadata.length = input.value
-        GUI.refreshSummaryDetails(workflow.bookingBlob.metadata)
-        counter.innerText = "Days: " + input.value
+        const counter = document.getElementById("booking_details_day_counter");
+        const input = document.getElementById('input_length');
+        
+        var curr_date = new Date();
+        curr_date.setDate(Number(curr_date.getDate()) + Number(input.value));
+        const options = { month: "long" };
+        workflow.bookingBlob.metadata.length = input.value;
+        counter.innerText = "Days: " + input.value + "; Ends on: " + new Intl.DateTimeFormat("en-US", options).format(curr_date) + " " + curr_date.getDate();
     }
 
     add_collaborator(username) {
-        workflow.goTo(steps.ADD_COLLABS)
         for (const c of this.bookingBlob.allowed_users) {
             if (c == username) {
                 return;
@@ -182,12 +127,12 @@ const BOOKING_OVERVIEW_PAGE = -2
         }
 
         this.bookingBlob.allowed_users.push(username)
-        GUI.refreshSummaryCollabs(this.bookingBlob.allowed_users)
+        // GUI.refreshSummaryCollabs(this.bookingBlob.allowed_users)
     }
 
     remove_collaborator(username) {
         // Removes collab from collaborators list and updates summary
-        this.goTo(steps.ADD_COLLABS)
+
         const temp = [];
 
         for (const c of this.bookingBlob.allowed_users) {
@@ -197,7 +142,6 @@ const BOOKING_OVERVIEW_PAGE = -2
         }
 
         this.bookingBlob.allowed_users = temp;
-        GUI.refreshSummaryCollabs(this.bookingBlob.allowed_users)
     }
 
     isCompleteBookingInfo() {
@@ -229,15 +173,10 @@ const BOOKING_OVERVIEW_PAGE = -2
         if (alert_destination == BOOKING_OVERVIEW_PAGE) {
             window.location.href = "../../booking/detail/" + this.bookingId + "/";
         } else {
-            this.goTo(alert_destination);
+            // this.goTo(alert_destination);
         }
     }
 
-    // onclickCancel() {
-    //     if (confirm("Are you sure you wish to discard this booking?")) {
-    //         location.reload();
-    //     }
-    // }
 
     /** Async / await is more infectious than I thought, so all functions that rely on an API call will need to be async */
     async onclickConfirm() {
@@ -282,21 +221,13 @@ const BOOKING_OVERVIEW_PAGE = -2
         $("html").css("cursor", "default");
         button.removeAttribute('disabled');
     }
-  }
+}
 
 
 /** View class that displays cards and generates HTML 
  * Functions as a namespace, does not hold state
 */
 class GUI {
-
-    static highlightCard(card) {
-        card.classList.add('selected_node');
-    }
-  
-    static unhighlightCard(card) {
-    card.classList.remove('selected_node');
-    }
 
     static highlightError(element) {
         element.classList.add('invalid_field');
@@ -306,15 +237,6 @@ class GUI {
     element.classList.remove("invalid_field");
     }
 
-    /** Takes a list of templateBlobs and creates a selectable card for each of them */
-    static displayTemplates(templates, flavor_map) {
-        const templates_list = document.getElementById("default_templates_list");
-
-        for (const t of templates) {
-            const newCard = this.makeTemplateCard(t, this.calculateAvailability(t, flavor_map));
-            templates_list.appendChild(newCard);
-        }
-    }
 
     static calculateAvailability(templateBlob, flavor_map) {
         const local_map = new Map()
@@ -340,39 +262,12 @@ class GUI {
         return lowest_count;
       }
 
-    static makeTemplateCard(templateBlob, available_count) {
-        const isAvailable = available_count > 0;
-        let availability_text = isAvailable ? 'Resources Available' : 'Resources Unavailable';
-        let color = isAvailable ? 'text-success' : 'text-danger';
-        let disabled = !isAvailable ? 'disabled = "true"' : '';
-
-        const col = document.createElement('div');
-        col.classList.add('col-12', 'col-md-6', 'col-xl-3', 'my-3', 'd-flex', 'flex-grow-1');
-        col.innerHTML=  `
-          <div class="card flex-grow-1">
-            <div class="card-header">
-                <p class="h5 font-weight-bold mt-2">` + templateBlob.pod_name + `</p>
-            </div>
-            <div class="card-body">
-                <p class="grid-item-description">` + templateBlob.pod_desc +`</p>
-                <p class="grid-item-description ` + color + `">` + availability_text + `</p>
-            </div>
-            <div class="card-footer">
-                <button type="button"` + disabled + ` class="btn btn-success grid-item-select-btn w-100 stretched-link" 
-                onclick="workflow.onclickSelectTemplate(this.parentNode.parentNode, '` + templateBlob.id +`')">Select</button>
-            </div>
-          </div>
-        `
-        return col;
-    }
 
     /** Removes default styling applied by django */
+      // Trimmed by adding args to django template function
     static modifyCollabWidget() {
-        document.getElementsByTagName('label')[0].setAttribute('hidden', '');
         document.getElementById('addable_limit').setAttribute('hidden', '');
         document.getElementById('added_number').setAttribute('hidden', '');
-        const user_field = document.getElementById('user_field');
-        user_field.classList.add('border-top-0');
         document.querySelector('.form-group').classList.add('mb-0');
 
         const added_list = document.getElementById('added_list');
@@ -380,60 +275,12 @@ class GUI {
         document.getElementById('search_select_outer').appendChild(added_list);
     }
 
-    static showDetailsError(message) {
-        document.getElementById("booking_details_error").innerText = message;
-    }
-
-    static hideDetailsError() {
-        document.getElementById("booking_details_error").innerText = '';
-    }
-
-    static refreshSummaryDetails(bookingMetaData) {
-        const ul = document.getElementById("booking_summary_booking_details")
-        ul.innerHTML = '';
-
-        if (bookingMetaData.project) {
-            const project_li = document.createElement('li');
-            project_li.innerText = 'Project: ' + bookingMetaData.project;
-            ul.appendChild(project_li);
-        }
-
-        if (bookingMetaData.purpose) {
-            const project_li = document.createElement('li');
-            project_li.innerText = 'Purpose: ' + bookingMetaData.purpose;
-            ul.appendChild(project_li);
-        }
-
-        if (bookingMetaData.length) {
-            const project_li = document.createElement('li');
-            project_li.innerText = 'Length: ' + bookingMetaData.length + ' days';
-            ul.appendChild(project_li);
-        }
-    }
-
-    static refreshSummaryCollabs(collaborators) {
-        const collabs_ul = document.getElementById('booking_summary_collaborators');
-        collabs_ul.innerHTML = '';
-        for (const u of collaborators) {
-            const collabs_li = document.createElement('li');
-            collabs_li.innerText = u
-            collabs_ul.appendChild(collabs_li);
-        }
-    }
-
-    static refreshSummaryHosts(templateBlob) {
-        const hosts_ul = document.getElementById('booking_summary_hosts');
-        hosts_ul.innerHTML = '';
-        for (const h of templateBlob.host_list) {
-            const hosts_li = document.createElement('li');
-            hosts_li.innerText = h.hostname;
-            hosts_ul.appendChild(hosts_li);
-        }
-    }
+    
 }
 
 
  // Search widget for django forms (taken from dashboard.js and slightly modified)
+    // For Add Collaborators section
  class SearchableSelectMultipleWidget {
     constructor(format_vars, field_dataset, field_initial) {
         this.format_vars = format_vars;
@@ -654,7 +501,7 @@ class GUI {
             const obj = this.items[id];
             const result_text = this.generate_element_text(obj);
             const result_entry = document.createElement("a");
-            result_entry.href = "#";
+            //result_entry.href = "#";
             result_entry.innerText = result_text;
             result_entry.title = result_text;
             result_entry.classList.add("list-group-item", "list-group-item-action", "overflow-ellipsis", "flex-shrink-0");
@@ -708,6 +555,7 @@ class GUI {
         document.getElementById("user_field").focus();
     }
 
+    /* This looks like alot of it can be removed */
     update_selected_list()
     {
         document.getElementById("added_number").innerText = this.added_items.size;
@@ -733,7 +581,7 @@ class GUI {
             times.classList.add("fas", "fa-times");
 
             const deleteButton = document.createElement("a");
-            deleteButton.href = "#";
+            //deleteButton.href = "#";
             deleteButton.innerHTML = "<i class='fas fa-times'></i>"
             deleteButton.setAttribute("onclick", `searchable_select_multiple_widget.remove_item(${item_id});`); 
             deleteButton.classList.add("btn");
