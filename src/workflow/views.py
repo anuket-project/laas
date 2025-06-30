@@ -69,7 +69,7 @@ def book_a_pod_view(request: HttpRequest):
     if not template_list:
         return HttpResponse(status=500)
     
-    # Separate the given templates into whether or not the user owns them in order to differentiate in the template
+    # Separate the given templates into whether or not the user owns them in order to differentiate in the html template
     templates = {
         "public" : [], 
         "private" : [],

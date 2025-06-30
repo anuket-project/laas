@@ -148,6 +148,7 @@ class BookingMetaDataBlob {
         this.lab = incomingBlob.lab; // String
         this.purpose = incomingBlob.purpose; // String
         this.project = incomingBlob.project; // String
+        this.details = incomingBlob.details; // String
         this.length = 1 // Number
 
         if (incomingBlob.length) {

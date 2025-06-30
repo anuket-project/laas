@@ -1,17 +1,6 @@
 /**
  * book-a-pod.js
  */
-
-const steps = {
-    SELECT_TEMPLATE: 0,
-    CLOUD_INIT: 1,
-    BOOKING_DETAILS: 2,
-    ADD_COLLABS: 2,
-    BOOKING_SUMMARY: 3
-  }
-
-const BOOKING_OVERVIEW_PAGE = -2
-
 class BookingWorkflow extends Workflow {
     constructor(savedBookingBlob) {
         super(["select_template", "cloud_init", "booking_details" , "booking_summary"])
@@ -35,76 +24,40 @@ class BookingWorkflow extends Workflow {
 
     setEventListeners() {
         
-        // Update the label for ci-file upload manually since Bootstrap 4 requires JS to update the label text for a file upload
-        document.getElementById('ci-file-input').addEventListener('change', function(e){
-            var fileName = document.getElementById('ci-file-input').files[0].name;
-            var label = document.getElementById('ci-file-label')
-            label.textContent = fileName
-        })
+        document.getElementById('ci-file-input').addEventListener('change', this.onUploadCIFile);
+        document.getElementById('input_length').addEventListener('input', this.onchangeDays);
+        document.getElementById('input_project').addEventListener('input', this.onSelectProject);
+        document.getElementById('input_purpose').addEventListener('input', this.onSelectPurpose);
+        document.getElementById('input_details').addEventListener('input', this.onAddDetails);
+
+
+        let templateSelects = document.querySelectorAll(".template-select");
+        this.onTemplateSelected = this.onTemplateSelected.bind(this)
+        templateSelects.forEach(elem => {
+            // Done this way so the function can still access instance variables with this.__ and access the given element without getElementById()
+            elem.addEventListener('input', (elem, w=this) => {
+                w.onTemplateSelected(elem.target)
+            });
+        });
+
+    }
+
+    // Update the label for ci-file upload manually since Bootstrap 4 requires JS to update the label text for a file upload
+    onUploadCIFile() {
+        var file = document.getElementById('ci-file-input').files[0]
+        var fileName = file.name;
+        var label = document.getElementById('ci-file-label');
+        label.textContent = fileName;
+
+
+        var reader = new FileReader();
+        reader.readAsText(file, "UTF-8");
         
-    }
-
-
-    getTemplateBlobFromId(templateId) {
-        for (const t of this.userTemplates) {
-            if (t.id == templateId) return t
+        // The reader will never "fail" to read the file because all files can technically be read as text
+        reader.onload = function (evt) {
+            workflow.bookingBlob.global_cifile = evt.target.result;
         }
-
-        return null
-    }
-
-    onclickSelectTemplate(templateCard, templateId) {
-        if (oldHighlight) {
-            GUI.unhighlightCard(oldHighlight)
-        }
-
-        GUI.highlightCard(templateCard);
-        this.bookingBlob.template_id = templateId;
-    }
-
-    isValidCIFile(ci_file) {
-        // todo 
-        return true;
-    }
-
-    isValidProject(project) {
-        let passed = true
-        let message = "success"
-
-        if (project == "") {
-            passed = false;
-            message = "Project field cannot be empty."
-            return[passed, message]
-        }
-
-        return [passed, message]
-    }
-
-    isValidPurpose(purpose) {
-        let passed = true
-        let message = "success"
-
-        if (purpose == "") {
-            passed = false;
-            message = "Purpose field cannot be empty."
-            return[passed, message]
-        }
-
-        return [passed, message]
-    }
-
-
-    // Purpose
-    onFocusOutPurpose() {
-        const input = document.getElementById('input_purpose');
-        const valid = workflow.isValidPurpose(input.value);
-        if (valid[0]) {
-            workflow.bookingBlob.metadata.purpose = input.value;
-            // GUI.refreshSummaryDetails(workflow.bookingBlob.metadata)
-        } else {
-            GUI.showDetailsError(valid[1])
-            GUI.highlightError(input);
-        }
+        
     }
 
 
@@ -117,6 +70,61 @@ class BookingWorkflow extends Workflow {
         const options = { month: "long" };
         workflow.bookingBlob.metadata.length = input.value;
         counter.innerText = "Days: " + input.value + "; Ends on: " + new Intl.DateTimeFormat("en-US", options).format(curr_date) + " " + curr_date.getDate();
+    }
+
+    onSelectProject() {
+        workflow.bookingBlob.metadata.project = this.value;
+    }
+
+    onSelectPurpose() {
+        workflow.bookingBlob.metadata.purpose = this.value;
+    }
+
+    onAddDetails() {
+        if (this.value.length > 30) {
+            workflow.bookingBlob.metadata.details = this.value;    
+        } else {
+            workflow.bookingBlob.metadata.details = null;
+        }
+    }
+
+    onTemplateSelected(elem) {
+        let selectedTemplateId = elem.options[elem.selectedIndex].value;
+
+        // Deselect other select field in order to prevent edge case where user only has 1 private template resulting in them being unable to change the template description to that private template after selecting it then a public template  
+        let templateSelectors = document.querySelectorAll(".template-select");
+        templateSelectors.forEach(e => {
+            if (e.selectedIndex != -1 && (e.options[e.options.selectedIndex].value) != selectedTemplateId) {
+                e.selectedIndex = -1;
+            }
+        })
+
+
+        let template;
+        for (template of this.userTemplates) {
+            if (template.id == selectedTemplateId) {
+                break;
+            }
+        }
+        
+
+        document.getElementById("template-header").textContent = template.pod_name;
+        document.getElementById("template-description").textContent = template.pod_desc;
+
+
+        let isAvailable = GUI.calculateAvailability(template, this.labFlavors) > 0;
+        let available_elem = document.getElementById("template-availability");
+
+        available_elem.textContent = isAvailable ? 'Resources Available' : 'Resources Unavailable';
+        available_elem.classList.remove("text-success");
+        available_elem.classList.remove("text-danger");
+        available_elem.classList.add(isAvailable ? 'text-success' : 'text-danger');
+
+        this.bookingBlob.template_id = null;
+        if (isAvailable) {
+            this.bookingBlob.template_id = template.id
+        }
+
     }
 
     add_collaborator(username) {
@@ -147,34 +155,22 @@ class BookingWorkflow extends Workflow {
     isCompleteBookingInfo() {
         let passed = true
         let message = "success"
-        let section = steps.BOOKING_SUMMARY
-
         const blob = this.bookingBlob;
         const meta = blob.metadata;
 
         if (blob.template_id == null) {
             passed = false;
-            message = "Please select a template."
-            section = steps.SELECT_TEMPLATE
-            return [passed, message, section]
+            message = "Please select an available template."
+            return [passed, message]
         }
 
-        if (meta.purpose == null || meta.project == null || meta.length == 0) {
+        if (meta.purpose == null || meta.project == null || meta.details == null || meta.details.length < 30 || meta.length == 0) {
             passed = false
             message = "Please finish adding booking details."
-            section = steps.BOOKING_DETAILS
-            return [passed, message, section]
+            return [passed, message]
         }
 
-        return[passed, message, section];
-    }
-
-    onclickConfirmError(alert_destination) {
-        if (alert_destination == BOOKING_OVERVIEW_PAGE) {
-            window.location.href = "../../booking/detail/" + this.bookingId + "/";
-        } else {
-            // this.goTo(alert_destination);
-        }
+        return[passed, message];
     }
 
 
@@ -186,15 +182,18 @@ class BookingWorkflow extends Workflow {
         button.setAttribute('disabled', 'true');
         const complete = this.isCompleteBookingInfo();
         if (!complete[0]) {
-            showError(complete[1], complete[2]);
+            showError(complete[1], -2);
             $("html").css("cursor", "default");
             button.removeAttribute('disabled');
-            return
+            return;
         }
 
         const response = await LibLaaSAPI.makeBooking(this.bookingBlob);
         if (!response) {
             showError("The selected resources for this booking are unavailable at this time. Please select a different resource or try again later.", -1)
+            $("html").css("cursor", "default");
+            button.removeAttribute('disabled');
+            return;
         }
         const r = JSON.parse(response)
         if (r.bookingId) {
@@ -209,7 +208,8 @@ class BookingWorkflow extends Workflow {
             }
 
             console.log(r.warnings);
-            showError(msg, BOOKING_OVERVIEW_PAGE);
+            showError(msg, -2);
+            //window.location.href = ("../../booking/detail/" + this.bookingId);
             return;
         } else {
             if (r.error == true) {
@@ -228,15 +228,6 @@ class BookingWorkflow extends Workflow {
  * Functions as a namespace, does not hold state
 */
 class GUI {
-
-    static highlightError(element) {
-        element.classList.add('invalid_field');
-    }
-  
-    static unhighlightError(element) {
-    element.classList.remove("invalid_field");
-    }
-
 
     static calculateAvailability(templateBlob, flavor_map) {
         const local_map = new Map()
