@@ -106,8 +106,7 @@ PROJECT = os.environ.get("PROJECT", "")  # the project for the current deploymen
 HOST_DOMAIN = os.environ.get("HOST_DOMAIN", "") # Domain for provisioned hosts (i.e opnfv.iol.unh.edu or akr.iol.unh.edu)
 LIBLAAS_BASE_URL = os.environ.get("LIBLAAS_BASE_URL") # API URL
 TEMPLATE_DIRS = ["base"]  # where all the base templates are
-# Replace with environment variable before deployment
-SUB_PROJECTS = ["Anuket", "CNTi", "FD.io", "L3AF", "Nephio", "ONAP", "OpenDaylight", "Paraglider", "XGVela", "Essedum", "LaaS"]
+SUB_PROJECTS = os.environ.get("SUB_PROJECTS").split(',')
 
 # If the user has a custom template directory,
 # We should search that first. Then we search the
