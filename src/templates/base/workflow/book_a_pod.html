@@ -72,23 +72,6 @@
 
     </fieldset>
 
-    <!-- CI File -->
-    <fieldset class="border-bottom mt-4">
-        <legend>Global Cloud Init Override</legend>
-        <p>Add a custom cloud init configuration to apply to all hosts in your booking (optional).</p>
-        
-        <div class="row mb-3">
-
-            <div class="col-auto">
-                <div class="custom-file">
-                    <label class="custom-file-label" id="ci-file-label" for="ci-file-input">Choose File</label>
-                    <input type="file" id="ci-file-input" name="ci-file" class="mb-3 custom-file-input" accept=".yaml, .yml, application/yaml">
-                </div>
-            </div>
-
-        </div>
-    </fieldset>
-
     <!-- Booking Details -->
     <fieldset class="border-bottom mt-4">
         <legend>Booking Details<span class="text-danger">*</span></legend>
@@ -126,11 +109,28 @@
 
         <div class="row mb-2">
             <div class="col-5">
-                <label for="input_length" id="booking_details_day_counter" class="text-center p-0 mb-0">Days: 1; Ends on:</label>
+                <label for="input_length" id="booking_details_day_counter" class="text-center p-0 mb-0">Days: <span class="text-primary">?</span> (Ends on <span class="text-primary">?</span>)</label>
                 <input id="input_length" type="range" min="1" max="21" value="1" class="form-control form-control-lg p-0" placeholder="Length">
             </div>
         </div>
 
+    </fieldset>
+
+    <!-- CI File -->
+    <fieldset class="border-bottom mt-4">
+        <legend>Global Cloud Init Override</legend>
+        <p>Add a custom cloud init configuration to apply to all hosts in your booking (optional).</p>
+        
+        <div class="row mb-3">
+
+            <div class="col-auto">
+                <div class="custom-file">
+                    <label class="custom-file-label" id="ci-file-label" for="ci-file-input">Choose File</label>
+                    <input type="file" id="ci-file-input" name="ci-file" class="mb-3 custom-file-input" accept=".yaml, .yml, application/yaml">
+                </div>
+            </div>
+
+        </div>
     </fieldset>
 
     <!-- Collaborators -->

@@ -62,14 +62,15 @@ class BookingWorkflow extends Workflow {
 
 
     onchangeDays() {
-        const counter = document.getElementById("booking_details_day_counter");
+        const counter = $("#booking_details_day_counter")
         const input = document.getElementById('input_length');
-        
         var curr_date = new Date();
         curr_date.setDate(Number(curr_date.getDate()) + Number(input.value));
         const options = { month: "long" };
         workflow.bookingBlob.metadata.length = input.value;
-        counter.innerText = "Days: " + input.value + "; Ends on: " + new Intl.DateTimeFormat("en-US", options).format(curr_date) + " " + curr_date.getDate();
+        const datetime = `${new Intl.DateTimeFormat("en-US", options).format(curr_date)} ${curr_date.getDate()}, ${curr_date.getFullYear()}`
+        counter.children()[0].innerText = `${input.value}`
+        counter.children()[1].innerText = `${datetime}`
     }
 
     onSelectProject() {
