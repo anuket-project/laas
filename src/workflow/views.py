@@ -8,11 +8,12 @@
 ##############################################################################
 
 from django.shortcuts import render, redirect
-from laas_dashboard.settings import PROJECT
-from django.http import HttpResponse
+from laas_dashboard.settings import PROJECT, SUB_PROJECTS
+from django.http import HttpResponse, HttpRequest
 from liblaas.views import user_get_user
 from workflow.forms import BookingMetaForm
 from account.models import UserProfile
+from liblaas.views import template_list_templates
 
 
 def login(request):
@@ -42,7 +43,7 @@ def design_a_pod_view(request):
     return render(request, template, context)
 
 
-def book_a_pod_view(request):
+def book_a_pod_view(request: HttpRequest):
     if request.method != "GET":
         return HttpResponse(status=405)
 
@@ -62,11 +63,37 @@ def book_a_pod_view(request):
         "keys": "true" if ("ipasshpubkey" in vpn_user) and (len(vpn_user["ipasshpubkey"]) > 0) else "false"
     }
 
+    
+    template_list = template_list_templates(request.user.userprofile.ipa_username, PROJECT)
+    
+    if not template_list:
+        return HttpResponse(status=500)
+    
+    # Separate the given templates into whether or not the user owns them in order to differentiate in the html template
+    templates = {
+        "public" : [], 
+        "private" : [],
+        "display_size": 0,
+    }
+
+    for template in template_list:
+        if template.get("owner") == request.user.userprofile.ipa_username:
+            templates["private"].append(template)
+        else:
+            templates["public"].append(template)
+
+    templates["public"].sort(key=lambda template : template["id"])
+    templates["private"].sort(key=lambda template : template["id"])
+    templates["display_size"] = min(10, max(len(templates["public"]), len(templates["private"])) + 4)
+
     template = "workflow/book_a_pod.html"
     context = {
         "form": BookingMetaForm(initial={}, user_initial=[], owner=request.user),
         "prereqs": prereqs,
-        "project": PROJECT
+        "project": PROJECT,
+        "sub_projects" : SUB_PROJECTS,
+        "purposes" : ["CI/CD", "Testing", "Training", "Demo", "Development", "Other"],
+        "templates" : templates,
     }
     return render(request, template, context)
 

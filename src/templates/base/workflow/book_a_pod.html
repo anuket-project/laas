@@ -8,98 +8,151 @@
 {% endblock %}
 {% block content %}
 <body>
-<div class="workflow-container">
-    <div id="prev" class="row w-100 m-0">
-        <button class="btn btn-workflow-nav stretched-link m-0 p-0 mt-3" hidden="true" onclick="workflow.goPrev()" id="workflow-prev">
-          <div class="arrow arrow-up"></div>
-        </button>
-      </div>
-    
-      <div id="next" class="row w-100 m-0">
-        <button class="btn btn-workflow-nav stretched-link m-0 p-0 mb-3" onclick="workflow.goNext()" id="workflow-next">
-          <div class="arrow arrow-down"></div>
-        </button>
-      </div>
+    <h1 class="mt-4"><u>Book a Resource</u></h1>
 
-    <div class="scroll-container w-100 h-100 p-0">
-        <div class="scroll-area pt-5 mx-5" id="select_template">
-            <h1 class="mt-4"><u>Book a Resource</u></h1>
-            <h2 class="mt-4 mb-3">Select Host Or Template<span class="text-danger">*</span></h2>
-            {% block info%}
-            <p>Select the resource bundle that you would like to reserve. Then use the navigation arrows or scroll to advance the workflow. Configure your own resource <a href="{% url 'workflow:design_a_pod' %}">here</a>.</p>
-            {% endblock %}
-              <div id="default_templates_list" class="row flex-grow-1">
-              </div>
-        </div>
-
-        <div class="scroll-area pt-5 mx-5" id="cloud_init">
-            <h2 class="mt-4 mb-3">Global Cloud Init Override</h2>
-            <p>Add a custom cloud init configuration to apply to all hosts in your booking (optional).</p>
-            <div class="d-flex align-items-center">
-              <textarea name="ci-textarea" id="ci-textarea" rows="15" class="w-50"></textarea>
-            </div>
-        </div>
-
-        <div class="scroll-area pt-5 mx-5" id="booking_details">
-            <h2 class="mt-4 mb-3">Booking Details<span class="text-danger">*</span></h2>
-            <p>Enter the project and purpose for your booking, as well as the duration (up to 21 days).</p>
-            <div class="form-group mb-0">
-              <div class="row align-items-center my-4">
-                <div class="col-xl-6 col-md-8 col-11">
-                  <input id="input_project" class="form-control form-control-lg border border-dark p-5" type="text" placeholder="Project">
-                </div>
-              </div>
-              <div class="row align-items-center my-4">
-                <div class="col-xl-6 col-md-8 col-11">
-                  <input id="input_purpose" class="form-control form-control-lg border border-dark p-5" type="text" placeholder = "Purpose">
-                </div>
-              </div>
-              <div class="row align-items-center my-4">
-                <span id="booking_details_error" class="text-danger col-xl-6 col-md-8 col-11"></span>
-              </div>
-              <div class="row align-items-center my-4">
-                <span id="booking_details_day_counter" class="col-md-1 col-2 p-0">Days: 1</span>
-                <input id="input_length" type="range" min="1" max="21" value="1" class="form-control form-control-lg col-xl-5 col-9 p-0" placeholder="Length" oninput="workflow.onchangeDays()">
-              </div>
-            </div>
-            <h2 class="mt-4 mb-3">Add Collaborators:</h2>
-            <p>Give SSH and booking overview access to other users. Collaborators must mark their profiles as public and have a linked IPA account.</p>
-            <div class="row">
-              <div class="col-xl-6 col-md-8 col-11 p-0 border border-dark">
-                {% bootstrap_field form.users label="Collaborators" %}
-              </div>
-            </div>
-        </div>
-
-        <div class="scroll-area pt-5 mx-5" id="booking_summary">
-            <h2 class="mt-4 mb-3">Booking Summary</h2>
-            <p>Review your booking information and click 'Book' to reserve your resources.</p>
-            <div class="row align-items-center">
-              <div class="card col-xl-6 col-md-8 col-11 border-0">
-                <ul class="list-group">
-                  <li class="list-group-item">Booking Details
-                    <ul id="booking_summary_booking_details">
-                    </ul>
-                  </li>
-                  <li class="list-group-item">Collaborators
-                    <ul id="booking_summary_collaborators">
-                    </ul>
-                  </li>
-                  <li class="list-group-item">Hosts
-                    <ul id="booking_summary_hosts">
-                    </ul>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            <div class="row align-items-center mt-5">
-              <!-- <button class="btn btn-danger cancel-book-button p-0 mr-2 col-xl-2 col-md-3 col-5" onclick="workflow.onclickCancel()">Cancel</button> -->
-              <button id="booking-confirm-button"  class="btn btn-success cancel-book-button p-0 ml-2 col-xl-2 col-md-3 col-5" onclick="workflow.onclickConfirm()">Book</button>
-            </div>
-          </div>
+    <!-- Template Select -->
+    <fieldset class="border-bottom mt-4">
+        <legend>Select a Template<span class="text-danger">*</span></legend>
+        {% block info %}
+        <p>Select the resource bundle that you would like to reserve. Configure your own custom resource <a href="{% url 'workflow:design_a_pod' %}">here</a>.</p>
+        {% endblock %}
         
+        <div class="row mt-3 mb-3 justify-content-left">
+
+            <!--Select Field-->
+            <div id="templates-list" class="col-4">
+                <ul class="nav nav-tabs" id="template-select-nav" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="template-public-tab" data-toggle="tab" data-target="#templates-public" type="button" role="tab" aria-controls="home" aria-selected="true">Public Templates</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="template-private-tab" data-toggle="tab" data-target="#templates-private" type="button" role="tab" aria-controls="home" aria-selected="true">Custom Templates</button>
+                    </li>
+
+                </ul>
+                <div class="tab-content" id="template-tab-content">
+                    <div class="tab-pane show active" id="templates-public" role="tabpanel" aria-labelledby="public-templates-tab">
+                        <select class="custom-select template-select" id="template-select-public" name="template" size="{{templates.display_size}}">
+                            {% for template in templates.public %}
+                            <option value="{{template.id}}">{{template.pod_name}}</option>
+                            {% endfor %}
+                        </select>
+
+
+                    </div>
+                    
+                    <div class="tab-pane" id="templates-private" role="tabpanel" aria-labelledby="private-templates-tab">
+                        <select class="custom-select template-select" id="template-select-private" name="template" size="{{templates.display_size}}">
+                            {% for template in templates.private %}
+                            <option value="{{template.id}}">{{template.pod_name}}</option>
+                            {% empty %}
+                            <option value="" disabled>No Custom Templates</option>
+                            {% endfor %}
+                        </select>
+
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!--Description-->
+            <div class="col-6 pt-3">
+                <div class="card mt-4">
+                    <div class="card-header"><h4 id="template-header">Template Description:</h4></div>
+                    <div class="card-body">
+                        <p id="template-description" class="grid-item-description mb-3">Please select a template</p>
+                        <p id="template-availability" class="grid-item-description mb-1"><br></p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </fieldset>
+
+    <!-- Booking Details -->
+    <fieldset class="border-bottom mt-4">
+        <legend>Booking Details<span class="text-danger">*</span></legend>
+        <p>Enter the project and purpose for your booking, as well as the duration (up to 21 days).</p>
+            
+        <div class="row mt-3 mb-2">
+
+            <div class="col-auto">
+                <label class="my-1 mr-2" for="input_project">Project</label>
+                <select class="custom-select" id="input_project" name="project" required>
+                    <option selected disabled value="">...</option>
+                    {% for sub_proj in sub_projects %}
+                    <option value="{{sub_proj}}">{{sub_proj}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-auto">
+                <label class="my-1 mr-2" for="input_purpose">Purpose</label>
+                <select class="custom-select" id="input_purpose" name="project" required>
+                    <option selected disabled value="">...</option>
+                    {% for purpose in purposes %}
+                    <option value="{{purpose}}">{{purpose}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6">
+                <label class="my-1 mr-2" for="input_details">Details</label>
+                <input type="text" id="input_details" name="details" minlength="30" class="form-control border p-2" aria-describedby="detailHelpBlock" required>
+                <small id="detailHelpBlock" class="form-text text-muted">Minimum 30 characters</small>
+            </div>
+
+        </div>
+
+        <div class="row mb-2">
+            <div class="col-5">
+                <label for="input_length" id="booking_details_day_counter" class="text-center p-0 mb-0">Days: <span class="text-primary">?</span> (Ends on <span class="text-primary">?</span>)</label>
+                <input id="input_length" type="range" min="1" max="21" value="1" class="form-control form-control-lg p-0" placeholder="Length">
+            </div>
+        </div>
+
+    </fieldset>
+
+    <!-- CI File -->
+    <fieldset class="border-bottom mt-4">
+        <legend>Global Cloud Init Override</legend>
+        <p>Add a custom cloud init configuration to apply to all hosts in your booking (optional).</p>
+        
+        <div class="row mb-3">
+
+            <div class="col-auto">
+                <div class="custom-file">
+                    <label class="custom-file-label" id="ci-file-label" for="ci-file-input">Choose File</label>
+                    <input type="file" id="ci-file-input" name="ci-file" class="mb-3 custom-file-input" accept=".yaml, .yml, application/yaml">
+                </div>
+            </div>
+
+        </div>
+    </fieldset>
+
+    <!-- Collaborators -->
+    <fieldset class="mt-4 pb-0">
+        <legend>Add Collaborators:</legend>
+        <p>Give SSH and booking overview access to other users. Collaborators must mark their profiles as public and have a linked IPA account.</p>
+        
+        <div class="row mb-3">
+        
+            <div class="col-6">
+            {% bootstrap_field form.users show_label=False %}
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- Book button -->
+    <div class="row align-items-center mt-4 mb-5">
+        <div class="col-4 mb-2">
+            <button id="booking-confirm-button"  class="btn btn-success cancel-book-button p-0 w-100" onclick="workflow.onclickConfirm()">Book</button>
+        </div>
     </div>
-</div> 
+                
 
 <div class="hidden_form d-none">
   <form id="token">
@@ -107,6 +160,7 @@
   </form>
 </div>
 
+<!-- Fix ipa Account Modal -->
 <div class="modal fade" id="ipa-modal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -158,13 +212,13 @@
         <h5 id="alert_modal_message"></h5>
       </div>
       <div class="modal-footer d-flex justify-content-center">
-        <button class="btn btn-success" data-dismiss="modal" id="alert-modal-submit" onclick="workflow.onclickConfirmError(alert_destination)">Confirm</button>
+        <button class="btn btn-success" data-dismiss="modal" id="alert-modal-submit">Confirm</button>
       </div>
     </div>
   </div>
 </div>
-</body>
 
+</body>
 
 <script>
 function updateFileName(input) {
