@@ -23,7 +23,7 @@
 
         <h3 class="col-2 mb-0 text-center align-self-center">{{lab.name}}</h3>
         <p class="col d-flex justify-content-center mt-2 mb-2 d-inline-block">{{lab.description}}</p>
-        <a class="col-2 text-center align-self-center" href="{{lab.lab_info_link}}">{{lab.lab_info_link}}</a>
+        <a class="col-2 text-center align-self-center" href="{{lab.lab_info_link}}">{{lab.lab_info_link|truncatechars:32}}</a>
         <button class="col-sm-1 btn btn-primary px-4 align-self-center" type="button" data-toggle="collapse" data-target="#lab-{{forloop.counter}}-collapse" aria-expanded="false" aria-controls="lab-{{forloop.counter}}-collapse">
             Details
         </button>
