@@ -24,7 +24,7 @@
                     <h5> These are your current bookings: </h5>
                     <ul style="list-style: none;">
                     {% for book in bookings %}
-                        <li><a href="/booking/detail/{{ book.id }}/">{{ book.purpose }}</a></li>
+                        <li><a href="/booking/detail/{{ book.id }}/">{{ book.details|truncatechars:110 }}</a></li>
                     {% endfor %}
                     </ul>
                 {% else %}
