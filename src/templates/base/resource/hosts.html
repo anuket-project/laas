@@ -1,4 +1,3 @@
-{% extends "dashboard/table.html" %}
 {% load static %}
 
 {% block table %}
@@ -31,7 +30,7 @@
             {% endif %}
             </td>
             <td>
-            {% if host.allocation.reason == "maintenance" %}
+            {% if host.allocation == "maintenance" %}
             No
             {% else %}
             Yes

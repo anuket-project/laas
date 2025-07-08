@@ -50,13 +50,18 @@ code {
                         <td></td>
                     </tr>
                     <tr>
+                        <td>Details</td>
+                        <td>{{ booking.details }}</td>
+                        <td></td>
+                    </tr>
+                    <tr>
                         <td>Start Time</td>
-                        <td>{{ booking.start }}</td>
+                        <td>{{ booking.start }} {{ tz_label }}</td>
                         <td></td>
                     </tr>
                     <tr>
                         <td>End Time</td>
-                        <td id="end_time_text">{{ booking.end }}</td>
+                        <td id="end_time_text">{{ booking.end }} {{ tz_label }}</td>
 
                         <td>
                           {% if booking.owner == user %}
