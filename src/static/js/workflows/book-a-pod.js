@@ -215,6 +215,7 @@ class BookingWorkflow extends Workflow {
 
             console.log(r.warnings);
             showError(msg, -2);
+            $("html").css("cursor", "default");
             return;
         } else {
             if (r.error == true) {
