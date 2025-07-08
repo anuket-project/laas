@@ -8,6 +8,7 @@ class BookingWorkflow extends Workflow {
 
         this.bookingBlob = new BookingBlob({});
         this.userTemplates = null;
+        this.bookingId = null;
     }
 
     async startWorkflow() {
@@ -208,9 +209,14 @@ class BookingWorkflow extends Workflow {
                 msg += `\n${w}\n`
             }
 
+            // Set confirmation modal to have a redirect to the booking's detail 
+            let e = document.getElementById("alert-modal-submit");
+            e.setAttribute("onclick", "workflow.redirectToDetail()")
+
+
             console.log(r.warnings);
             showError(msg, -2);
-            //window.location.href = ("../../booking/detail/" + this.bookingId);
+            $("html").css("cursor", "default");
             return;
         } else {
             if (r.error == true) {
@@ -221,6 +227,10 @@ class BookingWorkflow extends Workflow {
         }
         $("html").css("cursor", "default");
         button.removeAttribute('disabled');
+    }
+
+    redirectToDetail() {
+        window.location.href = ("../../booking/detail/" + this.bookingId);
     }
 }
 
