@@ -21,6 +21,7 @@ from django.db.models. signals import pre_save, post_save
 from django.dispatch import receiver
 from datetime import datetime
 from typing import Self
+
 class Booking(models.Model):
     id = models.AutoField(primary_key=True)
     # All bookings are owned by the user who requested it
@@ -36,6 +37,7 @@ class Booking(models.Model):
     ext_days = models.IntegerField(default=42)
     # the hardware that the user has booked
     project = models.CharField(max_length=100, default="", blank=True, null=True)
+    details = models.TextField(blank=False)
     lab = models.ForeignKey(Lab, null=True, on_delete=models.SET_NULL)
     pdf = models.TextField(blank=True, default="")
     idf = models.TextField(blank=True, default="")

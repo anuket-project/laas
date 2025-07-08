@@ -87,6 +87,7 @@ def request_create_booking(request) -> HttpResponse:
         "lab": PROJECT,
         "purpose": data["metadata"]["purpose"],
         "project": data["metadata"]["project"],
+        "details": data["metadata"]["details"],
         "length": int(data["metadata"]["length"])
     },
     "origin": PROJECT
@@ -96,6 +97,7 @@ def request_create_booking(request) -> HttpResponse:
     booking = Booking.objects.create(
     purpose=bookingBlob["metadata"]["purpose"],
     project=bookingBlob["metadata"]['project'],
+    details=bookingBlob["metadata"]["details"],
     lab=Lab.objects.get(name='UNH_IOL'),
     owner=request.user,
     start=timezone.now(),

@@ -6,11 +6,12 @@
         <div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-3">
             <div class="card h-100">
                 <div class="card-header">
-                    <h3>{{booking.purpose}} ({{booking.id}})</h3>
+                    <h3>{{booking.details|truncatechars:68}} ({{booking.id}})</h3>
                 </div>
                 <ul class="list-group list-group-flush h-100">
                     <li class="list-group-item">Lab: {{booking.lab}}</li>
                     <li class="list-group-item">Project: {{booking.project}}</li>
+                    <li class="list-group-item">Purpose: {{booking.purpose}}</li>
                     <li class="list-group-item">Start: {{booking.start}}</li>
                     <li class="list-group-item">End: {{booking.end}}</li>
                 </ul>
