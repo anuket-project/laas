@@ -33,7 +33,86 @@ class DesignWorkflow extends Workflow {
     this.resourceBuilder; // ResourceBuilder
 
     this.templateBlob.public = false;
+
+    // Whether or not a given step is valid upon initial inspection, used for workflow arrows
+      // Ints used to point to steps 
+    this.validSteps = {
+      0: false,
+      1: false,
+      2: false,
+      3: false,
+      4: false,
+      5: true
+    }
+
+    this.resourceCount = 0;
+    
   }
+
+  stepIsValid(step) {
+    // We do not need to re-highlight the next arrow if the user has already progressed past this step and has come back
+    if (this.validSteps[step] == true) { 
+      return; 
+    }
+    
+    let n = document.getElementById("next");
+    n.removeAttribute("hidden");
+    document.getElementById("next").classList.add("bg-success");
+    
+    this.validSteps[step] = true;
+
+  }
+
+  stepNotValid(step) {
+    let n = document.getElementById("next");
+    n.setAttribute("hidden", "");
+    this.validSteps[step] = false;
+  }
+
+  goNext() {
+    super.goNext();
+    document.getElementById('next').classList.remove("bg-success");
+
+    if (this.validSteps[this.step] == false){
+      let n = document.getElementById("next");
+      n.setAttribute("hidden", "");
+    
+    } else if (this.validSteps[this.step + 1] == false && this.validSteps[this.step] == true) {
+      let n = document.getElementById("next");
+      n.removeAttribute("hidden");
+      document.getElementById("next").classList.add("bg-success");
+    
+    } 
+    
+    // Configure_connections is an annoying case where this is the only convenient way to make the workflow arrow appear upon first visit (it is valid by default)
+    if (this.step == steps.CONFIGURE_CONNECTIONS) {
+      this.stepIsValid(steps.CONFIGURE_CONNECTIONS);
+    }
+    this.adjustProgressBar()
+  }
+
+  goPrev() {
+    super.goPrev();
+
+    if (this.validSteps[this.step] == true){
+      let n = document.getElementById("next");
+      n.removeAttribute("hidden");
+
+      if (this.validSteps[this.step + 1] == true) {
+        document.getElementById('next').classList.remove("bg-success");
+      } else {
+        document.getElementById("next").classList.add("bg-success");
+      }
+    }
+    this.adjustProgressBar()
+  }
+
+  adjustProgressBar() {
+    let percent = Number(this.step) * 20;
+
+    document.getElementById("vertical-progress-bar-fill").style.height = percent + "%";
+  }
+  
 
   /** Finds the templateBlob object in the userTemplates list based on a given uuid */
   getTemplateById(template_id) {
@@ -78,6 +157,8 @@ class DesignWorkflow extends Workflow {
       lab_card.classList.add("selected_node");
       await this.setLabDetails(this.templateBlob.lab_name);
       this.addDefaultNetwork();
+      this.stepIsValid(steps.SELECT_LAB);
+
     } else { // Lab has been selected
       if (confirm('Unselecting a lab will reset all selected resources, are you sure?')) {
         location.reload();
@@ -113,6 +194,7 @@ class DesignWorkflow extends Workflow {
 
     if (this.templateBlob.lab_name == null) {
       showError("Please select a lab before adding resources.", steps.SELECT_LAB);
+      this.stepNotValid(steps.ADD_RESOURCES);
       return;
     }
 
@@ -239,6 +321,8 @@ class DesignWorkflow extends Workflow {
           return;
         }
       }
+      this.stepIsValid(steps.ADD_RESOURCES);
+      this.resourceCount++;
 
       // todo
       // let result2 = isValidCIFile(host.cifile[0]);
@@ -277,6 +361,11 @@ class DesignWorkflow extends Workflow {
       if (hostname == existing_host.hostname) {
         this.removeHostFromTemplateBlob(existing_host);
         this.labFlavors.get(existing_host.flavor).available_count++;
+        this.resourceCount--;
+        if (this.resourceCount == 0) {
+          this.stepNotValid(steps.ADD_RESOURCES);
+        }
+
         GUI.refreshHostStep(this.templateBlob.host_list, this.labFlavors, this.labImages);
         GUI.refreshNetworkStep(this.templateBlob.networks);
         GUI.refreshConnectionStep(this.templateBlob.host_list);
@@ -359,6 +448,10 @@ class DesignWorkflow extends Workflow {
     }
 
     this.templateBlob.networks.push(networkBlob);
+    if(networkBlob["public"]) {
+      this.stepIsValid(steps.ADD_NETWORKS);
+    }
+
     return null;
   }
 
@@ -366,7 +459,7 @@ class DesignWorkflow extends Workflow {
    * Takes a network name as a parameter.
   */
   onclickDeleteNetwork(network_name) {
-    this.goTo(steps.ADD_NETWORKS)
+    this.goTo(steps.ADD_NETWORKS);
 
     for (let existing_network of this.templateBlob.networks) {
       if (network_name == existing_network.name) {
@@ -374,6 +467,10 @@ class DesignWorkflow extends Workflow {
         this.removeConnectionsOnNetwork(existing_network.name)
         GUI.refreshNetworkStep(this.templateBlob.networks);
         GUI.refreshConnectionStep(this.templateBlob.host_list);
+        
+        if (this.templateBlob.calculatePublicNetworkCount() < 1) {
+          this.stepNotValid(steps.ADD_NETWORKS);
+        }
         return;
       }
     }
@@ -467,10 +564,6 @@ class DesignWorkflow extends Workflow {
       GUI.hidePodDetailsError();
     });
 
-    // pod_public_input.addEventListener('focusout', (event)=> {
-    //   this.step = steps.POD_DETAILS;
-    //   workflow.onFocusOutPodPublicInput(pod_public_input);
-    // });
   }
 
   onFocusOutPodNameInput(element) {
@@ -479,11 +572,12 @@ class DesignWorkflow extends Workflow {
 
     if (validator[0]) {
       this.templateBlob.pod_name = pod_name;
-      GUI.refreshPodSummaryDetails(this.templateBlob.pod_name, this.templateBlob.pod_desc, this.templateBlob.public)
+      GUI.refreshPodSummaryDetails(this.templateBlob.pod_name, this.templateBlob.pod_desc)
     } else {
       GUI.highlightError(element);
       GUI.showPodDetailsError(validator[1]);
     }
+    this.validatePodDescAndName();
   }
 
   onFocusOutPodDescInput(element) {
@@ -492,18 +586,30 @@ class DesignWorkflow extends Workflow {
 
     if (validator[0]) {
       this.templateBlob.pod_desc = pod_desc;
-      GUI.refreshPodSummaryDetails(this.templateBlob.pod_name, this.templateBlob.pod_desc, this.templateBlob.public)
+      GUI.refreshPodSummaryDetails(this.templateBlob.pod_name, this.templateBlob.pod_desc)
     } else {
       GUI.highlightError(element);
       GUI.showPodDetailsError(validator[1]);
     }
+    this.validatePodDescAndName();
 
   }
 
-  onFocusOutPodPublicInput(element) {
-    this.templateBlob.public = element.checked;
-    GUI.refreshPodSummaryDetails(this.templateBlob.pod_name, this.templateBlob.pod_desc, this.templateBlob.public)
+  validatePodDescAndName() {
+    const pod_name = document.getElementById("pod-name-input").value;
+    const pod_desc = document.getElementById("pod-desc-input").value;
+
+    const validator_name = this.validatePodInput(pod_name, 53, "Pod name");
+    const validator_desc = this.validatePodInput(pod_desc, 255, "Pod description");
+
+    if (validator_name[0] && validator_desc[0]) {
+      this.stepIsValid(steps.POD_DETAILS);
+    } else {
+      this.stepNotValid(steps.POD_DETAILS);
+    }
+
   }
+
 
   /** Returns a tuple containing result and message (bool, String) */
   validatePodInput(input, maxCharCount, form_name) {
@@ -543,7 +649,7 @@ class DesignWorkflow extends Workflow {
       passed = false;
       message = "Pod contains invalid number of resources.";
       step = steps.ADD_RESOURCES;
-    } else if (this.templateBlob.networks.length < 1) {
+    } else if (this.templateBlob.calculatePublicNetworkCount() < 1) { 
       passed = false;
       message = "Pods must contain at least one network.";
       step = steps.ADD_NETWORKS;
@@ -1107,7 +1213,7 @@ class GUI {
     return td;
   }
 
-  static refreshPodSummaryDetails(pod_name, pod_desc, isPublic) {
+  static refreshPodSummaryDetails(pod_name, pod_desc) {
     const list = document.getElementById('pod_summary_pod_details');
     list.innerHTML = '';
     const name_li = document.createElement('li');
@@ -1117,10 +1223,6 @@ class GUI {
     const desc_li = document.createElement('li')
     desc_li.innerText = 'Description: ' + pod_desc;
     list.appendChild(desc_li);
-
-    const public_li = document.createElement('li');
-    public_li.innerText = 'Public: ' + isPublic;
-    list.appendChild(public_li);
   }
 
   static refreshPodSummaryHosts(host_list, flavors, images) {
@@ -1150,9 +1252,6 @@ class GUI {
       desc_li.innerText = 'Description: ' + this.pod.pod_desc;
       list.appendChild(desc_li);
 
-      const public_li = document.createElement('li');
-      public_li.innerText = 'Public: ' + this.pod.is_public;
-      list.appendChild(public_li);
     } else if (section == 'hosts') {
       const list = document.getElementById('pod_summary_hosts');
       list.innerHTML = '';

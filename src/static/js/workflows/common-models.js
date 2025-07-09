@@ -41,6 +41,19 @@ class TemplateBlob {
         return null;
     }
 
+    /**
+     * Returns the number of networks in the template that are marked as "public"
+     */
+    calculatePublicNetworkCount() {
+        let publicNetworkCount = 0;
+        for (let network of this.networks) {
+            if (network["public"]) {
+                publicNetworkCount++;
+            }
+        }
+        return publicNetworkCount;
+    }
+
 
     /**
      * Takes a hostname (string) and returns the host stored in the template, or null if it does not exist
