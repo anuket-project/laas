@@ -10,6 +10,7 @@
 
 
 import os
+import zoneinfo
 import pytz
 import json
 from django.utils import timezone
@@ -203,6 +204,9 @@ def account_booking_view(request):
         profile = UserProfile.objects.get(user=request.user)
         if (not profile or profile.ipa_username == None):
             return redirect("dashboard:index")
+        
+        # get user profile to get timezone label in context
+        up: UserProfile = UserProfile.objects.get(user=request.user)
 
         template = "account/booking_list.html"
         bookings = list(Booking.objects.filter(owner=request.user, end__gt=timezone.now()).order_by("-start"))
@@ -214,7 +218,8 @@ def account_booking_view(request):
             "title": "My Bookings",
             "bookings": bookings,
             "collab_bookings": collab_bookings,
-            "expired_bookings": expired_bookings
+            "expired_bookings": expired_bookings,
+            "tz_label" : zoneinfo.ZoneInfo(up.timezone),
         }
         return render(request, template, context=context)
 
