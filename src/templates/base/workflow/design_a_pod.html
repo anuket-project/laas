@@ -73,12 +73,16 @@
       <!-- Add Networks -->
     <div class="scroll-area pt-5 mx-5" id="add_networks">
       <h2 class="mt-4 mb-3">Add Networks<span class="text-danger">*</span></h2>
-      <p class="mb-0">Define 1 or more networks to use in your pod:</p>
+      <p class="mb-0">Define one or more networks to use in your pod:</p>
       <ul class="mb-1">
-        <li>Public networks are reachable from any host within the VPN</li>
-        <li>Private networks are only reachable by hosts within the pod on the same private network 2</li>
+        <li>Public networks are required for each host to reach the internet 
+          <ul>
+            <li>At least one public network is required</li>
+            <li>It is strongly recommend to not add multiple public networks to a host, unless the host is being specifically configured to support multi-homing.</li>
+          </ul>
+        </li>
+        <li>Private networks are only reachable by hosts within the pod on the same private network</li>
       </ul>
-      <p class="mb-2"><em>At least 1 public network is required.</em></p>
         <div class="row card-deck align-items-center" id="network_card_deck">
           <div class="col-xl-3 col-md-6 col-12" id="add_network_plus_card">
             <div class="card align-items-center border-0">
