@@ -53,7 +53,7 @@ class UserProfile(models.Model):
     full_name = models.CharField(max_length=100, null=True, blank=True, default='')
     booking_privledge = models.BooleanField(default=False)
 
-    public_user = models.BooleanField(default=False)
+    public_user = models.BooleanField(default=True)
     ipa_username = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
