@@ -522,12 +522,12 @@ code {
 </div>
 
 {% if booking.owner == user %}
-<div class="modal fade" id="addCollabModal" tabindex="-1" role="dialog" aria-labelledby="addCollabModal" aria-hidden="true">
+<div class="modal fade" id="addCollabModal" tabindex="-1" role="dialog" aria-labelledby="addCollabModal" aria-hidden="true" data-backdrop="static">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Add Collaborators</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="clearAddCollabList()">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -549,8 +549,12 @@ code {
             <li>Collaborators cannot be removed without contacting support.</li>
           </ol>
         </div>
+        <div id="collab-error" class="alert alert-danger pb-1" role="alert" hidden="">
+          <p>Please finish adding collaborators. <br>Please note that a collaborator has not been added unless it has been selected in the pop-up list.</p>
+        </div>
+
         <div>
-          {% bootstrap_field form.users label="Collaborators" %}
+          {% bootstrap_field form.users show_label=False %}
         </div>
 
         <button class="btn btn-success float-right" onclick="submitAddCollabs()">Submit</button>
@@ -559,7 +563,7 @@ code {
 </div>
 </div>
 
-<div class="modal fade" id="extendModal" tabindex="-1" role="dialog" aria-labelledby="extendModal" aria-hidden="true">
+<div class="modal fade" id="extendModal" tabindex="-1" role="dialog" aria-labelledby="extendModal" aria-hidden="true" data-backdrop="static">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -932,6 +936,13 @@ code {
     }
 
     async function submitAddCollabs() {
+
+      if (document.getElementById('user_field').value !== "" || searchable_select_multiple_widget.added_items.size == 0) {
+        document.getElementById('collab-error').hidden = false;
+
+        return;
+      }
+
       let collab_ids = collectCollabs();
         $.ajax({
             url: '../../collaborators/{{booking.id}}/',
@@ -953,8 +964,32 @@ code {
         })
 
         $("#addCollabModal").modal('hide');
+        clearAddCollabList();
 
     }
+
+    /* Clear collaborator list and hide warning text if visible */
+    function clearAddCollabList() {
+      
+      document.getElementById('collab-error').hidden = true;
+
+
+      let collabList = document.getElementById("added_list");
+      
+      while(collabList.firstChild) {
+        collabList.removeChild(collabList.lastChild);
+      };
+
+      document.getElementById("selector").value = "[]";
+      document.getElementById('user_field').value = "";
+      
+      // Calls the global bootstrap JS object that is holding the data for the field and removes all added items
+        // Without this, when adding collaborators for the second time, collaborators from the first form submission would appear as selected
+      searchable_select_multiple_widget.added_items.clear();
+      
+      
+    }
+
 
     async function submitExtendBooking() {
       const slider = document.getElementById("days_slider_input");
@@ -1181,11 +1216,26 @@ code {
         selected_image[instance_id] = image_id;
     }
 
+    /** Removes default styling applied by django*/
+      // Trimmed by adding args to django template function
+    function modifyCollabWidget() {
+        document.getElementById('addable_limit').setAttribute('hidden', '');
+        document.getElementById('added_number').setAttribute('hidden', '');
+        document.querySelector('.form-group').classList.add('mb-0');
+
+        const added_list = document.getElementById('added_list');
+        added_list.remove();
+        document.getElementById('search_select_outer').appendChild(added_list);
+
+    }
+
+
     function main() {
       fetchBookingStatus();
       setInterval(function () {
         fetchBookingStatus();
     }, 5000);
+    modifyCollabWidget();
     }
 
     main()

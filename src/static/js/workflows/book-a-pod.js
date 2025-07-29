@@ -167,10 +167,17 @@ class BookingWorkflow extends Workflow {
         }
 
         if (meta.purpose == null || meta.project == null || meta.details == null || meta.details.length < 30 || meta.length == 0) {
-            passed = false
+            passed = false;
             message = "Please finish adding booking details."
             return [passed, message]
         }
+
+        if (document.getElementById('user_field').value !== "") {
+            passed = false;
+            message = "Please finish adding collaborators. Please note that a collaborator has not been added unless it has been selected in the pop-up list."
+            return [passed, message]
+
+        } 
 
         return[passed, message];
     }
