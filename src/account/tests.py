@@ -1,9 +1,10 @@
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from account.models import UserProfile, Lab, LabStatus
 from django.db.models import QuerySet
 from django.db.utils import IntegrityError
+from django.http.response import JsonResponse, HttpResponse
 
 # Small test script in order to test if user auth tokens are being created
 # as expected
@@ -115,3 +116,101 @@ class SchemaTests(TestCase):
         self.assertEqual(lab.lab_home_link, None)
         
 
+class UserApiTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        usersToMake = {
+            "requester" : {
+                "email_addr" : "tester@test.org",
+                "name" : "",
+                "public" : True,
+            },
+            ################################
+            "bucktooth" : {
+                "email_addr" : "sfayx8tx@test.org",
+                "name" : "",
+                "public" : True,
+            },
+            "disposal" : {
+                "email_addr" : "zyruwsjs@ya.com",
+                "name" : "",
+                "public" : True,
+            },
+            "copilot2" : {
+                "email_addr" : "uypmkhpg@real.com",
+                "name" : "",
+                "public" : True,
+            },
+            "residency" : {
+                "email_addr" : "uermkppj@mail.co",
+                "name" : "",
+                "public" : True,
+            },
+            "copilot" : {
+                "email_addr" : "uermkppj@mail.co",
+                "name" : "",
+                "public" : False,
+            },
+            "parasitic" : {
+                "email_addr" : "mail@mail.com",
+                "name" : "",
+                "public" : False,
+            },
+            "mail@mail.com" : {
+                "email_addr" : "disposal@mail.com",
+                "name" : "",
+                "public" : False,
+            }
+        }
+        
+        for username, info in usersToMake.items():
+            newUser = User.objects.create(username=username)
+            UserProfile.objects.create(user=newUser, ipa_username=username, email_addr=info["email_addr"], public_user=info["public"])
+        
+        self.requestUser = User.objects.get(username="requester")
+        self.requestUserProfile = UserProfile.objects.get(user=self.requestUser)
+        self.client.force_login(self.requestUser)
+
+
+    def test_all_pub_collaborators(self):
+        
+        response: HttpResponse = self.client.get('/accounts/users/collaborators')
+        query = UserProfile.objects.filter(public_user=True).exclude(user=self.requestUser)
+        
+        response_payload: dict = response.json()
+        
+        self.assertEqual(len(response_payload), query.count())
+        for id, user in response_payload.items():
+            small_set = query.filter(ipa_username=user['ipa'], email_addr=user['email'], full_name=user['full_name'])
+            self.assertEqual(len(small_set), 1)
+            self.assertEqual(small_set.first().pk, int(id))
+
+
+    def test_query_user(self):
+        expected_bad_query_result = {
+            'is_user': False,
+            'id' : None,
+            'ipa' : '',
+            'email': '',
+            }
+
+
+        bad_response: HttpResponse = self.client.get('/accounts/users/collaborators/validate')
+        self.assertEqual(bad_response.status_code, 400)
+
+        # Match neither, match an email and username, partial match email, partial match username
+        bad_queries = ["garbage", "mail@mail.com", "uypmkhpg", "copilo"]
+        for q in bad_queries:
+            bad_query_response: HttpResponse = self.client.get('/accounts/users/collaborators/validate', data={"query":q})
+            self.assertEqual(type(bad_query_response), type(JsonResponse({"dummy": "data"})))
+            bad_json: dict = bad_query_response.json()
+            self.assertDictEqual(bad_json, expected_bad_query_result)
+
+        # pub user name match, email match. Repeat for private
+        good_queries = ["disposal", "uypmkhpg@real.com", "parasitic", "disposal@mail.com"]
+        for q in good_queries:
+            good_query_response: HttpResponse = self.client.get('/accounts/users/collaborators/validate', data={"query":q})
+            self.assertEqual(type(good_query_response), type(JsonResponse({"dummy": "data"})))
+            good_json: dict = good_query_response.json()
+            self.assertTrue(good_json["ipa"] == q or good_json["email"] == q)
+            self.assertTrue(UserProfile.objects.filter(pk=good_json["id"]).count() == 1)

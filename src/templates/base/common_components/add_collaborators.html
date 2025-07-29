@@ -1,0 +1,67 @@
+{% comment "Usage" %}
+Import the required JS:
+<script src="{%static " /js/common_components/add_collaborators.js" %}"></script>
+
+Used to render the add collaborators field in forms where it is needed
+
+See JS file for documentation on using the related JS class
+
+Functionality:
+- Public users can be queried by ipa_username, email, or full name
+- Private users can be queried only by ipa_username, email
+
+- Only public users will appear in the search dropdown results
+
+- Hitting enter = add user button = clicking an option in the dropdown results
+    - If user is not public, will query backend to see if user exists
+
+{% endcomment %}
+
+
+<div class="form-group mb-2">
+    <label class="sr-only" for="id_users">Users</label>
+    <div id="search_select_outer" class="d-flex flex-column">
+
+        <div class="input-group">
+            <input id="addCollab_search" name="ignore_this" class="form-control custom-control pl-4" autocomplete="off"
+                type="text" placeholder="Search for other users" value="" style="z-index: 3;">
+            <div class="input-group-append">
+                <button id="addCollab_button" class="btn text-dark" type="button"
+                    style="background-color: #e9ecef; border-color: #ced4da;">Add User</button>
+            </div>
+            <span for="addCollab_search" id="addCollab_search_invalidFeedback" class="invalid-feedback">Unable to find
+                user, please try again.</span>
+        </div>
+
+
+        <div id="scroll_restrictor" class="d-flex position-relative">
+            <div id="addCollab_dropdownOptions" class="list-group w-100 z-2 overflow-auto position-absolute mh-30vh">
+                
+            </div>
+        </div>
+
+        <h5 class="mt-3 mb-1">Added Collaborators:</h5>
+        <ul class="list-group" id="addCollab_selectedUsers">
+            <p id="addCollab_noCollaboratorNotice" class="m-0">No collaborators added</p>
+        </ul>
+    </div>
+</div>
+
+
+{% comment "Example rendered elements:" %}
+<!--xyz = random number-->
+
+<!--Selected User
+        Must apply eventListener to button in order to work properly, see JS-->
+<li id="addCollab_selectedUser_xyz" class="list-group-item d-flex align-items-center py-1 px-2">
+    <div class="col overflow-ellipsis addCollab_selectedUserText">ipa_username, email@mail.com</div>
+    <div class="col-auto">
+        <button class="btn fas fa-times"></button>
+    </div>
+</li>
+
+
+<!--Dropdown option-->
+<a class="list-group-item list-group-item-action overflow-ellipsis flex-shrink-0" id="addCollab_dropdownOptions_xyz">ipa_username, email@mail.com</a>
+
+{% endcomment %}

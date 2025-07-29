@@ -2,6 +2,7 @@
 {% load static %}
 {% load bootstrap4 %}
 {% block extrahead %}
+<script src="{%static "/js/common_components/add_collaborators.js" %}"></script>
 <script src="{% static "/js/workflows/common-models.js" %}"></script>
 <script src="{% static "/js/workflows/workflow.js" %}"></script>
 <script src="{% static "/js/workflows/book-a-pod.js" %}"></script>
@@ -136,12 +137,13 @@
     <!-- Collaborators -->
     <fieldset class="mt-4 pb-0">
         <legend>Add Collaborators:</legend>
-        <p>Give SSH and booking overview access to other users. Collaborators must mark their profiles as public and have a linked IPA account.</p>
+        <p>Give SSH and booking overview access to other users. Collaborators <strong>must</strong> have a linked IPA account in order to be added as a collaborator. <br>
+        Public users will be shown in the search results dropdown, in order to add a private user you must know their IPA username or connected email.</p>
         
         <div class="row mb-3">
         
             <div class="col-6">
-            {% bootstrap_field form.users show_label=False %}
+            {% include "../common_components/add_collaborators.html" %}
             </div>
         </div>
     </fieldset>

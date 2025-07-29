@@ -3,8 +3,8 @@
 {% load bootstrap4 %}
 
 {% block extrahead %}
-    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
-    <script src="{% static "/js/forms.js" %}"></script>
+<script src="{%static "/js/common_components/add_collaborators.js" %}"></script>
+<script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
 
 {% endblock %}
 <style>
@@ -31,7 +31,7 @@ code {
                         <td>Collaborators
                         </td>
                         <td>
-                            <span id="collab_string">{{ collab_string }}</span>
+                            <span id="collab_string">{{ collabs|join:", " }}</span>
                         </td>
                         <td>
                           {% if booking.owner == user %}
@@ -527,7 +527,7 @@ code {
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Add Collaborators</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="clearAddCollabList()">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="onCloseCollabWidget()">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -541,7 +541,12 @@ code {
           Please note:
           <ol>
             <li>
-              Only users that have marked their profile as "public" will appear in this list.
+              Only users that have marked their profile as "public" will appear in the search results dropdown 
+              <ul>
+                <li>
+                  In order to add a private user you must know their IPA username or connected email.
+                </li>
+              </ul>
             </li>
             <li>
               SSH keys and users for the invited collaborators will <strong>NOT</strong> be added to the booked resources.
@@ -550,11 +555,11 @@ code {
           </ol>
         </div>
         <div id="collab-error" class="alert alert-danger pb-1" role="alert" hidden="">
-          <p>Please finish adding collaborators. <br>Please note that a collaborator has not been added unless it has been selected in the pop-up list.</p>
+          <p>Please finish adding collaborators. <br> Please note that a collaborator has not been added unless they appear in the "Added Collaborators" list.</p>
         </div>
 
         <div>
-          {% bootstrap_field form.users show_label=False %}
+          {% include "../common_components/add_collaborators.html" %}
         </div>
 
         <button class="btn btn-success float-right" onclick="submitAddCollabs()">Submit</button>
@@ -697,6 +702,10 @@ code {
 
     // Store latest fetch of logs for use in modal
     const instance_cache = new Map(); // map instance id to 
+
+    // JS class for collaborator widget
+    const collaboratorWidget = new addCollaboratorWidget();
+
 
     function updateSSHCommand(selectedHost) {
       const sshHost = selectedHost + '.{{ host_domain }}';
@@ -937,13 +946,14 @@ code {
 
     async function submitAddCollabs() {
 
-      if (document.getElementById('user_field').value !== "" || searchable_select_multiple_widget.added_items.size == 0) {
+      if (!collaboratorWidget.isValid()) {
         document.getElementById('collab-error').hidden = false;
 
         return;
       }
 
-      let collab_ids = collectCollabs();
+      // JSON.stringify used to deal with typing errors encountered
+      let collab_ids = JSON.stringify(collaboratorWidget.getCollaboratorIds());
         $.ajax({
             url: '../../collaborators/{{booking.id}}/',
             type: 'post',
@@ -957,6 +967,7 @@ code {
         .done(function(response) {
             let collabs = JSON.parse(response);
             document.getElementById("collab_string").innerText = collabs.collaborators;
+            collaboratorWidget.makeSelectionPermanent();
         })
         .fail(function(response, textStatus, errorThrown) {
             console.log(response, textStatus, errorThrown)
@@ -964,31 +975,16 @@ code {
         })
 
         $("#addCollabModal").modal('hide');
-        clearAddCollabList();
+        document.getElementById('collab-error').hidden = true;
 
     }
 
-    /* Clear collaborator list and hide warning text if visible */
-    function clearAddCollabList() {
-      
+    function onCloseCollabWidget() {
+      collaboratorWidget.clearCurrentSelection()
+      collaboratorWidget.clearSearchBar()
       document.getElementById('collab-error').hidden = true;
-
-
-      let collabList = document.getElementById("added_list");
-      
-      while(collabList.firstChild) {
-        collabList.removeChild(collabList.lastChild);
-      };
-
-      document.getElementById("selector").value = "[]";
-      document.getElementById('user_field').value = "";
-      
-      // Calls the global bootstrap JS object that is holding the data for the field and removes all added items
-        // Without this, when adding collaborators for the second time, collaborators from the first form submission would appear as selected
-      searchable_select_multiple_widget.added_items.clear();
-      
-      
     }
+
 
 
     async function submitExtendBooking() {
@@ -1203,31 +1199,11 @@ code {
         return progress_map.size == host_count
     }
 
-    function collectCollabs() {
-      // Widget value is initialized to '' but is set to '[]' after adding and removing
-  
-      let value = document.getElementById('selector').value;
-      if (value === '') value = '[]';
-      return value;
-    }
-
     function selectImageForInstance(instance_id, image_id, image_name) {
         document.querySelector("#image-selector-" + instance_id).innerHTML = image_name;        
         selected_image[instance_id] = image_id;
     }
 
-    /** Removes default styling applied by django*/
-      // Trimmed by adding args to django template function
-    function modifyCollabWidget() {
-        document.getElementById('addable_limit').setAttribute('hidden', '');
-        document.getElementById('added_number').setAttribute('hidden', '');
-        document.querySelector('.form-group').classList.add('mb-0');
-
-        const added_list = document.getElementById('added_list');
-        added_list.remove();
-        document.getElementById('search_select_outer').appendChild(added_list);
-
-    }
 
 
     function main() {
@@ -1235,8 +1211,9 @@ code {
       setInterval(function () {
         fetchBookingStatus();
     }, 5000);
-    modifyCollabWidget();
+    collaboratorWidget.init(['{{collabs|join:"', '"}}']);
     }
+    
 
     main()
 </script>

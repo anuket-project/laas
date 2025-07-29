@@ -17,13 +17,16 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 from django.views import View
 from django.http.response import JsonResponse, HttpResponse
+from django.http import HttpRequest
 from rest_framework.authtoken.models import Token
-from django.views.decorators.csrf import csrf_exempt
+
+from django.db.models import QuerySet
 
 from api.forms import DowntimeForm
 from account.models import UserProfile, Lab
 from booking.models import Booking
 from api.models import LabManagerTracker,AutomationAPIManager, APILog
+from account.models import UserProfile
 
 """
 API views.
@@ -174,6 +177,7 @@ def all_users(request):
              for up in UserProfile.objects.filter(public_user=True)]
 
     return JsonResponse(users, safe=False)
+
 
 
 """

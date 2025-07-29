@@ -34,7 +34,9 @@ from account.views import (
     account_booking_view,
     account_detail_view,
     account_settings_view,
-    account_dev_login_view
+    account_dev_login_view,
+    all_pub_collaborators,
+    query_user
 )
 
 app_name = 'account'
@@ -47,4 +49,6 @@ urlpatterns = [
     path('my/bookings/', account_booking_view, name='my-bookings'),
     path('my/', account_detail_view, name='my-account'),
     path('dev_login/', account_dev_login_view, name='dev-login'),
+    path('users/collaborators', all_pub_collaborators),
+    path('users/collaborators/validate', query_user),
 ]
