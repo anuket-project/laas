@@ -287,3 +287,18 @@ def request_image_set(request, host_id) -> HttpResponse:
         return HttpResponse(
             status = 500,
         )
+    
+def request_list_images(request) -> HttpResponse:
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+    
+    success = image_list_images()
+
+    if (success is None):
+        return HttpResponse(status=500)
+    else:
+        return JsonResponse(
+            data = success,
+            status = 200,
+            safe=False
+        )

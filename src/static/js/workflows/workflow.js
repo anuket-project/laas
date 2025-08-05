@@ -75,6 +75,13 @@ class LibLaaSAPI {
         return templates;
     }
 
+    static async getImages() {
+        const response = await this.handleResponse(this.makeRequest(endpoint.IMAGES, {}))
+        let images = []
+        let data = JSON.parse(response)
+        return data
+    }
+
     static async makeTemplate(templateBlob) { // -> UUID or null
         return await this.handleResponse(this.makeRequest(endpoint.MAKE_TEMPLATE, {"template_blob": templateBlob}));
     }

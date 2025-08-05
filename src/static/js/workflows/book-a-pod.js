@@ -8,12 +8,14 @@ class BookingWorkflow extends Workflow {
 
         this.bookingBlob = new BookingBlob({});
         this.userTemplates = null;
+        this.images = null;
         this.bookingId = null;
         this.addCollaboratorWidget = new addCollaboratorWidget();
     }
 
     async startWorkflow() {
         this.userTemplates = await LibLaaSAPI.getTemplatesForUser(dashboard_project)
+        this.images =  await LibLaaSAPI.getImages()
         const flavorsList = await LibLaaSAPI.getLabFlavors(dashboard_project)
         this.labFlavors = new Map(); // Map<UUID, FlavorBlob>
         for (const fblob of flavorsList) {
@@ -21,7 +23,7 @@ class BookingWorkflow extends Workflow {
         }
         this.setEventListeners();
         workflow.onchangeDays();
-        await this.addCollaboratorWidget.init();
+        await this.addCollaboratorWidget.init([]);
         
     }
 
@@ -127,6 +129,20 @@ class BookingWorkflow extends Workflow {
         this.bookingBlob.template_id = null;
         if (isAvailable) {
             this.bookingBlob.template_id = template.id
+        }
+
+
+        document.getElementById("ciFile_input").hidden = false;
+        document.getElementById("ciFile_disabled-notice").hidden = true;
+
+        for (let host of template.host_list) {
+            if (this.images.find((image) => image.image_id === host.image).distro !== "Ubuntu"  ) {
+
+                document.getElementById("ciFile_input").hidden = true;
+                document.getElementById("ciFile_disabled-notice").hidden = false;
+
+                break;
+            }
         }
 
     }

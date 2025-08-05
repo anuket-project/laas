@@ -24,4 +24,5 @@ urlpatterns = [
     re_path(r'^ipmi/set/(?P<host_id>[A-Za-z0-9_-]+)$', request_ipmi_setpower, name='ipmi_set'),
     re_path(r'^ipmi/get/(?P<host_id>[A-Za-z0-9_-]+)$', request_ipmi_getpower, name='ipmi_get'),
     re_path(r'^reimage/(?P<host_id>[A-Za-z0-9_-]+)$', request_image_set, name='image_set'),
+    path('images/', request_list_images)
 ]

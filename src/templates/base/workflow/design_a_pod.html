@@ -44,7 +44,7 @@
       <div class="scroll-area pt-5 mx-5" id="select_lab">
         <!-- Ideally the 'Design a Pod' header would be anchored to the top of the page below the arrow -->
         <h1 class="mt-4"><u>Design a Pod</u></h1>
-        <p>To get started, select a lab. Then use the navigation arrows to advance through the workflow. <br> The next navigation button will appear <em>only</em> when the current step in the workflow<em>is valid.</em></p>
+        <p>To get started, select a lab. Then use the navigation arrows to advance through the workflow. <br> The next navigation button will appear <em>only</em> when the current step in the workflow <em>is valid.</em></p>
         <h2 class="mt-4 mb-3">Select a Lab<span class="text-danger">*</span></h2>
         <div class="row card-deck" id="lab_cards">
         </div>
@@ -188,8 +188,14 @@
                 <h2>Hostname<span class="text-danger">*</span></h2>
                 <input type="text" class="form-control" id="hostname-input" placeholder="Enter Hostname">
                 <h2>Cloud Init</h2>
-                <div class="d-flex justify-content-center align-items-center">
-                  <textarea name="ci-textarea" id="ci-textarea" rows="5" class="w-100"></textarea>
+                <div id="ciFile_disabled-notice" class="d-flex justify-content-center align-items-center">
+                  <div hidden="" class="m-0 py-0 px-2 border rounded" style="padding-top: .375rem !important; padding-bottom: .375rem !important;">
+                    <p class="m-0 p-0 pl-1">Cloud init files are only supported for Ubuntu</p>
+                  </div>
+                <div id="ciFile_input" class="custom-file py-1">
+                    <label class="custom-file-label" id="ci-file-label" for="ci-file-input">Choose File</label>
+                    <input type="file" id="ci-file-input" name="ci-file" class="mb-3 custom-file-input" accept=".yaml, .yml, application/yaml">
+                  </div>
                 </div>
               </div>
             </div>

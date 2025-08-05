@@ -20,6 +20,8 @@ const steps = {
  * Step initialization methods are prefaced with 'step'.
  */
 class DesignWorkflow extends Workflow {
+  static images = null;
+
   constructor(savedTemplateBlob) {
     super(["select_lab", "add_resources", "add_networks", "configure_connections", "pod_details", "pod_summary"])
 
@@ -134,6 +136,8 @@ class DesignWorkflow extends Workflow {
     const labs = await LibLaaSAPI.getLabs();
     GUI.display_labs(labs);
     document.getElementById(this.sections[0]).scrollIntoView({ behavior: 'smooth' });
+    DesignWorkflow.images = await LibLaaSAPI.getImages();
+
   }
 
   /** Adds the public network on start */
@@ -238,6 +242,8 @@ class DesignWorkflow extends Workflow {
     }
     this.resourceBuilder.user_configs[this.resourceBuilder.tab].image = image_id;
     GUI.highlightCard(card.childNodes[1]);
+    GUI.showHideCloudInit(image_id)
+
   }
 
   /** Takes a string and returns a tuple containing the  result and the error message (bool, string)*/
@@ -757,7 +763,13 @@ class GUI {
             <input type="text" class="form-control" id="hostname-input" placeholder="Enter Hostname">
             <h2>Cloud Init</h2>
             <div class="d-flex justify-content-center align-items-center">
-              <textarea name="ci-textarea" id="ci-textarea" rows="5" class="w-100"></textarea>
+              <div id="ciFile_disabled-notice" hidden="" class="m-0 py-0 px-2 border rounded" style="padding-top: .375rem !important; padding-bottom: .375rem !important;">
+                    <p class="m-0 p-0 pl-1">Cloud init files are only supported for Ubuntu</p>
+                </div>
+                <div id="ciFile_input" class="custom-file py-1">
+                    <label class="custom-file-label" id="ci-file-label" for="ci-file-input">Choose File</label>
+                    <input type="file" id="ci-file-input" name="ci-file" class="mb-3 custom-file-input" accept=".yaml, .yml, application/yaml">
+                </div>
             </div>
           </div>
         </div>
@@ -855,7 +867,7 @@ class GUI {
     // config stuff
     const image_cards = document.getElementById('image-cards');
     const hostname_input = document.getElementById('hostname-input');
-    const ci_textarea = document.getElementById('ci-textarea');
+    const ci_fileinput = document.getElementById('ci-file-input');
 
     const tab_flavor_id = resourceBuilder.original_configs[resourceBuilder.tab].flavor;
     const tab_flavor = flavor_map.get(tab_flavor_id);
@@ -881,16 +893,47 @@ class GUI {
     });
 
     // CI input
-    let ci_value = resourceBuilder.user_configs[resourceBuilder.tab].cifile[0];
-    if (!ci_value) {
-      ci_value = "";
-    }
-    ci_textarea.value = ci_value;
-    ci_textarea.addEventListener('focusout', (event) => {
-      resourceBuilder.user_configs[resourceBuilder.tab].cifile[0] = ci_textarea.value;
+   
+    // Resets the file input because it is impossible to set a file input to anything except null / blank through JS
+    ci_fileinput.value = null;
+    document.getElementById('ci-file-label').textContent = 'Choose File';
+    ci_fileinput.addEventListener('change', (event) => {
+      let file = document.getElementById('ci-file-input').files[0];
+      let fileName = file.name;
+      let label = document.getElementById('ci-file-label');
+      label.textContent = fileName;
+
+      var reader = new FileReader();
+      reader.readAsText(file, "UTF-8");
+
+      resourceBuilder.user_configs[resourceBuilder.tab].rawCiFile = file
+
+      reader.onload = function (evt) {
+        resourceBuilder.user_configs[resourceBuilder.tab].cifile[0] = evt.target.result;
+        
+      }
     })
+
+    this.showHideCloudInit(resourceBuilder.user_configs[resourceBuilder.tab].image)
+
     this.removeHostConfigErrorMessage();
     document.getElementById('resource_config_section').removeAttribute('hidden');
+  }
+
+
+  static showHideCloudInit(image_id) {
+    if (DesignWorkflow.images.find((image) => image.image_id === image_id).distro !== "Ubuntu"  ) {
+
+      console.log(DesignWorkflow.images.slice().filter((image) => image.image_id === image_id)[0])
+
+      document.getElementById("ciFile_input").hidden = true;
+      document.getElementById("ciFile_disabled-notice").hidden = false;
+
+    } else {
+      document.getElementById("ciFile_input").hidden = false;
+      document.getElementById("ciFile_disabled-notice").hidden = true;
+    }
+
   }
 
   static showHostConfigErrorMessage(message) {

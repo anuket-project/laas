@@ -323,3 +323,21 @@ def clean_ssh_keys(ssh_key_list: list[str]) -> list[str]:
     for key in ssh_key_list:
         cleaned.append(key.strip())
     return cleaned
+
+
+### IMAGE
+
+# GET
+def image_list_images() -> json:
+
+    endpoint = f'flavor/images'
+    url = f'{base}{endpoint}'
+    try:
+        response = requests.get(url)
+        return response.json()
+
+    except Exception as e:
+        print(f"Error at {url}")
+        print(e)
+        return None
+
