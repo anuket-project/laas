@@ -172,13 +172,6 @@ class BookingWorkflow extends Workflow {
 
         } 
 
-        if (document.getElementById('user_field').value !== "") {
-            passed = false;
-            message = "Please finish adding collaborators. Please note that a collaborator has not been added unless it has been selected in the pop-up list."
-            return [passed, message]
-
-        } 
-
         return[passed, message];
     }
 
