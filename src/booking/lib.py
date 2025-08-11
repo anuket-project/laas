@@ -95,12 +95,15 @@ def attempt_end_booking(booking: Booking) -> tuple[bool, str]:
         print("expiring booking " + str(booking.id) + " has no agg id: ending without hitting LibLaaS")
         booking.complete = True
         booking.save()
+        message=f"{booking.id} has no agg id: ending without hitting LibLaaS"
+
     else:
         message = "Unable to end booking"
         print("ending booking " + str(booking.id) + " with agg id: ", booking.aggregateId)
         result: dict = booking_end_booking(booking.aggregateId)
         if result is None:
             print("failed to end booking - no response from LibLaaS!")
+            raise RuntimeError(f"Unable to end booking, agg id: {booking.aggregateId}. No response from LibLaaS")
         elif result["success"] is True:
             print("ended booking successfully")
             booking.complete = True
@@ -109,5 +112,6 @@ def attempt_end_booking(booking: Booking) -> tuple[bool, str]:
         else:
             print("Failed to end booking with reason " + result["details"])
             message = result["details"]
-
+            raise RuntimeError(f"Unable to end booking, agg id: {booking.aggregateId}. {message}")
+        
     return (booking.complete, message)

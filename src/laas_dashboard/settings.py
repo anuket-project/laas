@@ -262,3 +262,11 @@ EXPIRE_HOURS = 48  # Notify when booking is expiring within this many hours
 
 SITE_CONTACT = os.environ.get("SITE_CONTACT")
 EVE_DOCS_URL = os.environ.get("EVE_DOCS_URL", "")
+
+
+# Email Settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = os.environ.get("EMAIL_PORT", 25)
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
