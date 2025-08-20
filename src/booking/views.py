@@ -229,7 +229,7 @@ def booking_detail_view(request, booking_id):
             "booking": booking,
             "status": statuses,
             "tz_label" : zoneinfo.ZoneInfo(up.timezone),
-            "collab_string": ", ".join(map(str, booking.collaborators.all())),
+            "collabs": list(map(str, booking.collaborators.all())),
             "contact_email": Lab.objects.filter(name="UNH_IOL").first().contact_email,
             "templatehosts": template_hosts,
             "ipmi_fqdns": host_ipmi_fqdns,

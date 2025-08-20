@@ -3,8 +3,8 @@
 {% load bootstrap4 %}
 
 {% block extrahead %}
-    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
-    <script src="{% static "/js/forms.js" %}"></script>
+<script src="{%static "/js/common_components/add_collaborators.js" %}"></script>
+<script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=yaml"></script>
 
 {% endblock %}
 <style>
@@ -31,7 +31,7 @@ code {
                         <td>Collaborators
                         </td>
                         <td>
-                            <span id="collab_string">{{ collab_string }}</span>
+                            <span id="collab_string">{{ collabs|join:", " }}</span>
                         </td>
                         <td>
                           {% if booking.owner == user %}
@@ -522,12 +522,12 @@ code {
 </div>
 
 {% if booking.owner == user %}
-<div class="modal fade" id="addCollabModal" tabindex="-1" role="dialog" aria-labelledby="addCollabModal" aria-hidden="true">
+<div class="modal fade" id="addCollabModal" tabindex="-1" role="dialog" aria-labelledby="addCollabModal" aria-hidden="true" data-backdrop="static">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Add Collaborators</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="onCloseCollabWidget()">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -541,7 +541,12 @@ code {
           Please note:
           <ol>
             <li>
-              Only users that have marked their profile as "public" will appear in this list.
+              Only users that have marked their profile as "public" will appear in the search results dropdown 
+              <ul>
+                <li>
+                  In order to add a private user you must know their IPA username or connected email.
+                </li>
+              </ul>
             </li>
             <li>
               SSH keys and users for the invited collaborators will <strong>NOT</strong> be added to the booked resources.
@@ -549,8 +554,12 @@ code {
             <li>Collaborators cannot be removed without contacting support.</li>
           </ol>
         </div>
+        <div id="collab-error" class="alert alert-danger pb-1" role="alert" hidden="">
+          <p>Please finish adding collaborators. <br> Please note that a collaborator has not been added unless they appear in the "Added Collaborators" list.</p>
+        </div>
+
         <div>
-          {% bootstrap_field form.users label="Collaborators" %}
+          {% include "../common_components/add_collaborators.html" %}
         </div>
 
         <button class="btn btn-success float-right" onclick="submitAddCollabs()">Submit</button>
@@ -559,7 +568,7 @@ code {
 </div>
 </div>
 
-<div class="modal fade" id="extendModal" tabindex="-1" role="dialog" aria-labelledby="extendModal" aria-hidden="true">
+<div class="modal fade" id="extendModal" tabindex="-1" role="dialog" aria-labelledby="extendModal" aria-hidden="true" data-backdrop="static">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -693,6 +702,10 @@ code {
 
     // Store latest fetch of logs for use in modal
     const instance_cache = new Map(); // map instance id to 
+
+    // JS class for collaborator widget
+    const collaboratorWidget = new addCollaboratorWidget();
+
 
     function updateSSHCommand(selectedHost) {
       const sshHost = selectedHost + '.{{ host_domain }}';
@@ -932,7 +945,15 @@ code {
     }
 
     async function submitAddCollabs() {
-      let collab_ids = collectCollabs();
+
+      if (!collaboratorWidget.isValid()) {
+        document.getElementById('collab-error').hidden = false;
+
+        return;
+      }
+
+      // JSON.stringify used to deal with typing errors encountered
+      let collab_ids = JSON.stringify(collaboratorWidget.getCollaboratorIds());
         $.ajax({
             url: '../../collaborators/{{booking.id}}/',
             type: 'post',
@@ -946,6 +967,7 @@ code {
         .done(function(response) {
             let collabs = JSON.parse(response);
             document.getElementById("collab_string").innerText = collabs.collaborators;
+            collaboratorWidget.makeSelectionPermanent();
         })
         .fail(function(response, textStatus, errorThrown) {
             console.log(response, textStatus, errorThrown)
@@ -953,8 +975,17 @@ code {
         })
 
         $("#addCollabModal").modal('hide');
+        document.getElementById('collab-error').hidden = true;
 
     }
+
+    function onCloseCollabWidget() {
+      collaboratorWidget.clearCurrentSelection()
+      collaboratorWidget.clearSearchBar()
+      document.getElementById('collab-error').hidden = true;
+    }
+
+
 
     async function submitExtendBooking() {
       const slider = document.getElementById("days_slider_input");
@@ -1168,25 +1199,21 @@ code {
         return progress_map.size == host_count
     }
 
-    function collectCollabs() {
-      // Widget value is initialized to '' but is set to '[]' after adding and removing
-  
-      let value = document.getElementById('selector').value;
-      if (value === '') value = '[]';
-      return value;
-    }
-
     function selectImageForInstance(instance_id, image_id, image_name) {
         document.querySelector("#image-selector-" + instance_id).innerHTML = image_name;        
         selected_image[instance_id] = image_id;
     }
+
+
 
     function main() {
       fetchBookingStatus();
       setInterval(function () {
         fetchBookingStatus();
     }, 5000);
+    collaboratorWidget.init(['{{collabs|join:"', '"}}']);
     }
+    
 
     main()
 </script>

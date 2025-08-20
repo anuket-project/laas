@@ -63,7 +63,7 @@ def request_create_booking(request) -> HttpResponse:
     # Warnings are issues that won't affect the booking's ability to provision, but may lead to unexpected behavior for the user
     warnings: list[str] = []
 
-    collab_profiles = [UserProfile.objects.get(user=User.objects.get(username=dashboard_username)) for dashboard_username in data["allowed_users"]]
+    collab_profiles = [UserProfile.objects.filter(ipa_username=ipa_username).first() for ipa_username in data["allowed_users"]]
 
     invalid_collaborators: list[UserProfile] = find_invalid_collaborators(collab_profiles)
 
@@ -286,4 +286,19 @@ def request_image_set(request, host_id) -> HttpResponse:
     else:
         return HttpResponse(
             status = 500,
+        )
+    
+def request_list_images(request) -> HttpResponse:
+    if not request.user.is_authenticated:
+        return HttpResponse(status=401)
+    
+    success = image_list_images()
+
+    if (success is None):
+        return HttpResponse(status=500)
+    else:
+        return JsonResponse(
+            data = success,
+            status = 200,
+            safe=False
         )

@@ -9,6 +9,11 @@
 
 from django.core.exceptions import (ObjectDoesNotExist, MultipleObjectsReturned)
 
+from django.core import mail
+from laas_dashboard.settings import (
+    EMAIL_HOST_USER,
+)
+
 
 class AbstractModelQuery():
     """
@@ -50,3 +55,17 @@ class AbstractModelQuery():
             return cls.filter(*args, **kwargs)[0]
         except IndexError:
             raise ObjectDoesNotExist()
+
+
+
+
+def send_email(subject: str, message: str, recipient_list: list[str]):
+
+    with mail.get_connection() as connection:
+        mail.EmailMessage(
+            subject = subject,
+            body = message,
+            from_email = EMAIL_HOST_USER,
+            to = recipient_list,
+            connection=connection
+        ).send()

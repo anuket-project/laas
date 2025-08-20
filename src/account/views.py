@@ -10,6 +10,7 @@
 
 
 import os
+import zoneinfo
 import pytz
 import json
 from django.utils import timezone
@@ -17,7 +18,8 @@ from django.contrib.auth import logout, authenticate,login as django_login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.urls import reverse
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpRequest
+from django.db.models import QuerySet
 from django.shortcuts import redirect, render
 from django.views.generic import RedirectView
 from django.shortcuts import render
@@ -203,6 +205,9 @@ def account_booking_view(request):
         profile = UserProfile.objects.get(user=request.user)
         if (not profile or profile.ipa_username == None):
             return redirect("dashboard:index")
+        
+        # get user profile to get timezone label in context
+        up: UserProfile = UserProfile.objects.get(user=request.user)
 
         template = "account/booking_list.html"
         bookings = list(Booking.objects.filter(owner=request.user, end__gt=timezone.now()).order_by("-start"))
@@ -214,7 +219,8 @@ def account_booking_view(request):
             "title": "My Bookings",
             "bookings": bookings,
             "collab_bookings": collab_bookings,
-            "expired_bookings": expired_bookings
+            "expired_bookings": expired_bookings,
+            "tz_label" : zoneinfo.ZoneInfo(up.timezone),
         }
         return render(request, template, context=context)
 
@@ -263,3 +269,73 @@ def account_dev_login_view(request):
             return render(request, template_dash)
         else:
             return render(request, template, {'error_message': 'Incorrect username and / or password.'})
+        
+
+def all_pub_collaborators(request: HttpRequest) -> HttpResponse | JsonResponse:
+    """
+    Used in add_collaborator component to get initial set of users that can be collaborated with
+    """
+
+    if request.user.is_anonymous:
+        return HttpResponse('Unauthorized', status=401)
+    
+    qs: QuerySet  = UserProfile.objects.filter(public_user=True).filter(ipa_username__startswith='').select_related('user').exclude(user=request.user)
+    userObjs: dict[int, dict] = {}
+    for up in qs:
+        item = {
+            'ipa': up.ipa_username,
+            'full_name': up.full_name if up.full_name else "",
+            'email': up.email_addr if up.email_addr else "",
+        }
+
+        userObjs[up.pk] = item
+
+    return JsonResponse(userObjs)
+
+def query_user(request: HttpRequest) -> HttpResponse | JsonResponse:
+    """
+    Used in add_collaborator component to validate if a user exists, regardless of if its public or private
+    """
+
+    required_field = "query"
+    response: dict[str, str | bool | int] = {
+        'is_user': False,
+        'id' : None,
+        'ipa' : '',
+        'email': '',
+    }
+
+
+    if request.user.is_anonymous:
+        return HttpResponse('Unauthorized', status=401)
+    
+    if not request.GET.__contains__(required_field):
+        return HttpResponse("Bad Request", status=400)
+    
+    query = request.GET.get(required_field)
+
+    qs: QuerySet  = UserProfile.objects.filter(ipa_username__startswith='').select_related('user').exclude(user=request.user)
+
+    email_query = qs.filter(email_addr__iexact=query)
+    ipa_query = qs.filter(ipa_username__iexact=query)
+
+
+    # A poor mans XOR
+    if (email_query.count() == 1) == (ipa_query.count() == 1):
+        return JsonResponse(response)
+    
+
+    if email_query.exists():
+        response["is_user"] = True
+        response['id'] = email_query.first().pk
+        response['ipa'] = email_query.first().ipa_username
+        response['email'] = email_query.first().email_addr
+
+    if ipa_query.exists():
+        response["is_user"] = True
+
+        response['id'] = ipa_query.first().pk
+        response['ipa'] = ipa_query.first().ipa_username
+        response['email'] = ipa_query.first().email_addr
+
+    return JsonResponse(response)
