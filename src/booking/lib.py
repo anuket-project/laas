@@ -74,13 +74,10 @@ def resolve_hostname(server_address) -> dict[str, str]:
     except:
         print("Unable to parse 'host' command response for IPv6 address!")
 
-    if v4_result is not None or v6_result is not None:
-        return {
-            'v4': v4_list,
-            'v6': v6_list,
-        }
-    
-    return f"Unable to resolve any IP for {server_address}"
+    return {
+        'v4': v4_list,
+        'v6': v6_list,
+    }
 
 def attempt_end_booking(booking: Booking) -> tuple[bool, str]:
     """
