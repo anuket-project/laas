@@ -9,4 +9,4 @@
 ##############################################################################
 python manage.py migrate && \
 python manage.py collectstatic --no-input && \
-gunicorn laas_dashboard.wsgi -b 0.0.0.0:8000
+gunicorn laas_dashboard.wsgi --workers ${LAAS_GUNICORN_WORKERS:-1} --threads ${LAAS_GUNICORN_THREADS:-1} -b 0.0.0.0:8000
