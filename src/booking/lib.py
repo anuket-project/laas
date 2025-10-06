@@ -49,30 +49,35 @@ def resolve_hostname(server_address) -> dict[str, str]:
     v4_result = process.close()
 
     v4_list = "N/A"
-    if (v4_result is None and not "not found" in v4_data):
-        v4_list = ""
-        v4_lines = v4_data.strip().split("\n")
-        for line in v4_lines:
-            v4_list = v4_list.join((line.split(" has address ")[1], "\n"))
+
+    try:
+        if (v4_result is None and not "not found" in v4_data):
+            v4_list = ""
+            v4_lines = v4_data.strip().split("\n")
+            for line in v4_lines:
+                v4_list = v4_list.join((line.split(" has address ")[1], "\n"))
+    except:
+        print("Unable to parse 'host' command response for IPv4 address!")
 
     process = os.popen(f"host -R 1 -W 1 -st AAAA {server_address}")
     v6_data = process.read()
     v6_result = process.close()
 
     v6_list = "N/A"
-    if (v6_result is None and not "not found" in v6_data):
-        v6_list = ""
-        v6_lines = v6_data.strip().split("\n")
-        for line in v6_lines:
-            v6_list = v6_list.join((line.split(" has address ")[1], "\n"))
 
-    if v4_result is not None or v6_result is not None:
-        return {
-            'v4': v4_list,
-            'v6': v6_list,
-        }
-    
-    return f"Unable to resolve any IP for {server_address}"
+    try:
+        if (v6_result is None and not "not found" in v6_data):
+            v6_list = ""
+            v6_lines = v6_data.strip().split("\n")
+            for line in v6_lines:
+                v6_list = v6_list.join((line.split(" has address ")[1], "\n"))
+    except:
+        print("Unable to parse 'host' command response for IPv6 address!")
+
+    return {
+        'v4': v4_list,
+        'v6': v6_list,
+    }
 
 def attempt_end_booking(booking: Booking) -> tuple[bool, str]:
     """
