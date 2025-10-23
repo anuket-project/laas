@@ -5,12 +5,12 @@ class BookingWorkflow extends Workflow {
     constructor(savedBookingBlob) {
         super(["select_template", "cloud_init", "booking_details" , "booking_summary"])
 
-
         this.bookingBlob = new BookingBlob({});
         this.userTemplates = null;
         this.images = null;
         this.bookingId = null;
         this.addCollaboratorWidget = new addCollaboratorWidget();
+       
     }
 
     async startWorkflow() {
@@ -24,7 +24,8 @@ class BookingWorkflow extends Workflow {
         this.setEventListeners();
         workflow.onchangeDays();
         await this.addCollaboratorWidget.init([]);
-        
+    
+
     }
 
     setEventListeners() {
@@ -65,7 +66,6 @@ class BookingWorkflow extends Workflow {
         
     }
 
-
     onchangeDays() {
         const counter = $("#booking_details_day_counter")
         const input = document.getElementById('input_length');
@@ -80,14 +80,19 @@ class BookingWorkflow extends Workflow {
 
     onSelectProject() {
         workflow.bookingBlob.metadata.project = this.value;
+        workflow.onErrorChangeElements.project(true);
     }
 
     onSelectPurpose() {
         workflow.bookingBlob.metadata.purpose = this.value;
+        workflow.onErrorChangeElements.purpose(true);
     }
 
     onAddDetails() {
-        if (this.value.length > 30) {
+        workflow.onErrorChangeElements.details(true);
+        document.getElementById("detailHelpBlock").innerHTML = this.value.length + "/15 Minimum Characters"
+
+        if (this.value.length > 15) {
             workflow.bookingBlob.metadata.details = this.value;    
         } else {
             workflow.bookingBlob.metadata.details = null;
@@ -95,6 +100,7 @@ class BookingWorkflow extends Workflow {
     }
 
     onTemplateSelected(elem) {
+        this.onErrorChangeElements.template(true);
         let selectedTemplateId = elem.options[elem.selectedIndex].value;
 
         // Deselect other select field in order to prevent edge case where user only has 1 private template resulting in them being unable to change the template description to that private template after selecting it then a public template  
@@ -149,19 +155,42 @@ class BookingWorkflow extends Workflow {
 
     isCompleteBookingInfo() {
         let passed = true
-        let message = "success"
+        let message = "Success"
         const blob = this.bookingBlob;
         const meta = blob.metadata;
 
         if (blob.template_id == null) {
             passed = false;
             message = "Please select an available template."
+            this.onErrorChangeElements.template(false);
             return [passed, message]
         }
 
-        if (meta.purpose == null || meta.project == null || meta.details == null || meta.details.length < 30 || meta.length == 0) {
+        if (meta.project == null) {
             passed = false;
-            message = "Please finish adding booking details."
+            message = "Please select a booking project."
+            this.onErrorChangeElements.project(false);
+            return [passed, message]
+        }
+
+        if (meta.purpose == null) {
+            passed = false;
+            message = "Please select a booking purpose."
+            this.onErrorChangeElements.purpose(false);
+            return [passed, message]
+        }
+
+        if (meta.length < 1 || meta.length > 21) {
+            passed = false;
+            message = "Please select a valid booking length";
+            
+            return[passed, message]
+        }
+
+        if (meta.details == null || meta.details.length < 15) {
+            passed = false;
+            message = "Please finish adding booking details, a minimum of 15 characters is required."
+            workflow.onErrorChangeElements.details(false);
             return [passed, message]
         }
         
@@ -174,6 +203,51 @@ class BookingWorkflow extends Workflow {
 
         return[passed, message];
     }
+
+    // "Library" of sections updating on error
+    onErrorChangeElements = {
+            // isValid: bool -> True: make section "valid", False: add error to section 
+            template: (isValid) => {
+                let templateSelects = document.querySelectorAll(".template-select");
+                let templateSelectText = document.getElementById("template-description");
+                if (!isValid) {
+                    templateSelects.forEach((e) => {
+                        e.classList.add("is-invalid")
+                    });
+                    templateSelectText.classList.add("text-danger")
+                
+                } else {
+                    templateSelects.forEach((e) => {
+                        e.classList.remove("is-invalid")
+                    });
+                    templateSelectText.classList.remove("text-danger")
+                    
+                }
+            },
+            project: (isValid) => {
+                if (!isValid) {document.getElementById('input_project').classList.add("is-invalid");}
+                else {document.getElementById('input_project').classList.remove("is-invalid");}
+            },
+            purpose: (isValid) => {
+                if (!isValid) {document.getElementById('input_purpose').classList.add("is-invalid");}
+                else {document.getElementById('input_purpose').classList.remove("is-invalid");}
+            },
+            details: (isValid) => {
+                let input = document.getElementById('input_details');
+                let help_text = document.getElementById('detailHelpBlock'); 
+                if (!isValid) {
+                    input.classList.add("is-invalid");
+                    input.classList.add("border-danger");
+                    help_text.classList.remove("text-muted");
+                    help_text.classList.add("text-danger");
+                } else {
+                    input.classList.remove("is-invalid");
+                    input.classList.remove("border-danger");
+                    help_text.classList.add("text-muted");
+                    help_text.classList.remove("text-danger");
+                }
+            },  
+        }
 
 
     /** Async / await is more infectious than I thought, so all functions that rely on an API call will need to be async */
