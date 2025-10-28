@@ -43,7 +43,6 @@ class addCollaboratorWidget {
         this.#selectedUserElementTemplate.appendChild(textField);
         this.#selectedUserElementTemplate.appendChild(buttonHold);
 
-       
         // Set semantics of <a> to be a button rather than a link
         this.#userDropdownOptionTemplate.classList.add("list-group-item", "list-group-item-action", "overflow-ellipsis", "flex-shrink-0");
         this.#userDropdownOptionTemplate.setAttribute("role", "button")
@@ -67,14 +66,12 @@ class addCollaboratorWidget {
         
     }
 
-
     getCollaboratorIds() {
         let retIds = []
 
         this.#selectedUsers.forEach((val, key) => {
             retIds.push(key)
         })
-
 
         return retIds;
     }
@@ -86,10 +83,8 @@ class addCollaboratorWidget {
             retIds.push(val)
         })
 
-
         return retIds;
     }
-
 
 
     isValid() {
@@ -108,8 +103,7 @@ class addCollaboratorWidget {
             
         }
 
-        this.#selectedUsersPermanent = new Map(this.#selectedUsers)
-        
+        this.#selectedUsersPermanent = new Map(this.#selectedUsers)        
     }
 
 
@@ -121,7 +115,6 @@ class addCollaboratorWidget {
         }
 
         this.#selectedUsers = new Map(this.#selectedUsersPermanent)    
-        
     }
 
     clearSearchBar() {
@@ -148,9 +141,8 @@ class addCollaboratorWidget {
             await this.#queryForUser(elemVal, true);
         });
 
-
-
     }
+
 
     async #getPubUsers() {
         const token = document.getElementsByName('csrfmiddlewaretoken')[0].value
@@ -175,7 +167,6 @@ class addCollaboratorWidget {
             )
           }));
     }
-
 
 
     #updateDropdownUserOptions(search) {
