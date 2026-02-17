@@ -30,7 +30,6 @@ class BookingWorkflow extends Workflow {
 
     setEventListeners() {
         
-        document.getElementById('ci-file-input').addEventListener('change', this.onUploadCIFile);
         document.getElementById('input_length').addEventListener('input', this.onchangeDays);
         document.getElementById('input_project').addEventListener('input', this.onSelectProject);
         document.getElementById('input_purpose').addEventListener('input', this.onSelectPurpose);
@@ -46,24 +45,6 @@ class BookingWorkflow extends Workflow {
             });
         });
 
-    }
-
-    // Update the label for ci-file upload manually since Bootstrap 4 requires JS to update the label text for a file upload
-    onUploadCIFile() {
-        var file = document.getElementById('ci-file-input').files[0]
-        var fileName = file.name;
-        var label = document.getElementById('ci-file-label');
-        label.textContent = fileName;
-
-
-        var reader = new FileReader();
-        reader.readAsText(file, "UTF-8");
-        
-        // The reader will never "fail" to read the file because all files can technically be read as text
-        reader.onload = function (evt) {
-            workflow.bookingBlob.global_cifile = evt.target.result;
-        }
-        
     }
 
     onchangeDays() {
@@ -138,18 +119,18 @@ class BookingWorkflow extends Workflow {
         }
 
 
-        document.getElementById("ciFile_input").hidden = false;
-        document.getElementById("ciFile_disabled-notice").hidden = true;
+        // document.getElementById("ciFile_input").hidden = false;
+        // document.getElementById("ciFile_disabled-notice").hidden = true;
 
-        for (let host of template.host_list) {
-            if (this.images.find((image) => image.image_id === host.image).distro !== "Ubuntu"  ) {
+        // for (let host of template.host_list) {
+        //     if (this.images.find((image) => image.image_id === host.image).distro !== "Ubuntu"  ) {
 
-                document.getElementById("ciFile_input").hidden = true;
-                document.getElementById("ciFile_disabled-notice").hidden = false;
+        //         document.getElementById("ciFile_input").hidden = true;
+        //         document.getElementById("ciFile_disabled-notice").hidden = false;
 
-                break;
-            }
-        }
+        //         break;
+        //     }
+        // }
 
     }
 

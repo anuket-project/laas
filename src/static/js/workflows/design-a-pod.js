@@ -242,7 +242,6 @@ class DesignWorkflow extends Workflow {
     }
     this.resourceBuilder.user_configs[this.resourceBuilder.tab].image = image_id;
     GUI.highlightCard(card.childNodes[1]);
-    GUI.showHideCloudInit(image_id)
 
   }
 
@@ -909,32 +908,15 @@ class GUI {
       resourceBuilder.user_configs[resourceBuilder.tab].rawCiFile = file
 
       reader.onload = function (evt) {
-        resourceBuilder.user_configs[resourceBuilder.tab].cifile[0] = evt.target.result;
+        resourceBuilder.user_configs[resourceBuilder.tab].cifile = evt.target.result;
         
       }
     })
-
-    this.showHideCloudInit(resourceBuilder.user_configs[resourceBuilder.tab].image)
-
     this.removeHostConfigErrorMessage();
     document.getElementById('resource_config_section').removeAttribute('hidden');
   }
 
 
-  static showHideCloudInit(image_id) {
-    if (DesignWorkflow.images.find((image) => image.image_id === image_id).distro !== "Ubuntu"  ) {
-
-      console.log(DesignWorkflow.images.slice().filter((image) => image.image_id === image_id)[0])
-
-      document.getElementById("ciFile_input").hidden = true;
-      document.getElementById("ciFile_disabled-notice").hidden = false;
-
-    } else {
-      document.getElementById("ciFile_input").hidden = false;
-      document.getElementById("ciFile_disabled-notice").hidden = true;
-    }
-
-  }
 
   static showHostConfigErrorMessage(message) {
     document.getElementById("hostname-input").classList.add("invalid_field");
