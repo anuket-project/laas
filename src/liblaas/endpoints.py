@@ -279,6 +279,8 @@ def request_ipmi_getpower(request, host_id) -> HttpResponse:
     
 def request_image_set(request, host_id) -> HttpResponse:
     data = json.loads(request.body.decode('utf-8'))
+    profile = UserProfile.objects.get(user=request.user)
+    data["by_user"] = profile.ipa_username
     success = booking_set_image(host_id, data)
     
     if (success.get("code") == 200):
