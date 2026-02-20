@@ -76,7 +76,7 @@ class HostConfigBlob {
         this.hostname = incomingBlob.hostname; // String 
         this.flavor = incomingBlob.flavor; // UUID (String)
         this.image = incomingBlob.image; // UUID (String)
-        this.cifile = []; // List<String>
+        this.cifile = null; // String
         this.bondgroups = []; // List<BondgroupBlob>
 
         if (incomingBlob.cifile) {
