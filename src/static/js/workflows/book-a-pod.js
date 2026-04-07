@@ -73,7 +73,7 @@ class BookingWorkflow extends Workflow {
         workflow.onErrorChangeElements.details(true);
         document.getElementById("detailHelpBlock").innerHTML = this.value.length + "/15 Minimum Characters"
 
-        if (this.value.length > 15) {
+        if (this.value.length >= 15) {
             workflow.bookingBlob.metadata.details = this.value;    
         } else {
             workflow.bookingBlob.metadata.details = null;

@@ -15,7 +15,15 @@
     <fieldset class="border-bottom mt-4">
         <legend>Select a Template<span class="text-danger">*</span></legend>
         {% block info %}
-        <p>Select the resource bundle that you would like to reserve. Configure your own custom resource <a href="{% url 'workflow:design_a_pod' %}">here</a>.</p>
+        <p class="mb-0">
+        Select the resource bundle / template that you would like to reserve. Configure your own custom resource <a href="{% url 'workflow:design_a_pod' %}">here</a>.<br>
+        Configuring your own resource / template allows you to:
+        </p>
+        <ul>
+            <li>Configure multiple hosts and their networking</li>
+            <li>Select an operating system other than the provided default</li>
+            <li>Use custom cloud-init images with your hosts</li>
+        </ul>
         {% endblock %}
         
         <div class="row mt-3 mb-3 justify-content-left">
