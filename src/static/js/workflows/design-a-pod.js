@@ -760,10 +760,15 @@ class GUI {
           <div class="form-group">
             <h2>Hostname<span class="text-danger">*</span></h2>
             <input type="text" class="form-control" id="hostname-input" placeholder="Enter Hostname">
-            <h2>Cloud Init</h2>
-            <div class="d-flex justify-content-center align-items-center">
+              <h2>Cloud Init</h2>  
+              <p class="mb-0">User-data files used by Canonical's cloud-init. See supporting documentation on the <a href="https://docs.cloud-init.io/en/latest/explanation/format/index.html#user-data-formats">official documentation</a> for use cases with the following notes:</p> 
+                <ul>
+                  <li>We use a noCloud datasource from disk so MIME types <em>cannot be used</em></li>
+                  <li>It is recommended to <em>not</em> have a users section as we supply one to configure accounts and ssh access</li>
+                </ul>
+              <div class="d-flex justify-content-center align-items-center">
               <div id="ciFile_disabled-notice" hidden="" class="m-0 py-0 px-2 border rounded" style="padding-top: .375rem !important; padding-bottom: .375rem !important;">
-                    <p class="m-0 p-0 pl-1">Cloud init files are only supported for Ubuntu</p>
+                  <p class="m-0 p-0 pl-1">Cloud init files are currently disabled for this OS</p>
                 </div>
                 <div id="ciFile_input" class="custom-file py-1">
                     <label class="custom-file-label" id="ci-file-label" for="ci-file-input">Choose File</label>
@@ -772,7 +777,7 @@ class GUI {
             </div>
           </div>
         </div>
-      </div>
+
       <p id="add-host-error-msg" class="text-danger"></p>
       `
 
